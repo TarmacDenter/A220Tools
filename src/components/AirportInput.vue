@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { FetchStatus } from '@/types/wind'
 
 const props = defineProps<{
+  modelValue: string
   status: FetchStatus
 }>()
 
 const emit = defineEmits<{
   fetch: [icao: string]
+  'update:modelValue': [value: string]
 }>()
-
-const icaoInput = ref('')
+const icaoInput = ref(props.modelValue)
 
 function onFetch() {
   const val = icaoInput.value.trim().toUpperCase()
@@ -21,6 +22,18 @@ function onFetch() {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter') onFetch()
 }
+
+function onInput(value: string) {
+  icaoInput.value = value
+  emit('update:modelValue', value)
+}
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    icaoInput.value = value
+  },
+)
 </script>
 
 <template>
@@ -29,13 +42,14 @@ function onKeydown(e: KeyboardEvent) {
     <div class="input-row">
       <input
         id="icao-input"
-        v-model="icaoInput"
+        :value="icaoInput"
         type="text"
         placeholder="e.g. KLAX"
         maxlength="4"
         class="icao-field"
         :disabled="props.status === 'loading'"
         @keydown="onKeydown"
+        @input="onInput(($event.target as HTMLInputElement).value)"
         autocomplete="off"
         autocapitalize="characters"
         spellcheck="false"

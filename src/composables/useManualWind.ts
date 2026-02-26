@@ -1,11 +1,14 @@
 import type { ParsedWind } from '@/types/wind'
 
+export type ManualWindSource = 'atis_mag' | 'metar_true' | 'aerodata_true'
+
 export interface ManualWindInput {
   direction: string
   speed: string
   gust: string
-  isMagnetic: boolean
-  declination: string // east positive, e.g. "12" or "-5"; empty = use fetched value
+  source: ManualWindSource
+  declinationMagnitude: string // magnitude only, e.g. "12"; empty = use fetched value
+  declinationDir: 'E' | 'W'
 }
 
 export function parseManualWind(input: ManualWindInput): ParsedWind | null {

@@ -92,7 +92,7 @@ const isManualTrue = computed(
         <span v-if="result.magneticCorrection.source === 'manual_entered'">(manually entered)</span>
         <span v-else-if="result.magneticCorrection.source === 'geomagnetism_package'">(WMM model)</span>
         <span v-else>(airport API)</span>.
-        Use this mode for ATIS and AeroData sources.
+        Use this mode for METAR and AeroData sources.
       </div>
     </div>
 
@@ -102,7 +102,7 @@ const isManualTrue = computed(
       <div>
         <strong>MAGNETIC input mode.</strong>
         No declination correction applied — winds treated as already magnetic.
-        Use this mode for METAR winds.
+        Use this mode for ATIS winds.
       </div>
     </div>
 
@@ -111,8 +111,8 @@ const isManualTrue = computed(
       <span class="advisory-icon">⚠</span>
       <div>
         <strong>Using ATIS or AWOS?</strong>
-        ATIS/AWOS broadcast winds in <strong>TRUE</strong> degrees — switch to
-        <em>TRUE mode</em> in manual entry, or use the METAR fetch above.
+        ATIS/AWOS broadcast winds in <strong>MAGNETIC</strong> degrees — switch to
+        <em>ATIS (MAG)</em> in manual entry, or use the METAR fetch above.
         <br />
         <strong>Using METAR directly?</strong>
         METAR winds are <strong>TRUE</strong> — the fetch corrects automatically,

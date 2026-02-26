@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useMetar, parseMetarWind } from '@/composables/useMetar'
 import { useAirportInfo } from '@/composables/useAirportInfo'
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations'
@@ -16,12 +16,20 @@ import HeadingTable from './HeadingTable.vue'
 
 // --- State ---
 const manualMode = ref(false)
-const manualInputs = ref({ direction: '', speed: '', gust: '', isMagnetic: false, declination: '' })
+const manualInputs = ref({
+  direction: '',
+  speed: '',
+  gust: '',
+  source: 'metar_true',
+  declinationMagnitude: '',
+  declinationDir: 'E',
+})
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false)
 
-const { status: metarStatus, metar, error: metarError, fetchMetar } = useMetar()
+const { status: metarStatus, metar, error: metarError, fetchMetar, clearMetar } = useMetar()
 const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo()
+const icaoInput = ref('')
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
@@ -70,17 +78,19 @@ const effectiveMagCorr = computed<MagneticCorrection | null>(() => {
   if (useZeroDecl.value) {
     return { declination: 0, source: 'airport_api', rawMagdecString: null }
   }
-  if (manualMode.value && manualInputs.value.isMagnetic) {
+  if (manualMode.value && manualInputs.value.source === 'atis_mag') {
     return { declination: 0, source: 'manual_magnetic', rawMagdecString: null }
   }
   // TRUE mode: prefer manually entered declination if provided
   if (manualMode.value) {
-    const raw = manualInputs.value.declination.trim()
+    const raw = manualInputs.value.declinationMagnitude.trim()
     if (raw !== '') {
       const parsed = parseFloat(raw)
       if (!isNaN(parsed)) {
-        console.log(`[WindCheckerApp] Using manually entered declination: ${parsed}°`)
-        return { declination: parsed, source: 'manual_entered', rawMagdecString: null }
+        const sign = manualInputs.value.declinationDir === 'W' ? -1 : 1
+        const signed = parsed * sign
+        console.log(`[WindCheckerApp] Using manually entered declination: ${signed}°`)
+        return { declination: signed, source: 'manual_entered', rawMagdecString: null }
       }
     }
     // Fall back to fetched airport declination, then 0
@@ -108,6 +118,13 @@ const headingRows = computed(() => {
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null)
 const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading')
+
+watch(manualMode, (enabled) => {
+  if (!enabled) return
+  clearMetar()
+  icaoInput.value = ''
+  useZeroDecl.value = false
+})
 </script>
 
 <template>
@@ -117,7 +134,7 @@ const isLoading = computed(() => metarStatus.value === 'loading' || airportStatu
       <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for all headings</p>
     </header>
 
-    <AirportInput :status="metarStatus" @fetch="onFetch" />
+    <AirportInput v-model="icaoInput" :status="metarStatus" @fetch="onFetch" />
 
     <!-- Manual mode toggle -->
     <div class="manual-toggle">

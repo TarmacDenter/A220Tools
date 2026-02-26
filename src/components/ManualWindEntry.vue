@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualWindInput } from '@/composables/useManualWind'
+import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
 
 const props = defineProps<{
   modelValue: ManualWindInput
@@ -9,44 +9,58 @@ const emit = defineEmits<{
   'update:modelValue': [value: ManualWindInput]
 }>()
 
-function updateField(field: 'direction' | 'speed' | 'gust' | 'declination', value: string) {
+function updateField(
+  field: 'direction' | 'speed' | 'gust' | 'declinationMagnitude',
+  value: string,
+) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
 }
 
-function toggleMagnetic(isMagnetic: boolean) {
-  emit('update:modelValue', { ...props.modelValue, isMagnetic })
+function setSource(source: ManualWindSource) {
+  emit('update:modelValue', { ...props.modelValue, source })
+}
+
+function setDeclinationDir(dir: 'E' | 'W') {
+  emit('update:modelValue', { ...props.modelValue, declinationDir: dir })
 }
 </script>
 
 <template>
-  <div class="manual-entry" :class="modelValue.isMagnetic ? 'mode-magnetic' : 'mode-true'">
+  <div class="manual-entry" :class="modelValue.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'">
 
-    <!-- Mode toggle -->
+    <!-- Source selector -->
     <div class="mode-toggle">
       <button
         class="mode-btn"
-        :class="{ active: !modelValue.isMagnetic }"
-        @click="toggleMagnetic(false)"
+        :class="{ active: modelValue.source === 'atis_mag' }"
+        @click="setSource('atis_mag')"
       >
-        TRUE
+        ATIS (MAG)
       </button>
       <button
         class="mode-btn"
-        :class="{ active: modelValue.isMagnetic }"
-        @click="toggleMagnetic(true)"
+        :class="{ active: modelValue.source === 'metar_true' }"
+        @click="setSource('metar_true')"
       >
-        MAGNETIC
+        METAR (TRUE)
+      </button>
+      <button
+        class="mode-btn"
+        :class="{ active: modelValue.source === 'aerodata_true' }"
+        @click="setSource('aerodata_true')"
+      >
+        AERODATA (TRUE)
       </button>
     </div>
 
     <!-- Source reminder -->
     <div class="source-reminder">
-      <span v-if="!modelValue.isMagnetic">
-        Use <strong>TRUE</strong> for: ATIS / AeroData
+      <span v-if="modelValue.source !== 'atis_mag'">
+        Use <strong>TRUE</strong> for: METAR / AeroData
         — declination will be applied automatically
       </span>
       <span v-else>
-        Use <strong>MAGNETIC</strong> for: METAR
+        Use <strong>MAGNETIC</strong> for: ATIS
         — winds entered directly as magnetic, no correction applied
       </span>
     </div>
@@ -54,12 +68,12 @@ function toggleMagnetic(isMagnetic: boolean) {
     <!-- Wind inputs -->
     <div class="fields">
       <div class="field">
-        <label>Wind FROM ({{ modelValue.isMagnetic ? '°M' : '°T' }} or VRB)</label>
+        <label>Wind FROM ({{ modelValue.source === 'atis_mag' ? '°M' : '°T' }} or VRB)</label>
         <input
           type="text"
           :value="modelValue.direction"
           @input="updateField('direction', ($event.target as HTMLInputElement).value)"
-          :placeholder="modelValue.isMagnetic ? '270°M or VRB' : '270°T or VRB'"
+          :placeholder="modelValue.source === 'atis_mag' ? '270°M or VRB' : '270°T or VRB'"
           class="wind-input"
           autocomplete="off"
         />
@@ -94,17 +108,35 @@ function toggleMagnetic(isMagnetic: boolean) {
       </div>
 
       <!-- Declination — only relevant in TRUE mode -->
-      <div v-if="!modelValue.isMagnetic" class="field field-decl">
+      <div v-if="modelValue.source !== 'atis_mag'" class="field field-decl">
         <label>Declination (°)</label>
-        <input
-          type="number"
-          :value="modelValue.declination"
-          @input="updateField('declination', ($event.target as HTMLInputElement).value)"
-          placeholder="e.g. 12 or −5"
-          step="0.1"
-          class="wind-input narrow-decl"
-        />
-        <span class="field-hint">+ east &nbsp;/&nbsp; − west &nbsp;·&nbsp; blank = auto</span>
+        <div class="declination-row">
+          <input
+            type="number"
+            :value="modelValue.declinationMagnitude"
+            @input="updateField('declinationMagnitude', ($event.target as HTMLInputElement).value)"
+            placeholder="e.g. 12"
+            step="0.1"
+            class="wind-input narrow-decl"
+          />
+          <div class="decl-toggle">
+            <button
+              class="decl-btn"
+              :class="{ active: modelValue.declinationDir === 'E' }"
+              @click="setDeclinationDir('E')"
+            >
+              E
+            </button>
+            <button
+              class="decl-btn"
+              :class="{ active: modelValue.declinationDir === 'W' }"
+              @click="setDeclinationDir('W')"
+            >
+              W
+            </button>
+          </div>
+        </div>
+        <span class="field-hint">blank = auto &nbsp;·&nbsp; toggle sets sign</span>
       </div>
     </div>
 
@@ -153,6 +185,10 @@ function toggleMagnetic(isMagnetic: boolean) {
 
 .mode-btn:first-child {
   border-right: 1.5px solid #d1d5db;
+}
+
+.mode-btn + .mode-btn {
+  border-left: 1.5px solid #d1d5db;
 }
 
 .mode-true .mode-btn.active {
@@ -250,5 +286,38 @@ function toggleMagnetic(isMagnetic: boolean) {
 
 .wind-input.narrow-decl {
   width: 100px;
+}
+
+.declination-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.decl-toggle {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid #d1d5db;
+}
+
+.decl-btn {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: background 0.15s, color 0.15s;
+}
+
+.decl-btn + .decl-btn {
+  border-left: 1.5px solid #d1d5db;
+}
+
+.mode-true .decl-btn.active {
+  background: #eab308;
+  color: #1c1917;
 }
 </style>

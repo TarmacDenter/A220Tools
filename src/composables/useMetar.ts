@@ -75,7 +75,13 @@ export function useMetar() {
     }
   }
 
-  return { status, metar, error, fetchMetar }
+  function clearMetar() {
+    status.value = 'idle'
+    metar.value = null
+    error.value = null
+  }
+
+  return { status, metar, error, fetchMetar, clearMetar }
 }
 
 /**
