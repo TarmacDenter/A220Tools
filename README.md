@@ -1,81 +1,69 @@
 # A220Tools
 
-This template should help get you started developing with Vue 3 in Vite.
+A lightweight cockpit helper for checking A220 engine-start tailwind exposure across headings from live METAR or manual wind inputs.
 
-## Recommended IDE Setup
+## Safety disclaimer
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+This is not an official Airbus or airline application. Always verify all wind/performance information against approved operational sources (ATIS/AWOS, METAR, and company procedures).
 
-## Recommended Browser Setup
+## What it does
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- Fetches live METAR by ICAO and parses wind conditions.
+- Retrieves airport magnetic declination and converts TRUE winds to MAGNETIC.
+- Computes safe/unsafe heading sectors against the A220 engine-start tailwind limit.
+- Supports manual entry modes for ATIS (MAG) and METAR/AeroData (TRUE).
+- Shows assumptions and source transparency so pilots can cross-check quickly.
 
-## Type Support for `.vue` Imports in TS
+## Tech stack
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- Vue 3 + TypeScript
+- Vite
+- Vitest + Vue Test Utils
+- Playwright
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
+## Quick start
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Open the local URL shown by Vite (normally `http://localhost:5173`).
+
+## Scripts
+
+- `npm run dev`: Start the Vite dev server.
+- `npm run build`: Type-check and create a production build in `dist/`.
+- `npm run preview`: Serve the production build locally.
+- `npm run test:unit`: Run Vitest unit tests.
+- `npm run test:e2e`: Run Playwright end-to-end tests.
+- `npm run lint`: Run lint auto-fixes (`oxlint` + `eslint`).
+
+## Testing notes
+
+Install Playwright browsers once before first e2e run:
 
 ```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
-
-```sh
-# Install browsers for the first run
 npx playwright install
+```
 
-# When testing on CI, must build the project first
-npm run build
+Useful e2e variants:
 
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
+```sh
 npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
+npm run test:e2e -- e2e/vue.spec.ts
 npm run test:e2e -- --debug
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Project structure
 
-```sh
-npm run lint
-```
+- `src/components/`: UI components (main app, input panels, readouts, tables).
+- `src/composables/`: Data fetch and wind calculation logic.
+- `src/constants/`: Operational limits and constants.
+- `src/types/`: Shared TypeScript models.
+- `src/__tests__/`: Unit tests.
+- `e2e/`: Playwright specs.
 
-## GitHub Pages deployment
+## Deployment
 
-A workflow is configured in `.github/workflows/deploy.yml` to build the app on pushes to `master` and publish `dist/` to the `gh-pages` branch.
-
-1. Push to `master` (or run the workflow manually from the Actions tab).
-2. In repository settings, configure GitHub Pages to serve from the `gh-pages` branch root.
-
+GitHub Pages deployment is configured via `.github/workflows/deploy.yml` and publishes `dist/` to `gh-pages`.
