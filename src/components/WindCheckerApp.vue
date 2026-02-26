@@ -9,6 +9,7 @@ import type { MagneticCorrection, ParsedWind } from '@/types/wind'
 import AirportInput from './AirportInput.vue'
 import ManualWindEntry from './ManualWindEntry.vue'
 import { parseManualWind } from '@/composables/useManualWind'
+import type { ManualWindInput } from '@/composables/useManualWind'
 import AssumptionsDisplay from './AssumptionsDisplay.vue'
 import SafetyReadout from './SafetyReadout.vue'
 import CompassRose from './CompassRose.vue'
@@ -16,7 +17,7 @@ import HeadingTable from './HeadingTable.vue'
 
 // --- State ---
 const manualMode = ref(false)
-const manualInputs = ref({
+const manualInputs = ref<ManualWindInput>({
   direction: '',
   speed: '',
   gust: '',
