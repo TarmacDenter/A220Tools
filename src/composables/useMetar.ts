@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import type { FetchStatus, MetarData, ParsedWind } from '@/types/wind'
+import { fetchAviationWeatherJson } from '@/composables/aviationWeatherApi'
 
 export function useMetar() {
   const status = ref<FetchStatus>('idle')
@@ -16,18 +17,10 @@ export function useMetar() {
     console.log('Fetching METAR…')
 
     try {
-      const base = import.meta.env.DEV ? '/api/avwx' : 'https://aviationweather.gov/api/data'
-      const url = `${base}/metar?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
-      console.log('URL:', url)
+      const path = `/metar?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
+      console.log('Path:', path)
 
-      const response = await fetch(url)
-      console.log(`HTTP ${response.status} ${response.statusText}`)
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const data = await response.json()
+      const data = await fetchAviationWeatherJson<unknown>(path)
 
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error(`No METAR data found for ${icao.toUpperCase()}`)
