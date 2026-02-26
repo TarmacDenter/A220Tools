@@ -71,3 +71,11 @@ npm run test:e2e -- --debug
 ```sh
 npm run lint
 ```
+
+## GitHub Pages deployment
+
+A workflow is configured in `.github/workflows/deploy.yml` to build the app on pushes to `main` and publish `dist/` to the `gh-pages` branch.
+
+1. Push to `main` (or run the workflow manually from the Actions tab).
+2. In repository settings, configure GitHub Pages to serve from the `gh-pages` branch root.
+
