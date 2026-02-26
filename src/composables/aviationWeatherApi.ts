@@ -6,6 +6,9 @@ function withCorsProxy(url: string): string {
   return `https://corsproxy.io/?${encodeURIComponent(url)}`
 }
 
+function withIsomorphicCorsProxy(url: string): string {
+  return `https://cors.isomorphic-git.org/${url}`
+}
 export async function fetchJsonWithFallback<T>(urls: string[]): Promise<T> {
 
   let lastError: unknown = null
@@ -33,7 +36,11 @@ export async function fetchAviationWeatherJson<T>(path: string): Promise<T> {
     return fetchJsonWithFallback<T>([`/api/avwx${path}`])
   }
 
-  // gh-pages deployments can hit CORS restrictions when calling the API directly.
-  // Try direct first, then transparently fall back to a CORS proxy.
-  return fetchJsonWithFallback<T>([directUrl, withCorsProxy(directUrl)])
+  // gh-pages deployments hit CORS restrictions when calling aviationweather.gov directly.
+  // Use CORS proxies in production to avoid direct-browser CORS failures.
+  return fetchJsonWithFallback<T>([
+    withIsomorphicCorsProxy(directUrl),
+    withCorsProxy(directUrl),
+    directUrl,
+  ])
 }
