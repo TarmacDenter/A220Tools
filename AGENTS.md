@@ -26,6 +26,10 @@ Ship safe, testable improvements to the A220 wind-check tool with minimal regres
 - Do not refactor unrelated code while implementing a focused request.
 - Keep behavior changes and formatting-only changes in separate commits when possible.
 - Never use destructive git commands unless explicitly requested.
+- Branching model:
+  - Use `dev` as the default working/integration branch.
+  - Use short-lived feature branches off `dev`.
+  - Treat `master` as release-only; deployment-triggering merges happen there intentionally.
 
 ## Code quality rules
 

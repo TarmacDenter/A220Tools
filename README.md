@@ -67,3 +67,10 @@ npm run test:e2e -- --debug
 ## Deployment
 
 GitHub Pages deployment is configured via `.github/workflows/deploy.yml` and publishes `dist/` to `gh-pages`.
+
+## Branch strategy
+
+- `dev`: default integration branch for day-to-day work.
+- `master`: release branch; merges here trigger deployment.
+- Feature branches: branch from `dev`, then merge back into `dev`.
+- Promote to production by merging `dev` into `master` only when ready to deploy.
