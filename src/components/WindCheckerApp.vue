@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useMetar, parseMetarWind } from '@/composables/useMetar'
-import { useAirportInfo } from '@/composables/useAirportInfo'
-import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations'
-import { TAILWIND_LIMIT_KT } from '@/constants/windLimits'
-import type { MagneticCorrection, ParsedWind } from '@/types/wind'
+import { ref, computed, watch } from 'vue';
+import { useMetar, parseMetarWind } from '@/composables/useMetar';
+import { useAirportInfo } from '@/composables/useAirportInfo';
+import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
+import { TAILWIND_LIMIT_KT } from '@/constants/windLimits';
+import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 
-import AirportInput from './AirportInput.vue'
-import ManualWindEntry from './ManualWindEntry.vue'
-import { parseManualWind } from '@/composables/useManualWind'
-import type { ManualWindInput } from '@/composables/useManualWind'
-import AssumptionsDisplay from './AssumptionsDisplay.vue'
-import SafetyReadout from './SafetyReadout.vue'
-import CompassRose from './CompassRose.vue'
-import HeadingTable from './HeadingTable.vue'
+import AirportInput from './AirportInput.vue';
+import ManualWindEntry from './ManualWindEntry.vue';
+import { parseManualWind } from '@/composables/useManualWind';
+import type { ManualWindInput } from '@/composables/useManualWind';
+import AssumptionsDisplay from './AssumptionsDisplay.vue';
+import SafetyReadout from './SafetyReadout.vue';
+import CompassRose from './CompassRose.vue';
+import HeadingTable from './HeadingTable.vue';
 
 // --- State ---
-const manualMode = ref(false)
+const manualMode = ref(false);
 const manualInputs = ref<ManualWindInput>({
   direction: '',
   speed: '',
@@ -24,108 +24,108 @@ const manualInputs = ref<ManualWindInput>({
   source: 'metar_true',
   declinationMagnitude: '',
   declinationDir: 'E',
-})
+});
 // User chose to continue with 0° declination despite airport fetch failure
-const useZeroDecl = ref(false)
+const useZeroDecl = ref(false);
 
-const { status: metarStatus, metar, error: metarError, fetchMetar, clearMetar } = useMetar()
-const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo()
-const icaoInput = ref('')
+const { status: metarStatus, metar, error: metarError, fetchMetar, clearMetar } = useMetar();
+const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo();
+const icaoInput = ref('');
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
-  useZeroDecl.value = false
+  useZeroDecl.value = false;
   await Promise.all([
     fetchMetar(icao),
     fetchAirportInfo(icao),
-  ])
+  ]);
 }
 
 function enableManualMode() {
-  manualMode.value = true
+  manualMode.value = true;
 }
 
 function continueWithZeroDecl() {
-  useZeroDecl.value = true
-  console.warn('[WindCheckerApp] User chose to continue with 0° declination — METAR winds are TRUE, no magnetic correction applied')
+  useZeroDecl.value = true;
+  console.warn('[WindCheckerApp] User chose to continue with 0° declination — METAR winds are TRUE, no magnetic correction applied');
 }
 
 // --- Error state helpers ---
 // Both failed
 const bothFailed = computed(() =>
   metarStatus.value === 'error' && airportStatus.value === 'error'
-)
+);
 // Only METAR failed (airport may have succeeded or errored)
 const onlyMetarFailed = computed(() =>
   metarStatus.value === 'error' && airportStatus.value !== 'error'
-)
+);
 // Only airport failed but METAR succeeded — offer "continue with 0° decl"
 const onlyAirportFailed = computed(() =>
   metarStatus.value === 'success' && airportStatus.value === 'error' && !useZeroDecl.value
-)
+);
 
 // --- Computed wind result ---
 const parsedWind = computed<ParsedWind | null>(() => {
   if (!manualMode.value && metar.value) {
-    return parseMetarWind(metar.value)
+    return parseMetarWind(metar.value);
   }
   if (manualMode.value) {
-    return parseManualWind(manualInputs.value)
+    return parseManualWind(manualInputs.value);
   }
-  return null
-})
+  return null;
+});
 
 const effectiveMagCorr = computed<MagneticCorrection | null>(() => {
   if (useZeroDecl.value) {
-    return { declination: 0, source: 'airport_api', rawMagdecString: null }
+    return { declination: 0, source: 'airport_api', rawMagdecString: null };
   }
   if (manualMode.value && manualInputs.value.source === 'atis_mag') {
-    return { declination: 0, source: 'manual_magnetic', rawMagdecString: null }
+    return { declination: 0, source: 'manual_magnetic', rawMagdecString: null };
   }
   // TRUE mode: prefer manually entered declination if provided
   if (manualMode.value) {
-    const raw = manualInputs.value.declinationMagnitude.trim()
+    const raw = manualInputs.value.declinationMagnitude.trim();
     if (raw !== '') {
-      const parsed = parseFloat(raw)
+      const parsed = parseFloat(raw);
       if (!isNaN(parsed)) {
-        const sign = manualInputs.value.declinationDir === 'W' ? -1 : 1
-        const signed = parsed * sign
-        console.log(`[WindCheckerApp] Using manually entered declination: ${signed}°`)
-        return { declination: signed, source: 'manual_entered', rawMagdecString: null }
+        const sign = manualInputs.value.declinationDir === 'W' ? -1 : 1;
+        const signed = parsed * sign;
+        console.log(`[WindCheckerApp] Using manually entered declination: ${signed}°`);
+        return { declination: signed, source: 'manual_entered', rawMagdecString: null };
       }
     }
     // Fall back to fetched airport declination, then 0
-    return magneticCorrection.value ?? { declination: 0, source: 'airport_api', rawMagdecString: null }
+    return magneticCorrection.value ?? { declination: 0, source: 'airport_api', rawMagdecString: null };
   }
-  return magneticCorrection.value
-})
+  return magneticCorrection.value;
+});
 
 const windResult = computed(() => {
-  const pw = parsedWind.value
-  const mc = effectiveMagCorr.value
-  if (!pw || !mc) return null
+  const pw = parsedWind.value;
+  const mc = effectiveMagCorr.value;
+  if (!pw || !mc) return null;
   // Don't compute if we're blocked waiting for user to choose a fallback
-  if (onlyAirportFailed.value) return null
-  return computeWindResult(pw, mc)
-})
+  if (onlyAirportFailed.value) return null;
+  return computeWindResult(pw, mc);
+});
 
 const headingRows = computed(() => {
-  const result = windResult.value
-  if (!result) return []
-  const { parsedWind: pw, windDirectionMagnetic } = result
-  if (pw.isCalm || pw.isVariable) return []
-  return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT)
-})
+  const result = windResult.value;
+  if (!result) return [];
+  const { parsedWind: pw, windDirectionMagnetic } = result;
+  if (pw.isCalm || pw.isVariable) return [];
+  return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT);
+});
 
-const rawMetar = computed(() => metar.value?.rawOb ?? null)
-const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading')
+const rawMetar = computed(() => metar.value?.rawOb ?? null);
+const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading');
 
 watch(manualMode, (enabled) => {
-  if (!enabled) return
-  clearMetar()
-  icaoInput.value = ''
-  useZeroDecl.value = false
-})
+  if (!enabled) return;
+  clearMetar();
+  icaoInput.value = '';
+  useZeroDecl.value = false;
+});
 </script>
 
 <template>
@@ -134,6 +134,12 @@ watch(manualMode, (enabled) => {
       <h1 class="app-title">A220 Engine Start Wind Checker</h1>
       <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for all headings</p>
     </header>
+
+    <div class="pilot-disclaimer" role="note">
+      <strong>Pilot advisory:</strong> This is not an official Airbus or airline app.
+      Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures)...
+      seriously... I made this from the hotel.
+    </div>
 
     <AirportInput v-model="icaoInput" :status="metarStatus" @fetch="onFetch" />
 
@@ -169,7 +175,8 @@ watch(manualMode, (enabled) => {
     <div v-else-if="onlyMetarFailed && !manualMode" class="error-panel">
       <p class="error-title">METAR fetch failed</p>
       <p class="error-detail">{{ metarError }}</p>
-      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.</p>
+      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.
+      </p>
       <div class="error-actions">
         <button class="action-btn primary" @click="enableManualMode">
           Enter winds manually
@@ -246,6 +253,17 @@ watch(manualMode, (enabled) => {
   font-size: 0.95rem;
   color: #64748b;
   margin: 0.25rem 0 0;
+}
+
+.pilot-disclaimer {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
 }
 
 .manual-toggle {
