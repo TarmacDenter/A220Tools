@@ -23,7 +23,7 @@ const manualInputs = ref<ManualWindInput>({
   gust: '',
   source: 'metar_true',
   declinationMagnitude: '',
-  declinationDir: 'E',
+  declinationDir: 'W',
 });
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false);
