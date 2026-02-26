@@ -1,0 +1,374 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useMetar, parseMetarWind } from '@/composables/useMetar'
+import { useAirportInfo } from '@/composables/useAirportInfo'
+import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations'
+import { TAILWIND_LIMIT_KT } from '@/constants/windLimits'
+import type { MagneticCorrection, ParsedWind } from '@/types/wind'
+
+import AirportInput from './AirportInput.vue'
+import ManualWindEntry from './ManualWindEntry.vue'
+import { parseManualWind } from '@/composables/useManualWind'
+import AssumptionsDisplay from './AssumptionsDisplay.vue'
+import SafetyReadout from './SafetyReadout.vue'
+import CompassRose from './CompassRose.vue'
+import HeadingTable from './HeadingTable.vue'
+
+// --- State ---
+const manualMode = ref(false)
+const manualInputs = ref({ direction: '', speed: '', gust: '', isMagnetic: false, declination: '' })
+// User chose to continue with 0° declination despite airport fetch failure
+const useZeroDecl = ref(false)
+
+const { status: metarStatus, metar, error: metarError, fetchMetar } = useMetar()
+const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo()
+
+// --- Fetch orchestration ---
+async function onFetch(icao: string) {
+  useZeroDecl.value = false
+  await Promise.all([
+    fetchMetar(icao),
+    fetchAirportInfo(icao),
+  ])
+}
+
+function enableManualMode() {
+  manualMode.value = true
+}
+
+function continueWithZeroDecl() {
+  useZeroDecl.value = true
+  console.warn('[WindCheckerApp] User chose to continue with 0° declination — METAR winds are TRUE, no magnetic correction applied')
+}
+
+// --- Error state helpers ---
+// Both failed
+const bothFailed = computed(() =>
+  metarStatus.value === 'error' && airportStatus.value === 'error'
+)
+// Only METAR failed (airport may have succeeded or errored)
+const onlyMetarFailed = computed(() =>
+  metarStatus.value === 'error' && airportStatus.value !== 'error'
+)
+// Only airport failed but METAR succeeded — offer "continue with 0° decl"
+const onlyAirportFailed = computed(() =>
+  metarStatus.value === 'success' && airportStatus.value === 'error' && !useZeroDecl.value
+)
+
+// --- Computed wind result ---
+const parsedWind = computed<ParsedWind | null>(() => {
+  if (!manualMode.value && metar.value) {
+    return parseMetarWind(metar.value)
+  }
+  if (manualMode.value) {
+    return parseManualWind(manualInputs.value)
+  }
+  return null
+})
+
+const effectiveMagCorr = computed<MagneticCorrection | null>(() => {
+  if (useZeroDecl.value) {
+    return { declination: 0, source: 'airport_api', rawMagdecString: null }
+  }
+  if (manualMode.value && manualInputs.value.isMagnetic) {
+    return { declination: 0, source: 'manual_magnetic', rawMagdecString: null }
+  }
+  // TRUE mode: prefer manually entered declination if provided
+  if (manualMode.value) {
+    const raw = manualInputs.value.declination.trim()
+    if (raw !== '') {
+      const parsed = parseFloat(raw)
+      if (!isNaN(parsed)) {
+        console.log(`[WindCheckerApp] Using manually entered declination: ${parsed}°`)
+        return { declination: parsed, source: 'manual_entered', rawMagdecString: null }
+      }
+    }
+    // Fall back to fetched airport declination, then 0
+    return magneticCorrection.value ?? { declination: 0, source: 'airport_api', rawMagdecString: null }
+  }
+  return magneticCorrection.value
+})
+
+const windResult = computed(() => {
+  const pw = parsedWind.value
+  const mc = effectiveMagCorr.value
+  if (!pw || !mc) return null
+  // Don't compute if we're blocked waiting for user to choose a fallback
+  if (onlyAirportFailed.value) return null
+  return computeWindResult(pw, mc)
+})
+
+const headingRows = computed(() => {
+  const result = windResult.value
+  if (!result) return []
+  const { parsedWind: pw, windDirectionMagnetic } = result
+  if (pw.isCalm || pw.isVariable) return []
+  return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT)
+})
+
+const rawMetar = computed(() => metar.value?.rawOb ?? null)
+const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading')
+</script>
+
+<template>
+  <main class="app-main">
+    <header class="app-header">
+      <h1 class="app-title">A220 Engine Start Wind Checker</h1>
+      <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for all headings</p>
+    </header>
+
+    <AirportInput :status="metarStatus" @fetch="onFetch" />
+
+    <!-- Manual mode toggle -->
+    <div class="manual-toggle">
+      <label class="toggle-label">
+        <input type="checkbox" v-model="manualMode" />
+        <span>Enter winds manually</span>
+      </label>
+    </div>
+
+    <!-- Manual entry panel -->
+    <ManualWindEntry v-if="manualMode" v-model="manualInputs" />
+
+    <!-- Loading indicator -->
+    <div v-if="isLoading" class="status-msg loading">
+      Fetching data…
+    </div>
+
+    <!-- Both fetches failed -->
+    <div v-else-if="bothFailed && !manualMode" class="error-panel">
+      <p class="error-title">Could not retrieve data</p>
+      <p class="error-detail"><strong>METAR:</strong> {{ metarError }}</p>
+      <p class="error-detail"><strong>Airport info:</strong> {{ airportError }}</p>
+      <div class="error-actions">
+        <button class="action-btn primary" @click="enableManualMode">
+          Enter winds manually
+        </button>
+      </div>
+    </div>
+
+    <!-- Only METAR failed -->
+    <div v-else-if="onlyMetarFailed && !manualMode" class="error-panel">
+      <p class="error-title">METAR fetch failed</p>
+      <p class="error-detail">{{ metarError }}</p>
+      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.</p>
+      <div class="error-actions">
+        <button class="action-btn primary" @click="enableManualMode">
+          Enter winds manually
+        </button>
+      </div>
+    </div>
+
+    <!-- METAR succeeded but airport info failed — user must choose -->
+    <div v-else-if="onlyAirportFailed" class="error-panel warn">
+      <p class="error-title">Airport declination unavailable</p>
+      <p class="error-detail">{{ airportError }}</p>
+      <p class="error-hint">
+        METAR winds are reported in <strong>TRUE</strong> degrees. Without a declination value they
+        cannot be converted to magnetic. Choose an option:
+      </p>
+      <div class="error-actions">
+        <button class="action-btn secondary" @click="continueWithZeroDecl">
+          Continue with 0° declination
+          <span class="action-note">(treat METAR winds as magnetic — adjust mentally)</span>
+        </button>
+        <button class="action-btn primary" @click="enableManualMode">
+          Enter winds manually
+          <span class="action-note">(enter magnetic direction directly)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <template v-if="windResult">
+      <!-- Zero-decl warning banner -->
+      <div v-if="useZeroDecl" class="status-msg warning">
+        <strong>Warning:</strong> No declination applied — METAR winds are TRUE degrees.
+        Magnetic variation at this airport is unknown. Verify against ATIS/AWOS.
+      </div>
+
+      <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
+      <SafetyReadout :result="windResult" />
+      <CompassRose :result="windResult" />
+      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" />
+      <p v-else-if="windResult.parsedWind.isCalm" class="status-msg calm">
+        No table shown for calm winds.
+      </p>
+      <p v-else-if="windResult.parsedWind.isVariable" class="status-msg warning">
+        Table not available for variable winds — any heading may be unsafe.
+      </p>
+    </template>
+
+    <!-- Idle state -->
+    <div v-else-if="!isLoading && metarStatus === 'idle' && !manualMode" class="idle-prompt">
+      Enter an ICAO identifier above and click <strong>Check METAR</strong>, or enable manual entry.
+    </div>
+  </main>
+</template>
+
+<style scoped>
+.app-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.app-header {
+  margin-bottom: 1.5rem;
+}
+
+.app-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.app-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.manual-toggle {
+  margin: 0.5rem 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.toggle-label input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+/* Error panel */
+.error-panel {
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--color-unsafe);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+}
+
+.error-panel.warn {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left-color: var(--color-warning);
+}
+
+.error-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #b91c1c;
+  margin: 0 0 0.4rem;
+}
+
+.error-panel.warn .error-title {
+  color: #92400e;
+}
+
+.error-detail {
+  font-size: 0.875rem;
+  color: #7f1d1d;
+  margin: 0.2rem 0;
+  font-family: var(--font-mono);
+}
+
+.error-panel.warn .error-detail {
+  color: #78350f;
+}
+
+.error-hint {
+  font-size: 0.875rem;
+  color: #57534e;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.action-btn.primary {
+  background: #1d4ed8;
+  color: white;
+}
+
+.action-btn.primary:hover {
+  background: #1e40af;
+}
+
+.action-btn.secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.action-btn.secondary:hover {
+  background: #cbd5e1;
+}
+
+.action-note {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin-top: 0.15rem;
+}
+
+/* Status messages */
+.status-msg {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.status-msg.loading {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-msg.calm {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.status-msg.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.idle-prompt {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+</style>
