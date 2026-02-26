@@ -23,7 +23,7 @@ const manualInputs = ref<ManualWindInput>({
   gust: '',
   source: 'metar_true',
   declinationMagnitude: '',
-  declinationDir: 'E',
+  declinationDir: 'W',
 });
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false);
@@ -138,7 +138,7 @@ watch(manualMode, (enabled) => {
     <div class="pilot-disclaimer" role="note">
       <strong>Pilot advisory:</strong> This is not an official Airbus or airline app.
       Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures)...
-      seriously... I made this from the hotel.
+      seriously... I made this at the hotel.
     </div>
 
     <AirportInput v-model="icaoInput" :status="metarStatus" @fetch="onFetch" />
