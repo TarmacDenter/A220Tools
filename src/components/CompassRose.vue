@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import type { WindResult } from '@/types/wind'
 
-const props = defineProps<{
+const { result } = defineProps<{
   result: WindResult
 }>()
 
@@ -70,8 +70,8 @@ const labels = computed(() => {
 
 // Wind arrow (from direction)
 const windArrow = computed(() => {
-  if (props.result.parsedWind.isCalm || props.result.parsedWind.isVariable) return null
-  const dir = props.result.windDirectionMagnetic
+  if (result.parsedWind.isCalm || result.parsedWind.isVariable) return null
+  const dir = result.windDirectionMagnetic
   const tip = polarPoint(R - 5, dir)
   // Arrow points FROM the wind direction toward center (wind is blowing FROM that direction)
   return { x1: CX, y1: CY, x2: tip.x, y2: tip.y }
@@ -79,7 +79,7 @@ const windArrow = computed(() => {
 
 // Arc display
 const arcDisplay = computed(() => {
-  const { parsedWind, h1, h2, allHeadingsSafe } = props.result
+  const { parsedWind, h1, h2, allHeadingsSafe } = result
 
   if (parsedWind.isCalm) return { type: 'all-safe' }
   if (parsedWind.isVariable) return { type: 'variable' }

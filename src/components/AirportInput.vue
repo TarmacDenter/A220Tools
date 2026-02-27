@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import type { FetchStatus } from '@/types/wind'
 
-const props = defineProps<{
-  modelValue: string
+const { status, disabled = false } = defineProps<{
   status: FetchStatus
+  disabled?: boolean
 }>()
+
+const icaoInput = defineModel<string>({ required: true })
 
 const emit = defineEmits<{
   fetch: [icao: string]
-  'update:modelValue': [value: string]
 }>()
-const icaoInput = ref(props.modelValue)
 
 function onFetch() {
   const val = icaoInput.value.trim().toUpperCase()
@@ -22,18 +21,6 @@ function onFetch() {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter') onFetch()
 }
-
-function onInput(value: string) {
-  icaoInput.value = value
-  emit('update:modelValue', value)
-}
-
-watch(
-  () => props.modelValue,
-  (value) => {
-    icaoInput.value = value
-  },
-)
 </script>
 
 <template>
@@ -42,24 +29,23 @@ watch(
     <div class="input-row">
       <input
         id="icao-input"
-        :value="icaoInput"
+        v-model="icaoInput"
         type="text"
         placeholder="e.g. KLAX"
         maxlength="4"
         class="icao-field"
-        :disabled="props.status === 'loading'"
+        :disabled="status === 'loading' || disabled"
         @keydown="onKeydown"
-        @input="onInput(($event.target as HTMLInputElement).value)"
         autocomplete="off"
         autocapitalize="characters"
         spellcheck="false"
       />
       <button
         class="fetch-btn"
-        :disabled="props.status === 'loading' || icaoInput.trim().length < 3"
+        :disabled="status === 'loading' || disabled || icaoInput.trim().length < 3"
         @click="onFetch"
       >
-        <span v-if="props.status === 'loading'">Loading…</span>
+        <span v-if="status === 'loading'">Loading…</span>
         <span v-else>Check METAR</span>
       </button>
     </div>

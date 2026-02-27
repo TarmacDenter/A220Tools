@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import WindCheckerApp from '@/components/WindCheckerApp.vue'
+import InstallPrompt from '@/components/InstallPrompt.vue'
 </script>
 
 <template>
+  <InstallPrompt />
   <WindCheckerApp />
 </template>
 

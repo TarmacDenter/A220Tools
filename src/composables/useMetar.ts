@@ -6,6 +6,7 @@ export function useMetar() {
   const status = ref<FetchStatus>('idle')
   const metar = ref<MetarData | null>(null)
   const error = ref<string | null>(null)
+  const lastFetchedAt = ref<number | null>(null)
 
   async function fetchMetar(icao: string): Promise<void> {
     status.value = 'loading'
@@ -64,6 +65,7 @@ export function useMetar() {
       })
 
       status.value = 'success'
+      lastFetchedAt.value = Date.now()
       console.log('✓ METAR fetch complete')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -79,9 +81,10 @@ export function useMetar() {
     status.value = 'idle'
     metar.value = null
     error.value = null
+    lastFetchedAt.value = null
   }
 
-  return { status, metar, error, fetchMetar, clearMetar }
+  return { status, metar, error, lastFetchedAt, fetchMetar, clearMetar }
 }
 
 /**

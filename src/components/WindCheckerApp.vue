@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useMetar, parseMetarWind } from '@/composables/useMetar';
 import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
@@ -28,13 +28,21 @@ const manualInputs = ref<ManualWindInput>({
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false);
 
-const { status: metarStatus, metar, error: metarError, fetchMetar, clearMetar } = useMetar();
+const { status: metarStatus, metar, error: metarError, lastFetchedAt, fetchMetar, clearMetar } = useMetar();
 const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo();
 const icaoInput = ref('');
+const activeIcao = ref('');
+const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
+const freshnessNowMs = ref(Date.now());
+
+let freshnessIntervalId: ReturnType<typeof setInterval> | null = null;
+let autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
+  if (!isOnline.value) return;
   useZeroDecl.value = false;
+  activeIcao.value = icao.toUpperCase();
   await Promise.all([
     fetchMetar(icao),
     fetchAirportInfo(icao),
@@ -119,6 +127,66 @@ const headingRows = computed(() => {
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);
 const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading');
+const manualModeToggle = computed({
+  get: () => manualMode.value,
+  set: (value: boolean) => {
+    if (!isOnline.value && !value) return;
+    manualMode.value = value;
+  },
+});
+
+const metarFreshnessText = computed(() => {
+  if (!isOnline.value || lastFetchedAt.value === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
+  const elapsedMin = Math.floor(elapsedMs / 60_000);
+  const relative = elapsedMin === 0 ? 'Updated just now' : `Updated ${elapsedMin} min ago`;
+  const absolute = new Date(lastFetchedAt.value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${relative} (${absolute} local)`;
+});
+
+function handleOffline() {
+  isOnline.value = false;
+  manualMode.value = true;
+}
+
+function handleOnline() {
+  isOnline.value = true;
+}
+
+onMounted(() => {
+  freshnessIntervalId = window.setInterval(() => {
+    freshnessNowMs.value = Date.now();
+  }, 60_000);
+
+  autoRefreshIntervalId = window.setInterval(() => {
+    if (!isOnline.value) return;
+    if (manualMode.value) return;
+    if (metarStatus.value !== 'success') return;
+    if (activeIcao.value.length < 3) return;
+    void fetchMetar(activeIcao.value);
+  }, 300_000);
+
+  window.addEventListener('offline', handleOffline);
+  window.addEventListener('online', handleOnline);
+
+  if (!isOnline.value) {
+    manualMode.value = true;
+  }
+});
+
+onUnmounted(() => {
+  if (freshnessIntervalId !== null) {
+    clearInterval(freshnessIntervalId);
+  }
+  if (autoRefreshIntervalId !== null) {
+    clearInterval(autoRefreshIntervalId);
+  }
+  window.removeEventListener('offline', handleOffline);
+  window.removeEventListener('online', handleOnline);
+});
 
 watch(manualMode, (enabled) => {
   if (!enabled) return;
@@ -141,12 +209,18 @@ watch(manualMode, (enabled) => {
       seriously... I made this at the hotel.
     </div>
 
-    <AirportInput v-model="icaoInput" :status="metarStatus" @fetch="onFetch" />
+    <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline" @fetch="onFetch" />
+
+    <p v-if="metarFreshnessText" class="metar-freshness">{{ metarFreshnessText }}</p>
+
+    <div v-if="!isOnline" class="status-msg warning">
+      Offline: METAR retrieval is unavailable. Manual wind entry is required.
+    </div>
 
     <!-- Manual mode toggle -->
     <div class="manual-toggle">
       <label class="toggle-label">
-        <input type="checkbox" v-model="manualMode" />
+        <input type="checkbox" v-model="manualModeToggle" :disabled="!isOnline" />
         <span>Enter winds manually</span>
       </label>
     </div>
@@ -268,6 +342,12 @@ watch(manualMode, (enabled) => {
 
 .manual-toggle {
   margin: 0.5rem 0;
+}
+
+.metar-freshness {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
 }
 
 .toggle-label {
