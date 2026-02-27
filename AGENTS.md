@@ -77,8 +77,6 @@ npx vitest run src/__tests__/App.spec.ts
 - Keep components presentation-focused; move reusable logic out of templates.
 - For Vue `v-model` in `<script setup>`, prefer `defineModel()` over manual `modelValue` / `update:modelValue` wiring unless a separate local draft state is intentionally required.
 - In new or touched Vue code, prefer `<script setup lang="ts">`, Composition API patterns, and explicit typed interfaces over legacy Options API patterns.
-- Prefer typed, composable logic in `src/composables/` for business calculations.
-- Keep components presentation-focused; move reusable logic out of templates.
 - Avoid hidden magic constants; use `src/constants/` for operational limits.
 - Preserve existing naming and data model conventions in `src/types/`.
 - Add brief comments only when logic is non-obvious.
