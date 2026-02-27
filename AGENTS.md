@@ -69,6 +69,7 @@ npx vitest run src/__tests__/App.spec.ts
   - Use `dev` as the default working/integration branch.
   - Use short-lived feature branches off `dev`.
   - Treat `master` as release-only; deployment-triggering merges happen there intentionally.
+  - Do not merge `master` back into `dev`; keep merges one-way (`dev` -> `master`) to avoid bi-directional history.
 
 ## Code quality rules
 

@@ -75,3 +75,4 @@ GitHub Pages deployment is configured via `.github/workflows/deploy.yml` and pub
 - `master`: release branch; merges here trigger deployment.
 - Feature branches: branch from `dev`, then merge back into `dev`.
 - Promote to production by merging `dev` into `master` only when ready to deploy.
+- Do not merge `master` back into `dev`; keep merges one-way (`dev` -> `master`) to avoid bi-directional history.
