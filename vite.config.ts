@@ -5,6 +5,8 @@ import vue from "@vitejs/plugin-vue";
 import vueDevTools from "vite-plugin-vue-devtools";
 
 // https://vite.dev/config/
+const isGitHubPagesBuild = process.env.GITHUB_ACTIONS === "true";
+
 export default defineConfig({
   plugins: [vue(), vueDevTools()],
   resolve: {
@@ -21,5 +23,5 @@ export default defineConfig({
       },
     },
   },
-  base: "/A220Tools/",
+  base: isGitHubPagesBuild ? "/A220Tools/" : "/",
 });
