@@ -81,6 +81,10 @@ describe('WindCheckerApp', () => {
     vi.useRealTimers()
   })
 
+import { describe, expect, it } from 'vitest'
+import WindCheckerApp from '@/components/WindCheckerApp.vue'
+
+describe('WindCheckerApp', () => {
   it('defaults manual declination direction to west', async () => {
     const wrapper = mount(WindCheckerApp)
 
