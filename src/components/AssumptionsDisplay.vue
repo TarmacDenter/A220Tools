@@ -134,7 +134,7 @@ const isManualTrue = computed(
 <style scoped>
 .assumptions {
   background: var(--color-assumption-bg);
-  border: 1px solid #bae6fd;
+  border: 1px solid var(--color-info-border);
   border-radius: 8px;
   padding: 1rem 1.25rem;
   margin: 1rem 0;
@@ -152,7 +152,7 @@ const isManualTrue = computed(
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #0369a1;
+  color: var(--color-info-text);
 }
 
 .assumptions-toggle {
@@ -160,7 +160,7 @@ const isManualTrue = computed(
   background: transparent;
   padding: 0.25rem;
   border-radius: 6px;
-  color: #0369a1;
+  color: var(--color-info-text);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -168,11 +168,11 @@ const isManualTrue = computed(
 }
 
 .assumptions-toggle:hover {
-  background: #e0f2fe;
+  background: var(--color-info-bg);
 }
 
 .assumptions-toggle:focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -222,15 +222,15 @@ const isManualTrue = computed(
 }
 
 .metar-advisory {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  color: var(--color-info-text);
 }
 
 .magnetic-advisory {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
+  background: var(--color-safe-bg);
+  border: 1px solid var(--color-safe-border);
+  color: var(--color-safe-text);
 }
 
 </style>

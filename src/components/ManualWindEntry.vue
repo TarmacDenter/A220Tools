@@ -161,7 +161,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
   display: inline-flex;
   border-radius: 6px;
   overflow: hidden;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--color-border);
   margin-bottom: 0.75rem;
 }
 
@@ -172,17 +172,17 @@ function setDeclinationDir(dir: 'E' | 'W') {
   letter-spacing: 0.06em;
   border: none;
   cursor: pointer;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
   transition: background 0.15s, color 0.15s;
 }
 
 .mode-btn:first-child {
-  border-right: 1.5px solid #d1d5db;
+  border-right: 1.5px solid var(--color-border);
 }
 
 .mode-btn + .mode-btn {
-  border-left: 1.5px solid #d1d5db;
+  border-left: 1.5px solid var(--color-border);
 }
 
 .mode-true .mode-btn.active {
@@ -243,7 +243,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
 
 .field-hint {
   font-size: 0.72rem;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   font-style: italic;
 }
 
@@ -255,6 +255,8 @@ function setDeclinationDir(dir: 'E' | 'W') {
   width: 130px;
   outline: none;
   border: 1.5px solid;
+  background: var(--color-surface);
+  color: var(--color-text);
   transition: border-color 0.15s;
 }
 
@@ -292,7 +294,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
   display: inline-flex;
   border-radius: 6px;
   overflow: hidden;
-  border: 1.5px solid #d1d5db;
+  border: 1.5px solid var(--color-border);
 }
 
 .decl-btn {
@@ -301,13 +303,13 @@ function setDeclinationDir(dir: 'E' | 'W') {
   font-weight: 700;
   border: none;
   cursor: pointer;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
   transition: background 0.15s, color 0.15s;
 }
 
 .decl-btn + .decl-btn {
-  border-left: 1.5px solid #d1d5db;
+  border-left: 1.5px solid var(--color-border);
 }
 
 .mode-true .decl-btn.active {

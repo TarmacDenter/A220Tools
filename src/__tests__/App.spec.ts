@@ -67,6 +67,8 @@ function dispatchInstallPromptEvent() {
 
 describe('App', () => {
   beforeEach(() => {
+    window.localStorage.clear()
+    document.documentElement.removeAttribute('data-theme')
     mockNavigator({})
     mockStandalone({})
   })
@@ -134,5 +136,18 @@ describe('App', () => {
 
     expect(wrapper.text()).not.toContain('Install on iPhone:')
     expect(wrapper.text()).not.toContain('Install app:')
+  })
+
+  it('toggles dark mode and persists the selected theme', async () => {
+    const wrapper = mount(App)
+    await nextTick()
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+
+    await wrapper.get('.theme-toggle').trigger('click')
+    await nextTick()
+
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light')
+    expect(window.localStorage.getItem('a220-theme')).toBe('light')
   })
 })

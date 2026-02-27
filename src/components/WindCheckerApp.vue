@@ -15,6 +15,18 @@ import SafetyReadout from './SafetyReadout.vue';
 import CompassRose from './CompassRose.vue';
 import HeadingTable from './HeadingTable.vue';
 
+withDefaults(defineProps<{
+  theme?: 'light' | 'dark'
+  themeToggleLabel?: string
+}>(), {
+  theme: 'light',
+  themeToggleLabel: 'Toggle theme',
+})
+
+const emit = defineEmits<{
+  toggleTheme: []
+}>()
+
 // --- State ---
 const manualMode = ref(false);
 const manualInputs = ref<ManualWindInput>({
@@ -199,7 +211,41 @@ watch(manualMode, (enabled) => {
 <template>
   <main class="app-main">
     <header class="app-header">
-      <h1 class="app-title">A220 Engine Start Wind Checker</h1>
+      <div class="title-row">
+        <h1 class="app-title">A220 Engine Start Wind Checker</h1>
+        <button
+          class="theme-toggle"
+          type="button"
+          :aria-label="themeToggleLabel"
+          @click="emit('toggleTheme')"
+        >
+          <svg
+            v-if="theme === 'dark'"
+            class="theme-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <line x1="12" y1="1.5" x2="12" y2="5.2" />
+            <line x1="12" y1="18.8" x2="12" y2="22.5" />
+            <line x1="1.5" y1="12" x2="5.2" y2="12" />
+            <line x1="18.8" y1="12" x2="22.5" y2="12" />
+            <line x1="4.3" y1="4.3" x2="6.9" y2="6.9" />
+            <line x1="17.1" y1="17.1" x2="19.7" y2="19.7" />
+            <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
+            <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
+          </svg>
+          <svg
+            v-else
+            class="theme-icon"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
+          </svg>
+          <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
+        </button>
+      </div>
       <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for first engine start, or any stationary start</p>
     </header>
 
@@ -316,6 +362,14 @@ watch(manualMode, (enabled) => {
   margin-bottom: 1.5rem;
 }
 
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .app-title {
   font-size: 1.75rem;
   font-weight: 700;
@@ -323,17 +377,45 @@ watch(manualMode, (enabled) => {
   margin: 0;
 }
 
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  background: var(--color-surface-muted);
+}
+
+.theme-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
 .app-subtitle {
   font-size: 0.95rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin: 0.25rem 0 0;
 }
 
 .pilot-disclaimer {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--color-warning-text);
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0 0 1rem;
@@ -347,7 +429,7 @@ watch(manualMode, (enabled) => {
 .metar-freshness {
   margin: 0.25rem 0 0.75rem;
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--color-text-subtle);
 }
 
 .toggle-label {
@@ -356,7 +438,7 @@ watch(manualMode, (enabled) => {
   gap: 0.5rem;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--color-text-subtle);
 }
 
 .toggle-label input[type='checkbox'] {
@@ -367,8 +449,8 @@ watch(manualMode, (enabled) => {
 
 /* Error panel */
 .error-panel {
-  background: #fff1f2;
-  border: 1px solid #fecaca;
+  background: var(--color-unsafe-bg);
+  border: 1px solid var(--color-unsafe-border);
   border-left: 4px solid var(--color-unsafe);
   border-radius: 8px;
   padding: 1rem 1.25rem;
@@ -376,36 +458,36 @@ watch(manualMode, (enabled) => {
 }
 
 .error-panel.warn {
-  background: #fffbeb;
-  border-color: #fde68a;
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
   border-left-color: var(--color-warning);
 }
 
 .error-title {
   font-weight: 700;
   font-size: 1rem;
-  color: #b91c1c;
+  color: var(--color-unsafe-text);
   margin: 0 0 0.4rem;
 }
 
 .error-panel.warn .error-title {
-  color: #92400e;
+  color: var(--color-warning-text);
 }
 
 .error-detail {
   font-size: 0.875rem;
-  color: #7f1d1d;
+  color: var(--color-unsafe-text);
   margin: 0.2rem 0;
   font-family: var(--font-mono);
 }
 
 .error-panel.warn .error-detail {
-  color: #78350f;
+  color: var(--color-warning-text);
 }
 
 .error-hint {
   font-size: 0.875rem;
-  color: #57534e;
+  color: var(--color-text-subtle);
   margin: 0.5rem 0 0.75rem;
 }
 
@@ -430,21 +512,21 @@ watch(manualMode, (enabled) => {
 }
 
 .action-btn.primary {
-  background: #1d4ed8;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .action-btn.primary:hover {
-  background: #1e40af;
+  background: var(--color-primary-hover);
 }
 
 .action-btn.secondary {
-  background: #e2e8f0;
-  color: #334155;
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary-text);
 }
 
 .action-btn.secondary:hover {
-  background: #cbd5e1;
+  background: var(--color-secondary-hover);
 }
 
 .action-note {
@@ -463,28 +545,28 @@ watch(manualMode, (enabled) => {
 }
 
 .status-msg.loading {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .status-msg.calm {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--color-safe-bg);
+  color: var(--color-safe-text);
 }
 
 .status-msg.warning {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
 }
 
 .idle-prompt {
   margin: 2rem 0;
   padding: 1.5rem;
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
+  background: var(--color-surface-muted);
+  border: 1px dashed var(--color-border);
   border-radius: 8px;
   text-align: center;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.95rem;
 }
 </style>

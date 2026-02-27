@@ -102,7 +102,7 @@ const arcDisplay = computed(() => {
   <div class="compass-container">
     <svg viewBox="0 0 400 400" class="compass-rose" aria-label="Compass rose showing safe and unsafe headings">
       <!-- Background circle -->
-      <circle :cx="CX" :cy="CY" :r="R" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" />
+      <circle :cx="CX" :cy="CY" :r="R" fill="var(--color-compass-bg)" stroke="var(--color-compass-stroke)" stroke-width="1.5" />
 
       <!-- Safe arcs -->
       <template v-if="arcDisplay.type === 'all-safe'">
@@ -156,7 +156,7 @@ const arcDisplay = computed(() => {
         <line
           :x1="tick.inner.x" :y1="tick.inner.y"
           :x2="tick.outer.x" :y2="tick.outer.y"
-          stroke="#94a3b8"
+          stroke="var(--color-compass-ticks)"
           :stroke-width="tick.isLong ? 2 : 1"
         />
       </g>
@@ -171,7 +171,7 @@ const arcDisplay = computed(() => {
         dominant-baseline="central"
         :font-size="lbl.isCardinal ? 14 : 11"
         :font-weight="lbl.isCardinal ? '700' : '400'"
-        fill="#334155"
+        fill="var(--color-compass-label)"
       >{{ lbl.text }}</text>
 
       <!-- Wind arrow -->
@@ -180,16 +180,16 @@ const arcDisplay = computed(() => {
         <line
           :x1="windArrow.x1" :y1="windArrow.y1"
           :x2="windArrow.x2" :y2="windArrow.y2"
-          stroke="#0ea5e9"
+          stroke="var(--color-compass-wind)"
           stroke-width="3"
           stroke-linecap="round"
         />
         <!-- Arrowhead at tip -->
-        <circle :cx="windArrow.x2" :cy="windArrow.y2" r="5" fill="#0ea5e9" />
+        <circle :cx="windArrow.x2" :cy="windArrow.y2" r="5" fill="var(--color-compass-wind)" />
         <!-- Center dot -->
-        <circle :cx="CX" :cy="CY" r="4" fill="#0ea5e9" />
+        <circle :cx="CX" :cy="CY" r="4" fill="var(--color-compass-wind)" />
         <!-- Wind direction label -->
-        <text :x="CX" :y="CY + 18" text-anchor="middle" font-size="11" fill="#0369a1" font-weight="600">
+        <text :x="CX" :y="CY + 18" text-anchor="middle" font-size="11" fill="var(--color-compass-wind-label)" font-weight="600">
           FROM {{ result.windDirectionMagnetic.toFixed(0) }}°M
         </text>
       </g>
