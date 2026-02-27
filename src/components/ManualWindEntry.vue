@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
 
+withDefaults(defineProps<{
+  theme?: 'light' | 'dark'
+}>(), {
+  theme: 'light',
+})
+
 const manualInput = defineModel<ManualWindInput>({ required: true })
 
 function updateField(
@@ -20,7 +26,13 @@ function setDeclinationDir(dir: 'E' | 'W') {
 </script>
 
 <template>
-  <div class="manual-entry" :class="manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'">
+  <div
+    class="manual-entry"
+    :class="[
+      manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true',
+      { 'theme-dark': theme === 'dark' },
+    ]"
+  >
 
     <!-- Source selector -->
     <div class="mode-toggle">
@@ -147,13 +159,35 @@ function setDeclinationDir(dir: 'E' | 'W') {
 }
 
 .mode-true {
+  --manual-input-bg: #fffbeb;
+  --manual-input-text: #1c1917;
+  --manual-input-placeholder: #78716c;
   background: #fefce8;
   border-color: #fde047;
 }
 
 .mode-magnetic {
+  --manual-input-bg: #f0fdf4;
+  --manual-input-text: #14532d;
+  --manual-input-placeholder: #4d7c0f;
   background: #f0fdf4;
   border-color: #86efac;
+}
+
+.theme-dark.mode-true {
+  --manual-input-bg: #2b1d08;
+  --manual-input-text: #fef3c7;
+  --manual-input-placeholder: #fcd34d;
+  background: #2b1d08;
+  border-color: #b45309;
+}
+
+.theme-dark.mode-magnetic {
+  --manual-input-bg: #0f2619;
+  --manual-input-text: #dcfce7;
+  --manual-input-placeholder: #86efac;
+  background: #0f2619;
+  border-color: #166534;
 }
 
 /* Mode toggle */
@@ -214,6 +248,16 @@ function setDeclinationDir(dir: 'E' | 'W') {
   color: #14532d;
 }
 
+.theme-dark.mode-true .source-reminder {
+  background: #3b2a10;
+  color: #fde68a;
+}
+
+.theme-dark.mode-magnetic .source-reminder {
+  background: #123221;
+  color: #bbf7d0;
+}
+
 /* Fields */
 .fields {
   display: flex;
@@ -241,6 +285,14 @@ function setDeclinationDir(dir: 'E' | 'W') {
   color: #15803d;
 }
 
+.theme-dark.mode-true .field label {
+  color: #fcd34d;
+}
+
+.theme-dark.mode-magnetic .field label {
+  color: #86efac;
+}
+
 .field-hint {
   font-size: 0.72rem;
   color: var(--color-text-muted);
@@ -255,9 +307,14 @@ function setDeclinationDir(dir: 'E' | 'W') {
   width: 130px;
   outline: none;
   border: 1.5px solid;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: var(--manual-input-bg, var(--color-surface));
+  color: var(--manual-input-text, var(--color-text));
   transition: border-color 0.15s;
+}
+
+.wind-input::placeholder {
+  color: var(--manual-input-placeholder, var(--color-text-muted));
+  opacity: 1;
 }
 
 .mode-true .wind-input {
@@ -274,6 +331,14 @@ function setDeclinationDir(dir: 'E' | 'W') {
 
 .mode-magnetic .wind-input:focus {
   border-color: #22c55e;
+}
+
+.theme-dark.mode-true .wind-input {
+  border-color: #d97706;
+}
+
+.theme-dark.mode-magnetic .wind-input {
+  border-color: #16a34a;
 }
 
 .wind-input.narrow {
