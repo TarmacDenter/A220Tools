@@ -67,9 +67,16 @@ npx vitest run src/__tests__/App.spec.ts
 - Never use destructive git commands unless explicitly requested.
 - Branching model:
   - Use `dev` as the default working/integration branch.
-  - Use short-lived feature branches off `dev`.
-  - Treat `master` as release-only; deployment-triggering merges happen there intentionally.
-  - Do not merge `master` back into `dev`; keep merges one-way (`dev` -> `master`) to avoid bi-directional history.
+- Use short-lived feature branches off `dev`.
+- Treat `master` as release-only; deployment-triggering merges happen there intentionally.
+- Do not merge `master` back into `dev`; keep merges one-way (`dev` -> `master`) to avoid bi-directional history.
+
+## Preferred worktree workflow
+
+- Start every task on the `dev` branch and keep that branch clean. Rebase or pull from `origin/dev` before creating a new worktree.
+- Create a dedicated git worktree for the task (e.g., `git worktree add ../a220-task-123 dev`) so each change set stays isolated and us versus the shared `dev` checkout. Don’t reuse the existing worktree if it already has pending work.
+- Work exclusively inside the task worktree until tests/pass distel. Run `git status` there before commits to confirm only intended files changed and the rest of the repo stays untouched.
+- When the task is complete, run the relevant validations (`npm run test:unit`, `npm run lint`, etc.), then clean up the worktree (`git worktree remove` after ensuring there are no unfinished changes) before opening the next task.
 
 ## Code quality rules
 

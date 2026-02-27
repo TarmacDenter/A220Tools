@@ -51,7 +51,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
     <div class="source-reminder">
       <span v-if="manualInput.source !== 'atis_mag'">
         Use <strong>TRUE</strong> for: METAR / AeroData
-        — declination will be applied automatically
+        — find declination on the 10-9 page
       </span>
       <span v-else>
         Use <strong>MAGNETIC</strong> for: ATIS
