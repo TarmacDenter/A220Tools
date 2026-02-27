@@ -45,7 +45,7 @@ function formatComponent(hw: number): string {
 .table-wrapper {
   max-height: 400px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   margin: 1rem 0;
 }
@@ -55,33 +55,34 @@ function formatComponent(hw: number): string {
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: 0.875rem;
+  background: var(--color-surface);
 }
 
 .heading-table thead {
   position: sticky;
   top: 0;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   z-index: 1;
 }
 
 .heading-table th {
   padding: 0.6rem 0.75rem;
   text-align: left;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--color-border);
   font-family: sans-serif;
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .heading-table td {
   padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .row-unsafe {
-  background: #fff1f2;
+  background: var(--color-unsafe-bg);
 }
 
 .col-heading {
@@ -93,7 +94,7 @@ function formatComponent(hw: number): string {
 }
 
 .headwind {
-  color: #0f766e;
+  color: var(--color-safe-text);
 }
 
 .badge {
@@ -106,12 +107,12 @@ function formatComponent(hw: number): string {
 }
 
 .badge.safe {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--color-safe-bg);
+  color: var(--color-safe-text);
 }
 
 .badge.unsafe {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--color-unsafe-bg);
+  color: var(--color-unsafe-text);
 }
 </style>

@@ -63,21 +63,21 @@ defineProps<{
 }
 
 .readout-safe {
-  background: #dcfce7;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
+  background: var(--color-safe-bg);
+  color: var(--color-safe-text);
+  border: 1px solid var(--color-safe-border);
 }
 
 .readout-unsafe {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: var(--color-unsafe-bg);
+  color: var(--color-unsafe-text);
+  border: 1px solid var(--color-unsafe-border);
 }
 
 .readout-warning {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
 }
 
 .icon {

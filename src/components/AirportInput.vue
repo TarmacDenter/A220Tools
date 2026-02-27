@@ -63,7 +63,7 @@ function onKeydown(e: KeyboardEvent) {
 .label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -82,20 +82,22 @@ function onKeydown(e: KeyboardEvent) {
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  border: 2px solid #cbd5e1;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
   border-radius: 6px;
   outline: none;
   transition: border-color 0.15s;
 }
 
 .icao-field:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .fetch-btn {
   padding: 0.5rem 1rem;
-  background: #1d4ed8;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
   border: none;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -105,11 +107,11 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .fetch-btn:hover:not(:disabled) {
-  background: #1e40af;
+  background: var(--color-primary-hover);
 }
 
 .fetch-btn:disabled {
-  background: #93c5fd;
+  background: var(--color-primary-disabled);
   cursor: not-allowed;
 }
 </style>

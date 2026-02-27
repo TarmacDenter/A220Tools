@@ -1,11 +1,47 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import WindCheckerApp from '@/components/WindCheckerApp.vue'
 import InstallPrompt from '@/components/InstallPrompt.vue'
+
+type Theme = 'light' | 'dark'
+
+const THEME_STORAGE_KEY = 'a220-theme'
+const theme = ref<Theme>('dark')
+
+const themeToggleLabel = computed(() =>
+  theme.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+)
+
+function applyTheme(nextTheme: Theme) {
+  theme.value = nextTheme
+  document.documentElement.setAttribute('data-theme', nextTheme)
+  window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+}
+
+function toggleTheme() {
+  applyTheme(theme.value === 'dark' ? 'light' : 'dark')
+}
+
+onMounted(() => {
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+  if (storedTheme === 'light' || storedTheme === 'dark') {
+    applyTheme(storedTheme)
+    return
+  }
+
+  applyTheme('dark')
+})
 </script>
 
 <template>
-  <InstallPrompt />
-  <WindCheckerApp />
+  <div class="app-shell">
+    <InstallPrompt />
+    <WindCheckerApp
+      :theme="theme"
+      :theme-toggle-label="themeToggleLabel"
+      @toggle-theme="toggleTheme"
+    />
+  </div>
 </template>
 
 <style>
@@ -14,8 +50,80 @@ import InstallPrompt from '@/components/InstallPrompt.vue'
   --color-unsafe: #ef4444;
   --color-warning: #f59e0b;
   --color-assumption-bg: #f0f9ff;
+  --color-bg: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-surface-soft: #e2e8f0;
+  --color-border: #cbd5e1;
+  --color-border-strong: #94a3b8;
   --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-text-subtle: #475569;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #1e40af;
+  --color-primary-disabled: #93c5fd;
+  --color-primary-text: #ffffff;
+  --color-secondary-bg: #e2e8f0;
+  --color-secondary-hover: #cbd5e1;
+  --color-secondary-text: #334155;
+  --color-info-bg: #e0f2fe;
+  --color-info-border: #bae6fd;
+  --color-info-text: #0369a1;
+  --color-warning-bg: #fef3c7;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+  --color-safe-bg: #dcfce7;
+  --color-safe-border: #bbf7d0;
+  --color-safe-text: #15803d;
+  --color-unsafe-bg: #fee2e2;
+  --color-unsafe-border: #fecaca;
+  --color-unsafe-text: #b91c1c;
+  --color-code-bg: #e2e8f0;
+  --color-compass-bg: #f8fafc;
+  --color-compass-stroke: #cbd5e1;
+  --color-compass-ticks: #94a3b8;
+  --color-compass-label: #334155;
+  --color-compass-wind: #0ea5e9;
+  --color-compass-wind-label: #0369a1;
   --font-mono: 'Courier New', Courier, monospace;
+}
+
+[data-theme='dark'] {
+  --color-assumption-bg: #0b2233;
+  --color-bg: #0f172a;
+  --color-surface: #111827;
+  --color-surface-muted: #1f2937;
+  --color-surface-soft: #334155;
+  --color-border: #334155;
+  --color-border-strong: #475569;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #cbd5e1;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-primary-disabled: #1e3a8a;
+  --color-secondary-bg: #334155;
+  --color-secondary-hover: #475569;
+  --color-secondary-text: #e2e8f0;
+  --color-info-bg: #0c4a6e;
+  --color-info-border: #0369a1;
+  --color-info-text: #bae6fd;
+  --color-warning-bg: #78350f;
+  --color-warning-border: #b45309;
+  --color-warning-text: #fde68a;
+  --color-safe-bg: #14532d;
+  --color-safe-border: #166534;
+  --color-safe-text: #bbf7d0;
+  --color-unsafe-bg: #7f1d1d;
+  --color-unsafe-border: #991b1b;
+  --color-unsafe-text: #fecaca;
+  --color-code-bg: #1e293b;
+  --color-compass-bg: #1f2937;
+  --color-compass-stroke: #475569;
+  --color-compass-ticks: #64748b;
+  --color-compass-label: #e2e8f0;
+  --color-compass-wind: #38bdf8;
+  --color-compass-wind-label: #7dd3fc;
 }
 
 *,
@@ -27,15 +135,21 @@ import InstallPrompt from '@/components/InstallPrompt.vue'
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f1f5f9;
+  background: var(--color-bg);
   color: var(--color-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 code {
   font-family: var(--font-mono);
-  background: #e2e8f0;
+  background: var(--color-code-bg);
   padding: 0.1em 0.3em;
   border-radius: 3px;
   font-size: 0.9em;
 }
+
+.app-shell {
+  min-height: 100vh;
+}
+
 </style>

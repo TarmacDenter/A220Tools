@@ -116,10 +116,10 @@ onUnmounted(() => {
 <style scoped>
 .install-banner {
   align-items: center;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
   border-radius: 8px;
-  color: #1e3a8a;
+  color: var(--color-info-text);
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -147,20 +147,20 @@ onUnmounted(() => {
 }
 
 .install-btn.primary {
-  background: #1d4ed8;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .install-btn.primary:hover {
-  background: #1e40af;
+  background: var(--color-primary-hover);
 }
 
 .install-btn.secondary {
-  background: #dbeafe;
-  color: #1e3a8a;
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary-text);
 }
 
 .install-btn.secondary:hover {
-  background: #bfdbfe;
+  background: var(--color-secondary-hover);
 }
 </style>
