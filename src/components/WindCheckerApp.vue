@@ -200,7 +200,7 @@ watch(manualMode, (enabled) => {
   <main class="app-main">
     <header class="app-header">
       <h1 class="app-title">A220 Engine Start Wind Checker</h1>
-      <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for all headings</p>
+      <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for first engine start, or any stationary start</p>
     </header>
 
     <div class="pilot-disclaimer" role="note">
