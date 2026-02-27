@@ -18,7 +18,8 @@ export function normalizePathForBase(pathname: string, baseUrl: string): string 
 
   let consumedBaseSegments = 0
   while (consumedBaseSegments < segments.length) {
-    if (segments[consumedBaseSegments].toLowerCase() !== baseSegment) break
+    const currentSegment = segments[consumedBaseSegments]
+    if (currentSegment === undefined || currentSegment.toLowerCase() !== baseSegment) break
     consumedBaseSegments += 1
   }
 
