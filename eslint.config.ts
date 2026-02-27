@@ -1,11 +1,13 @@
 import { globalIgnores } from 'eslint/config'
+import type { Rule } from 'eslint'
+import type { CallExpression } from 'estree'
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
 import pluginVue from 'eslint-plugin-vue'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginOxlint from 'eslint-plugin-oxlint'
 
-const preferDefineModelRule = {
+const preferDefineModelRule: Rule.RuleModule = {
   meta: {
     type: 'suggestion',
     docs: {
@@ -18,11 +20,11 @@ const preferDefineModelRule = {
     },
     schema: [],
   },
-  create(context: { sourceCode: { getText: (node: unknown) => string } }) {
+  create(context) {
     return {
-      CallExpression(node: { callee?: { type?: string; name?: string } }) {
+      CallExpression(node: CallExpression) {
         const callee = node.callee
-        if (!callee || callee.type !== 'Identifier') return
+        if (callee.type !== 'Identifier') return
 
         if (callee.name !== 'defineProps' && callee.name !== 'defineEmits') return
 

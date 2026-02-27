@@ -35,8 +35,8 @@ const activeIcao = ref('');
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
 const freshnessNowMs = ref(Date.now());
 
-let freshnessIntervalId: ReturnType<typeof setInterval> | null = null;
-let autoRefreshIntervalId: ReturnType<typeof setInterval> | null = null;
+let freshnessIntervalId: number | null = null;
+let autoRefreshIntervalId: number | null = null;
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
@@ -179,10 +179,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (freshnessIntervalId !== null) {
-    clearInterval(freshnessIntervalId);
+    window.clearInterval(freshnessIntervalId);
   }
   if (autoRefreshIntervalId !== null) {
-    clearInterval(autoRefreshIntervalId);
+    window.clearInterval(autoRefreshIntervalId);
   }
   window.removeEventListener('offline', handleOffline);
   window.removeEventListener('online', handleOnline);
