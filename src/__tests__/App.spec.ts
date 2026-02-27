@@ -1,7 +1,59 @@
-import { describe, it, expect } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import App from '../App.vue'
+
+const originalNavigator = {
+  userAgent: window.navigator.userAgent,
+  platform: window.navigator.platform,
+  maxTouchPoints: window.navigator.maxTouchPoints,
+}
+
+function mockNavigator({
+  userAgent = originalNavigator.userAgent,
+  platform = originalNavigator.platform,
+  maxTouchPoints = originalNavigator.maxTouchPoints,
+}: {
+  userAgent?: string
+  platform?: string
+  maxTouchPoints?: number
+}) {
+  Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: userAgent })
+  Object.defineProperty(window.navigator, 'platform', { configurable: true, value: platform })
+  Object.defineProperty(window.navigator, 'maxTouchPoints', { configurable: true, value: maxTouchPoints })
+}
+
+function mockStandalone({
+  standaloneMatch = false,
+  navigatorStandalone = false,
+}: {
+  standaloneMatch?: boolean
+  navigatorStandalone?: boolean
+}) {
+  const addEventListener = vi.fn()
+  const removeEventListener = vi.fn()
+  const addListener = vi.fn()
+  const removeListener = vi.fn()
+
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === '(display-mode: standalone)' ? standaloneMatch : false,
+      media: query,
+      onchange: null,
+      addEventListener,
+      removeEventListener,
+      addListener,
+      removeListener,
+      dispatchEvent: vi.fn(),
+    })),
+  })
+
+  Object.defineProperty(window.navigator, 'standalone', {
+    configurable: true,
+    value: navigatorStandalone,
+  })
+}
 
 function dispatchInstallPromptEvent() {
   const installEvent = new Event('beforeinstallprompt', { cancelable: true }) as Event & {
@@ -14,6 +66,15 @@ function dispatchInstallPromptEvent() {
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    mockNavigator({})
+    mockStandalone({})
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders the wind checker heading', () => {
     const wrapper = mount(App)
     expect(wrapper.text()).toContain('A220 Engine Start Wind Checker')
@@ -41,6 +102,37 @@ describe('App', () => {
     await wrapper.get('.install-btn.secondary').trigger('click')
     await nextTick()
 
+    expect(wrapper.text()).not.toContain('Install app:')
+  })
+
+  it('shows iOS install instructions when native install prompt is unavailable', async () => {
+    mockNavigator({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    })
+    mockStandalone({ standaloneMatch: false, navigatorStandalone: false })
+
+    const wrapper = mount(App)
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Install on iPhone:')
+    expect(wrapper.text()).toContain('Add to Home Screen')
+    expect(wrapper.text()).not.toContain('Install app:')
+  })
+
+  it('hides install guidance when running in standalone mode on iOS', async () => {
+    mockNavigator({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
+      platform: 'iPhone',
+      maxTouchPoints: 5,
+    })
+    mockStandalone({ standaloneMatch: true, navigatorStandalone: true })
+
+    const wrapper = mount(App)
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('Install on iPhone:')
     expect(wrapper.text()).not.toContain('Install app:')
   })
 })
