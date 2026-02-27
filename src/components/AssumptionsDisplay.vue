@@ -2,29 +2,29 @@
 import { computed } from 'vue'
 import type { WindResult } from '@/types/wind'
 
-const props = defineProps<{
+const { result } = defineProps<{
   result: WindResult
   rawMetar: string | null
 }>()
 
 const decl = computed(() => {
-  const d = props.result.magneticCorrection.declination
+  const d = result.magneticCorrection.declination
   const abs = Math.abs(d).toFixed(1)
   return d >= 0 ? `${abs}°E` : `${abs}°W`
 })
 
 const speedUsed = computed(() => {
-  const w = props.result.parsedWind
+  const w = result.parsedWind
   if (w.gust !== null) return `${w.gust} kt (gust, vs sustained ${w.speed} kt)`
   return `${w.speed} kt (sustained, no gusts reported)`
 })
 
 const isMagneticManual = computed(
-  () => props.result.magneticCorrection.source === 'manual_magnetic'
+  () => result.magneticCorrection.source === 'manual_magnetic'
 )
-const isMetarSource = computed(() => props.result.parsedWind.source === 'metar')
+const isMetarSource = computed(() => result.parsedWind.source === 'metar')
 const isManualTrue = computed(
-  () => props.result.parsedWind.source === 'manual' && !isMagneticManual.value
+  () => result.parsedWind.source === 'manual' && !isMagneticManual.value
 )
 </script>
 

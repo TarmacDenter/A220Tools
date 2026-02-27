@@ -13,6 +13,7 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 - Computes safe/unsafe heading sectors against the A220 engine-start tailwind limit.
 - Supports manual entry modes for ATIS (MAG) and METAR/AeroData (TRUE).
 - Shows assumptions and source transparency so pilots can cross-check quickly.
+- Supports PWA install flow with an in-app install prompt and basic offline app-shell availability.
 
 ## Tech stack
 

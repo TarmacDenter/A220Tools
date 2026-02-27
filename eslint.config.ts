@@ -5,6 +5,40 @@ import pluginPlaywright from 'eslint-plugin-playwright'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginOxlint from 'eslint-plugin-oxlint'
 
+const preferDefineModelRule = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Prefer defineModel() over manual modelValue/update:modelValue boilerplate in <script setup>.',
+    },
+    messages: {
+      preferDefineModel:
+        'Prefer defineModel() instead of manual modelValue/update:modelValue wiring.',
+    },
+    schema: [],
+  },
+  create(context: { sourceCode: { getText: (node: unknown) => string } }) {
+    return {
+      CallExpression(node: { callee?: { type?: string; name?: string } }) {
+        const callee = node.callee
+        if (!callee || callee.type !== 'Identifier') return
+
+        if (callee.name !== 'defineProps' && callee.name !== 'defineEmits') return
+
+        const text = context.sourceCode.getText(node)
+        const hasManualVModel =
+          /defineProps\s*<[\s\S]*\bmodelValue\b[\s\S]*>\s*\(/.test(text) ||
+          /defineEmits\s*<[\s\S]*['"]update:modelValue['"][\s\S]*>\s*\(/.test(text)
+
+        if (hasManualVModel) {
+          context.report({ node, messageId: 'preferDefineModel' })
+        }
+      },
+    }
+  },
+}
+
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
 // configureVueProject({ scriptLangs: ['ts', 'tsx'] })
@@ -29,6 +63,20 @@ export default defineConfigWithVueTs(
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
+  },
+
+  {
+    files: ['src/**/*.{vue,ts,mts,tsx}'],
+    plugins: {
+      local: {
+        rules: {
+          'prefer-define-model': preferDefineModelRule,
+        },
+      },
+    },
+    rules: {
+      'local/prefer-define-model': 'error',
+    },
   },
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),

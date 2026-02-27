@@ -20,6 +20,45 @@ Ship safe, testable improvements to the A220 wind-check tool with minimal regres
 - Lint: oxlint + eslint.
 - Work primarily under `src/`, `src/composables/`, `src/components/`, `src/__tests__/`, and `e2e/`.
 
+## Commands
+
+```bash
+npm run dev          # Start dev server (http://localhost:5173)
+npm run build        # Type-check + build for production
+npm run preview      # Preview production build
+npm run type-check   # Run vue-tsc type checking only
+
+npm run test:unit    # Run Vitest unit tests
+npm run test:e2e     # Run Playwright E2E tests (starts dev/preview server automatically)
+
+npm run lint         # Run all linters (oxlint + eslint) with auto-fix
+```
+
+To run a single unit test file:
+
+```bash
+npx vitest run src/__tests__/App.spec.ts
+```
+
+## Architecture snapshot
+
+- App type: Vue 3 + TypeScript SPA built with Vite.
+- Entry flow: `index.html` -> `src/main.ts` -> `src/App.vue`
+- Key locations:
+  - `src/router/index.ts` - Vue Router (web history mode; routes may be minimal during early phases)
+  - `src/__tests__/` - Vitest unit tests with `@vue/test-utils` + jsdom
+  - `e2e/` - Playwright browser tests
+- Path alias: `@/` resolves to `./src/`
+
+## Tooling notes
+
+- Linters run in sequence: oxlint first, then ESLint (both with `--fix`).
+- TypeScript uses separate app/node/vitest tsconfig files referenced by root `tsconfig.json`.
+- Node version requirement: `^20.19.0 || >=22.12.0`.
+- Playwright base URL defaults:
+  - CI: `http://localhost:4173` (preview server)
+  - Local: `http://localhost:5173` (dev server)
+
 ## Execution policy
 
 - Make the smallest complete change that solves the task.
@@ -33,6 +72,11 @@ Ship safe, testable improvements to the A220 wind-check tool with minimal regres
 
 ## Code quality rules
 
+- Prefer modern Vue 3 conventions by default; when multiple valid approaches exist, choose the current idiomatic pattern for Vue 3.5+ unless constrained by existing architecture.
+- Prefer typed, composable logic in `src/composables/` for business calculations.
+- Keep components presentation-focused; move reusable logic out of templates.
+- For Vue `v-model` in `<script setup>`, prefer `defineModel()` over manual `modelValue` / `update:modelValue` wiring unless a separate local draft state is intentionally required.
+- In new or touched Vue code, prefer `<script setup lang="ts">`, Composition API patterns, and explicit typed interfaces over legacy Options API patterns.
 - Prefer typed, composable logic in `src/composables/` for business calculations.
 - Keep components presentation-focused; move reusable logic out of templates.
 - Avoid hidden magic constants; use `src/constants/` for operational limits.

@@ -1,52 +1,46 @@
 <script setup lang="ts">
 import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
 
-const props = defineProps<{
-  modelValue: ManualWindInput
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: ManualWindInput]
-}>()
+const manualInput = defineModel<ManualWindInput>({ required: true })
 
 function updateField(
   field: 'direction' | 'speed' | 'gust' | 'declinationMagnitude',
   value: string,
 ) {
-  emit('update:modelValue', { ...props.modelValue, [field]: value })
+  manualInput.value = { ...manualInput.value, [field]: value }
 }
 
 function setSource(source: ManualWindSource) {
-  emit('update:modelValue', { ...props.modelValue, source })
+  manualInput.value = { ...manualInput.value, source }
 }
 
 function setDeclinationDir(dir: 'E' | 'W') {
-  emit('update:modelValue', { ...props.modelValue, declinationDir: dir })
+  manualInput.value = { ...manualInput.value, declinationDir: dir }
 }
 </script>
 
 <template>
-  <div class="manual-entry" :class="modelValue.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'">
+  <div class="manual-entry" :class="manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'">
 
     <!-- Source selector -->
     <div class="mode-toggle">
       <button
         class="mode-btn"
-        :class="{ active: modelValue.source === 'atis_mag' }"
+        :class="{ active: manualInput.source === 'atis_mag' }"
         @click="setSource('atis_mag')"
       >
         ATIS (MAG)
       </button>
       <button
         class="mode-btn"
-        :class="{ active: modelValue.source === 'metar_true' }"
+        :class="{ active: manualInput.source === 'metar_true' }"
         @click="setSource('metar_true')"
       >
         METAR (TRUE)
       </button>
       <button
         class="mode-btn"
-        :class="{ active: modelValue.source === 'aerodata_true' }"
+        :class="{ active: manualInput.source === 'aerodata_true' }"
         @click="setSource('aerodata_true')"
       >
         AERODATA (TRUE)
@@ -55,7 +49,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
 
     <!-- Source reminder -->
     <div class="source-reminder">
-      <span v-if="modelValue.source !== 'atis_mag'">
+      <span v-if="manualInput.source !== 'atis_mag'">
         Use <strong>TRUE</strong> for: METAR / AeroData
         — declination will be applied automatically
       </span>
@@ -68,12 +62,12 @@ function setDeclinationDir(dir: 'E' | 'W') {
     <!-- Wind inputs -->
     <div class="fields">
       <div class="field">
-        <label>Wind FROM ({{ modelValue.source === 'atis_mag' ? '°M' : '°T' }} or VRB)</label>
+        <label>Wind FROM ({{ manualInput.source === 'atis_mag' ? '°M' : '°T' }} or VRB)</label>
         <input
           type="text"
-          :value="modelValue.direction"
+          :value="manualInput.direction"
           @input="updateField('direction', ($event.target as HTMLInputElement).value)"
-          :placeholder="modelValue.source === 'atis_mag' ? '270°M or VRB' : '270°T or VRB'"
+          :placeholder="manualInput.source === 'atis_mag' ? '270°M or VRB' : '270°T or VRB'"
           class="wind-input"
           autocomplete="off"
         />
@@ -83,7 +77,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
         <label>Max winds (kt)</label>
         <input
           type="number"
-          :value="modelValue.speed"
+          :value="manualInput.speed"
           @input="updateField('speed', ($event.target as HTMLInputElement).value)"
           placeholder="0"
           min="0"
@@ -97,7 +91,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
         <label>Sustained (kt, optional)</label>
         <input
           type="number"
-          :value="modelValue.gust"
+          :value="manualInput.gust"
           @input="updateField('gust', ($event.target as HTMLInputElement).value)"
           placeholder="—"
           min="0"
@@ -108,12 +102,12 @@ function setDeclinationDir(dir: 'E' | 'W') {
       </div>
 
       <!-- Declination — only relevant in TRUE mode -->
-      <div v-if="modelValue.source !== 'atis_mag'" class="field field-decl">
+      <div v-if="manualInput.source !== 'atis_mag'" class="field field-decl">
         <label>Declination (°)</label>
         <div class="declination-row">
           <input
             type="number"
-            :value="modelValue.declinationMagnitude"
+            :value="manualInput.declinationMagnitude"
             @input="updateField('declinationMagnitude', ($event.target as HTMLInputElement).value)"
             placeholder="e.g. 12"
             step="0.1"
@@ -122,14 +116,14 @@ function setDeclinationDir(dir: 'E' | 'W') {
           <div class="decl-toggle">
             <button
               class="decl-btn"
-              :class="{ active: modelValue.declinationDir === 'E' }"
+              :class="{ active: manualInput.declinationDir === 'E' }"
               @click="setDeclinationDir('E')"
             >
               E
             </button>
             <button
               class="decl-btn"
-              :class="{ active: modelValue.declinationDir === 'W' }"
+              :class="{ active: manualInput.declinationDir === 'W' }"
               @click="setDeclinationDir('W')"
             >
               W
