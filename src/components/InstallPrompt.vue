@@ -7,23 +7,59 @@ type BeforeInstallPromptEvent = Event & {
 }
 
 const deferredPrompt = ref<BeforeInstallPromptEvent | null>(null)
-const dismissed = ref(false)
+const dismissedNative = ref(false)
+const dismissedIos = ref(false)
 const installed = ref(false)
+const isInStandalone = ref(false)
+const supportsBeforeInstallPrompt = ref(false)
 
-const canInstall = computed(() => !dismissed.value && !installed.value && deferredPrompt.value !== null)
+let standaloneMediaQuery: MediaQueryList | null = null
+
+function detectStandalone() {
+  const mediaStandalone = window.matchMedia?.('(display-mode: standalone)').matches ?? false
+  const navigatorStandalone = 'standalone' in window.navigator && (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  isInStandalone.value = mediaStandalone || navigatorStandalone
+}
+
+const isIos = computed(() => {
+  const ua = window.navigator.userAgent
+  const platform = window.navigator.platform
+  const touchPoints = window.navigator.maxTouchPoints ?? 0
+  const iosUa = /iPad|iPhone|iPod/.test(ua)
+  const ipadOsUa = platform === 'MacIntel' && touchPoints > 1
+  return iosUa || ipadOsUa
+})
+
+const showNativeInstallCta = computed(() =>
+  !dismissedNative.value && !installed.value && !isInStandalone.value && deferredPrompt.value !== null
+)
+
+const showIosInstructions = computed(() =>
+  isIos.value &&
+  !supportsBeforeInstallPrompt.value &&
+  !dismissedIos.value &&
+  !installed.value &&
+  !isInStandalone.value
+)
 
 function handleBeforeInstallPrompt(event: Event) {
   event.preventDefault()
+  supportsBeforeInstallPrompt.value = true
   deferredPrompt.value = event as BeforeInstallPromptEvent
 }
 
 function handleInstalled() {
   installed.value = true
   deferredPrompt.value = null
+  detectStandalone()
 }
 
-function dismissPrompt() {
-  dismissed.value = true
+function dismissNativePrompt() {
+  dismissedNative.value = true
+}
+
+function dismissIosPrompt() {
+  dismissedIos.value = true
 }
 
 async function triggerInstall() {
@@ -38,25 +74,41 @@ async function triggerInstall() {
 }
 
 onMounted(() => {
+  detectStandalone()
+  standaloneMediaQuery = window.matchMedia?.('(display-mode: standalone)') ?? null
+  standaloneMediaQuery?.addEventListener?.('change', detectStandalone)
+  standaloneMediaQuery?.addListener?.(detectStandalone)
   window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
   window.addEventListener('appinstalled', handleInstalled)
 })
 
 onUnmounted(() => {
+  standaloneMediaQuery?.removeEventListener?.('change', detectStandalone)
+  standaloneMediaQuery?.removeListener?.(detectStandalone)
   window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
   window.removeEventListener('appinstalled', handleInstalled)
 })
 </script>
 
 <template>
-  <div v-if="canInstall" class="install-banner" role="status" aria-live="polite">
+  <div v-if="showNativeInstallCta" class="install-banner" role="status" aria-live="polite">
     <div class="install-copy">
       <strong>Install app:</strong>
       Add this tool to your home screen for faster access and offline calculator use.
     </div>
     <div class="install-actions">
       <button class="install-btn primary" @click="triggerInstall">Install</button>
-      <button class="install-btn secondary" @click="dismissPrompt">Dismiss</button>
+      <button class="install-btn secondary" @click="dismissNativePrompt">Dismiss</button>
+    </div>
+  </div>
+
+  <div v-else-if="showIosInstructions" class="install-banner" role="status" aria-live="polite">
+    <div class="install-copy">
+      <strong>Install on iPhone:</strong>
+      Open the browser Share menu, then tap Add to Home Screen. In Chrome this may appear as Share <em>then</em> Add to Home Screen; in Safari it is in the Share sheet.
+    </div>
+    <div class="install-actions">
+      <button class="install-btn secondary" @click="dismissIosPrompt">Dismiss</button>
     </div>
   </div>
 </template>
