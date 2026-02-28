@@ -3,7 +3,7 @@ import { nextTick } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import WindCheckerApp from '@/components/WindCheckerApp.vue'
 
-const baseTime = new Date('2026-01-15T10:00:00')
+const baseTime = new Date('2026-01-15T10:00:00Z')
 
 function setOnline(value: boolean) {
   Object.defineProperty(window.navigator, 'onLine', {
@@ -142,6 +142,27 @@ describe('WindCheckerApp', () => {
     await nextTick()
 
     expect(wrapper.text()).toContain('Updated 1 min ago')
+  })
+
+  it('shows METAR issued time in UTC and warns when older than 30 minutes', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mount(WindCheckerApp)
+    const icaoInput = wrapper.find('#icao-input')
+    const fetchButton = wrapper.find('.fetch-btn')
+
+    await icaoInput.setValue('KJFK')
+    await fetchButton.trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.text()).toContain('Issued at 10:00Z')
+    expect(wrapper.text()).toContain('Time now is 10:00Z')
+
+    await vi.advanceTimersByTimeAsync(31 * 60_000)
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('.metar-issued-panel').classes()).toContain('metar-issued-warn')
   })
 
   it('auto-refreshes METAR every 5 minutes while online after success', async () => {

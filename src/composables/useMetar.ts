@@ -2,6 +2,32 @@ import { ref } from 'vue'
 import type { FetchStatus, MetarData, ParsedWind } from '@/types/wind'
 import { fetchAviationWeatherJson } from '@/composables/aviationWeatherApi'
 
+function parseMetarIssuedAt(rawOb: string, nowMs: number): number | null {
+  const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)
+  if (!match) return null
+
+  const day = Number.parseInt(match[1]!, 10)
+  const hour = Number.parseInt(match[2]!, 10)
+  const minute = Number.parseInt(match[3]!, 10)
+  if (Number.isNaN(day) || Number.isNaN(hour) || Number.isNaN(minute)) return null
+
+  const now = new Date(nowMs)
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+
+  let issuedAt = Date.UTC(year, month, day, hour, minute, 0, 0)
+  const twelveHoursMs = 12 * 60 * 60 * 1000
+  const thirtyOneDaysMs = 31 * 24 * 60 * 60 * 1000
+
+  if (issuedAt - nowMs > twelveHoursMs) {
+    issuedAt = Date.UTC(year, month - 1, day, hour, minute, 0, 0)
+  } else if (nowMs - issuedAt > thirtyOneDaysMs) {
+    issuedAt = Date.UTC(year, month + 1, day, hour, minute, 0, 0)
+  }
+
+  return issuedAt
+}
+
 export function useMetar() {
   const status = ref<FetchStatus>('idle')
   const metar = ref<MetarData | null>(null)
@@ -49,6 +75,7 @@ export function useMetar() {
       metar.value = {
         icaoId: raw.icaoId ?? icao.toUpperCase(),
         rawOb: raw.rawOb ?? '',
+        issuedAt: parseMetarIssuedAt(raw.rawOb ?? '', Date.now()),
         wdir,
         wspd: raw.wspd ?? 0,
         wgst,

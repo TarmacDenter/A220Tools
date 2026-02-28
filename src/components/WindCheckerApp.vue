@@ -5,6 +5,7 @@ import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
 import { useInterval } from '@/composables/useInterval';
 import { TAILWIND_LIMIT_KT } from '@/constants/windLimits';
+import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 
 import AirportInput from './AirportInput.vue';
@@ -169,6 +170,52 @@ const metarFreshnessText = computed(() => {
   return `${relative} (${absolute} local)`;
 });
 
+const isMetarActive = computed(() => !manualMode.value && metarStatus.value === 'success' && metar.value !== null);
+
+function formatUtcTime(ms: number): string {
+  const date = new Date(ms);
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}Z`;
+}
+
+function formatElapsedMinutes(minutes: number): string {
+  if (minutes <= 0) return 'just now';
+  return `${minutes} min ago`;
+}
+
+const metarIssuedAgeMin = computed(() => {
+  if (!isMetarActive.value || metar.value?.issuedAt === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - metar.value.issuedAt);
+  return Math.floor(elapsedMs / 60_000);
+});
+
+const metarIssuedStatus = computed(() => {
+  const age = metarIssuedAgeMin.value;
+  if (age === null) return 'unknown';
+  if (age >= METAR_ISSUED_STALE_MIN) return 'stale';
+  if (age >= METAR_ISSUED_WARNING_MIN) return 'warn';
+  return 'ok';
+});
+
+const metarIssuedAtUtc = computed(() => {
+  if (!isMetarActive.value || metar.value?.issuedAt === null) return null;
+  return formatUtcTime(metar.value.issuedAt);
+});
+
+const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value));
+
+const metarFetchedAgeMin = computed(() => {
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
+  return Math.floor(elapsedMs / 60_000);
+});
+
+const metarFetchedAtUtc = computed(() => {
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
+  return formatUtcTime(lastFetchedAt.value);
+});
+
 function handleOffline() {
   isOnline.value = false;
   manualMode.value = true;
@@ -330,6 +377,24 @@ watch(manualMode, (enabled) => {
         Magnetic variation at this airport is unknown. Verify against ATIS/AWOS.
       </StatusMessage>
 
+      <div
+        v-if="isMetarActive"
+        class="metar-issued-panel"
+        :class="`metar-issued-${metarIssuedStatus}`"
+      >
+        <div class="metar-issued-row">
+          <strong v-if="metarIssuedAtUtc">
+            Issued at {{ metarIssuedAtUtc }}
+            <span v-if="metarIssuedAgeMin !== null">({{ formatElapsedMinutes(metarIssuedAgeMin) }})</span>
+          </strong>
+          <span v-else>Issued time unavailable from METAR.</span>
+        </div>
+        <div class="metar-issued-row">Time now is {{ nowUtc }}.</div>
+        <div class="metar-issued-row" v-if="metarFetchedAgeMin !== null && metarFetchedAtUtc">
+          Fetched {{ formatElapsedMinutes(metarFetchedAgeMin) }} at {{ metarFetchedAtUtc }}.
+        </div>
+      </div>
+
       <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
       <SafetyReadout :result="windResult" />
       <CompassRose :result="windResult" />
@@ -428,6 +493,32 @@ watch(manualMode, (enabled) => {
   margin: 0.25rem 0 0.75rem;
   font-size: 0.85rem;
   color: var(--color-text-subtle);
+}
+
+.metar-issued-panel {
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.metar-issued-panel.metar-issued-warn {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.metar-issued-panel.metar-issued-stale {
+  border-color: var(--color-unsafe-border);
+  background: var(--color-unsafe-bg);
+  color: var(--color-unsafe-text);
+}
+
+.metar-issued-row + .metar-issued-row {
+  margin-top: 0.25rem;
 }
 
 .toggle-label {

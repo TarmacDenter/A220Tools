@@ -1,6 +1,7 @@
 export interface MetarData {
   icaoId: string
   rawOb: string
+  issuedAt: number | null
   wdir: number | 'VRB' | null // null = calm
   wspd: number
   wgst: number | null
