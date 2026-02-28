@@ -39,6 +39,7 @@ describe('AssumptionsDisplay', () => {
 
     await wrapper.get('[data-testid="assumptions-toggle"]').trigger('click')
 
+    // FIXME: Fails intermittently in vitest; investigate panel visibility after toggle.
     expect(panel.isVisible()).toBe(true)
   })
 

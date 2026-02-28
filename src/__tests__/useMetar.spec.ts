@@ -37,6 +37,28 @@ describe('useMetar', () => {
     expect(metar.lastFetchedAt.value).toBe(new Date('2026-01-15T10:00:00').getTime())
   })
 
+  it('parses issued time from raw METAR observation', async () => {
+    const now = new Date(Date.UTC(2026, 0, 15, 10, 0, 0))
+    vi.setSystemTime(now)
+    vi.mocked(fetchAviationWeatherJson).mockResolvedValue([
+      {
+        icaoId: 'KSEA',
+        rawOb: 'KSEA 151000Z 24015KT 10SM CLR 03/M02 A3010',
+        wdir: 240,
+        wspd: 15,
+        wgst: null,
+        lat: 47.45,
+        lon: -122.31,
+        name: 'Seattle Tacoma Intl',
+      },
+    ])
+
+    const metar = useMetar()
+    await metar.fetchMetar('KSEA')
+
+    expect(metar.metar.value?.issuedAt).toBe(Date.UTC(2026, 0, 15, 10, 0, 0))
+  })
+
   it('retains lastFetchedAt after a later fetch error', async () => {
     const firstSuccessTime = new Date('2026-01-15T10:00:00')
     vi.setSystemTime(firstSuccessTime)

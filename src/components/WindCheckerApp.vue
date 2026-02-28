@@ -3,7 +3,9 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useMetar, parseMetarWind } from '@/composables/useMetar';
 import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
+import { useInterval } from '@/composables/useInterval';
 import { TAILWIND_LIMIT_KT } from '@/constants/windLimits';
+import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 
 import AirportInput from './AirportInput.vue';
@@ -14,6 +16,8 @@ import AssumptionsDisplay from './AssumptionsDisplay.vue';
 import SafetyReadout from './SafetyReadout.vue';
 import CompassRose from './CompassRose.vue';
 import HeadingTable from './HeadingTable.vue';
+import StatusMessage from './ui/StatusMessage.vue';
+import ErrorPanel from './ui/ErrorPanel.vue';
 
 withDefaults(defineProps<{
   theme?: 'light' | 'dark'
@@ -47,8 +51,18 @@ const activeIcao = ref('');
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
 const freshnessNowMs = ref(Date.now());
 
-let freshnessIntervalId: number | null = null;
-let autoRefreshIntervalId: number | null = null;
+// --- Intervals ---
+useInterval(() => {
+  freshnessNowMs.value = Date.now();
+}, 60_000);
+
+useInterval(() => {
+  if (!isOnline.value) return;
+  if (manualMode.value) return;
+  if (metarStatus.value !== 'success') return;
+  if (activeIcao.value.length < 3) return;
+  void fetchMetar(activeIcao.value);
+}, 300_000);
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
@@ -71,15 +85,12 @@ function continueWithZeroDecl() {
 }
 
 // --- Error state helpers ---
-// Both failed
 const bothFailed = computed(() =>
   metarStatus.value === 'error' && airportStatus.value === 'error'
 );
-// Only METAR failed (airport may have succeeded or errored)
 const onlyMetarFailed = computed(() =>
   metarStatus.value === 'error' && airportStatus.value !== 'error'
 );
-// Only airport failed but METAR succeeded — offer "continue with 0° decl"
 const onlyAirportFailed = computed(() =>
   metarStatus.value === 'success' && airportStatus.value === 'error' && !useZeroDecl.value
 );
@@ -159,6 +170,56 @@ const metarFreshnessText = computed(() => {
   return `${relative} (${absolute} local)`;
 });
 
+const isMetarActive = computed(() => !manualMode.value && metarStatus.value === 'success' && metar.value !== null);
+
+function formatUtcTime(ms: number): string {
+  const date = new Date(ms);
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}Z`;
+}
+
+function formatElapsedMinutes(minutes: number): string {
+  if (minutes <= 0) return 'just now';
+  return `${minutes} min ago`;
+}
+
+const metarIssuedAgeMin = computed(() => {
+  if (!isMetarActive.value) return null;
+  const metarValue = metar.value;
+  if (!metarValue || metarValue.issuedAt === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - metarValue.issuedAt);
+  return Math.floor(elapsedMs / 60_000);
+});
+
+const metarIssuedStatus = computed(() => {
+  const age = metarIssuedAgeMin.value;
+  if (age === null) return 'unknown';
+  if (age >= METAR_ISSUED_STALE_MIN) return 'stale';
+  if (age >= METAR_ISSUED_WARNING_MIN) return 'warn';
+  return 'ok';
+});
+
+const metarIssuedAtUtc = computed(() => {
+  if (!isMetarActive.value) return null;
+  const metarValue = metar.value;
+  if (!metarValue || metarValue.issuedAt === null) return null;
+  return formatUtcTime(metarValue.issuedAt);
+});
+
+const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value));
+
+const metarFetchedAgeMin = computed(() => {
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
+  return Math.floor(elapsedMs / 60_000);
+});
+
+const metarFetchedAtUtc = computed(() => {
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
+  return formatUtcTime(lastFetchedAt.value);
+});
+
 function handleOffline() {
   isOnline.value = false;
   manualMode.value = true;
@@ -169,18 +230,6 @@ function handleOnline() {
 }
 
 onMounted(() => {
-  freshnessIntervalId = window.setInterval(() => {
-    freshnessNowMs.value = Date.now();
-  }, 60_000);
-
-  autoRefreshIntervalId = window.setInterval(() => {
-    if (!isOnline.value) return;
-    if (manualMode.value) return;
-    if (metarStatus.value !== 'success') return;
-    if (activeIcao.value.length < 3) return;
-    void fetchMetar(activeIcao.value);
-  }, 300_000);
-
   window.addEventListener('offline', handleOffline);
   window.addEventListener('online', handleOnline);
 
@@ -190,12 +239,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (freshnessIntervalId !== null) {
-    window.clearInterval(freshnessIntervalId);
-  }
-  if (autoRefreshIntervalId !== null) {
-    window.clearInterval(autoRefreshIntervalId);
-  }
   window.removeEventListener('offline', handleOffline);
   window.removeEventListener('online', handleOnline);
 });
@@ -259,9 +302,9 @@ watch(manualMode, (enabled) => {
 
     <p v-if="metarFreshnessText" class="metar-freshness">{{ metarFreshnessText }}</p>
 
-    <div v-if="!isOnline" class="status-msg warning">
+    <StatusMessage v-if="!isOnline" variant="warning">
       Offline: METAR retrieval is unavailable. Manual wind entry is required.
-    </div>
+    </StatusMessage>
 
     <!-- Manual mode toggle -->
     <div class="manual-toggle">
@@ -272,16 +315,18 @@ watch(manualMode, (enabled) => {
     </div>
 
     <!-- Manual entry panel -->
-    <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
+    <ManualWindEntry v-if="manualMode" v-model="manualInputs" />
 
     <!-- Loading indicator -->
-    <div v-if="isLoading" class="status-msg loading">
+    <StatusMessage v-if="isLoading" variant="loading">
       Fetching data…
-    </div>
+    </StatusMessage>
 
     <!-- Both fetches failed -->
-    <div v-else-if="bothFailed && !manualMode" class="error-panel">
-      <p class="error-title">Could not retrieve data</p>
+    <ErrorPanel
+      v-else-if="bothFailed && !manualMode"
+      title="Could not retrieve data"
+    >
       <p class="error-detail"><strong>METAR:</strong> {{ metarError }}</p>
       <p class="error-detail"><strong>Airport info:</strong> {{ airportError }}</p>
       <div class="error-actions">
@@ -289,24 +334,28 @@ watch(manualMode, (enabled) => {
           Enter winds manually
         </button>
       </div>
-    </div>
+    </ErrorPanel>
 
     <!-- Only METAR failed -->
-    <div v-else-if="onlyMetarFailed && !manualMode" class="error-panel">
-      <p class="error-title">METAR fetch failed</p>
+    <ErrorPanel
+      v-else-if="onlyMetarFailed && !manualMode"
+      title="METAR fetch failed"
+    >
       <p class="error-detail">{{ metarError }}</p>
-      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.
-      </p>
+      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.</p>
       <div class="error-actions">
         <button class="action-btn primary" @click="enableManualMode">
           Enter winds manually
         </button>
       </div>
-    </div>
+    </ErrorPanel>
 
     <!-- METAR succeeded but airport info failed — user must choose -->
-    <div v-else-if="onlyAirportFailed" class="error-panel warn">
-      <p class="error-title">Airport declination unavailable</p>
+    <ErrorPanel
+      v-else-if="onlyAirportFailed"
+      variant="warn"
+      title="Airport declination unavailable"
+    >
       <p class="error-detail">{{ airportError }}</p>
       <p class="error-hint">
         METAR winds are reported in <strong>TRUE</strong> degrees. Without a declination value they
@@ -322,26 +371,44 @@ watch(manualMode, (enabled) => {
           <span class="action-note">(enter magnetic direction directly)</span>
         </button>
       </div>
-    </div>
+    </ErrorPanel>
 
     <!-- Results -->
     <template v-if="windResult">
       <!-- Zero-decl warning banner -->
-      <div v-if="useZeroDecl" class="status-msg warning">
+      <StatusMessage v-if="useZeroDecl" variant="warning">
         <strong>Warning:</strong> No declination applied — METAR winds are TRUE degrees.
         Magnetic variation at this airport is unknown. Verify against ATIS/AWOS.
+      </StatusMessage>
+
+      <div
+        v-if="isMetarActive"
+        class="metar-issued-panel"
+        :class="`metar-issued-${metarIssuedStatus}`"
+      >
+        <div class="metar-issued-row">
+          <strong v-if="metarIssuedAtUtc">
+            Issued at {{ metarIssuedAtUtc }}
+            <span v-if="metarIssuedAgeMin !== null">({{ formatElapsedMinutes(metarIssuedAgeMin) }})</span>
+          </strong>
+          <span v-else>Issued time unavailable from METAR.</span>
+        </div>
+        <div class="metar-issued-row">Time now is {{ nowUtc }}.</div>
+        <div class="metar-issued-row" v-if="metarFetchedAgeMin !== null && metarFetchedAtUtc">
+          Fetched {{ formatElapsedMinutes(metarFetchedAgeMin) }} at {{ metarFetchedAtUtc }}.
+        </div>
       </div>
 
       <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
       <SafetyReadout :result="windResult" />
       <CompassRose :result="windResult" />
       <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" />
-      <p v-else-if="windResult.parsedWind.isCalm" class="status-msg calm">
+      <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
         No table shown for calm winds.
-      </p>
-      <p v-else-if="windResult.parsedWind.isVariable" class="status-msg warning">
+      </StatusMessage>
+      <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
         Table not available for variable winds — any heading may be unsafe.
-      </p>
+      </StatusMessage>
     </template>
 
     <!-- Idle state -->
@@ -432,6 +499,32 @@ watch(manualMode, (enabled) => {
   color: var(--color-text-subtle);
 }
 
+.metar-issued-panel {
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.metar-issued-panel.metar-issued-warn {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.metar-issued-panel.metar-issued-stale {
+  border-color: var(--color-unsafe-border);
+  background: var(--color-unsafe-bg);
+  color: var(--color-unsafe-text);
+}
+
+.metar-issued-row + .metar-issued-row {
+  margin-top: 0.25rem;
+}
+
 .toggle-label {
   display: flex;
   align-items: center;
@@ -445,118 +538,6 @@ watch(manualMode, (enabled) => {
   width: 1rem;
   height: 1rem;
   cursor: pointer;
-}
-
-/* Error panel */
-.error-panel {
-  background: var(--color-unsafe-bg);
-  border: 1px solid var(--color-unsafe-border);
-  border-left: 4px solid var(--color-unsafe);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  margin: 0.75rem 0;
-}
-
-.error-panel.warn {
-  background: var(--color-warning-bg);
-  border-color: var(--color-warning-border);
-  border-left-color: var(--color-warning);
-}
-
-.error-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--color-unsafe-text);
-  margin: 0 0 0.4rem;
-}
-
-.error-panel.warn .error-title {
-  color: var(--color-warning-text);
-}
-
-.error-detail {
-  font-size: 0.875rem;
-  color: var(--color-unsafe-text);
-  margin: 0.2rem 0;
-  font-family: var(--font-mono);
-}
-
-.error-panel.warn .error-detail {
-  color: var(--color-warning-text);
-}
-
-.error-hint {
-  font-size: 0.875rem;
-  color: var(--color-text-subtle);
-  margin: 0.5rem 0 0.75rem;
-}
-
-.error-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.action-btn.primary {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-}
-
-.action-btn.primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.action-btn.secondary {
-  background: var(--color-secondary-bg);
-  color: var(--color-secondary-text);
-}
-
-.action-btn.secondary:hover {
-  background: var(--color-secondary-hover);
-}
-
-.action-note {
-  font-size: 0.75rem;
-  font-weight: 400;
-  opacity: 0.8;
-  margin-top: 0.15rem;
-}
-
-/* Status messages */
-.status-msg {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  margin: 0.75rem 0;
-  font-size: 0.9rem;
-}
-
-.status-msg.loading {
-  background: var(--color-info-bg);
-  color: var(--color-info-text);
-}
-
-.status-msg.calm {
-  background: var(--color-safe-bg);
-  color: var(--color-safe-text);
-}
-
-.status-msg.warning {
-  background: var(--color-warning-bg);
-  color: var(--color-warning-text);
 }
 
 .idle-prompt {
