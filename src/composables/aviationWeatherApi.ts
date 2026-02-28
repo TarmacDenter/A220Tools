@@ -9,20 +9,42 @@ function withCorsProxy(url: string): string {
 function withIsomorphicCorsProxy(url: string): string {
   return `https://cors.isomorphic-git.org/${url}`
 }
+
+function classifyProxy(url: string): string {
+  if (url.startsWith('/api/avwx')) {
+    return 'vite-proxy'
+  }
+  if (url.startsWith('https://cors.isomorphic-git.org/')) {
+    return 'isomorphic-git'
+  }
+  if (url.startsWith('https://corsproxy.io/?')) {
+    return 'corsproxy.io'
+  }
+  if (url.startsWith('https://aviationweather.gov/')) {
+    return 'direct'
+  }
+  return 'unknown'
+}
+
 export async function fetchJsonWithFallback<T>(urls: string[]): Promise<T> {
 
   let lastError: unknown = null
 
   for (const url of urls) {
     try {
+      console.log('[AviationWeather] Fetch attempt:', url)
       const response = await fetch(url)
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      return (await response.json()) as T
+      const payload = (await response.json()) as T
+      console.log('[AviationWeather] JSON response:', payload)
+      console.log('[AviationWeather] Success via:', { url, proxy: classifyProxy(url) })
+      return payload
     } catch (err) {
       lastError = err
+      console.warn('[AviationWeather] Fetch failed:', { url, error: err })
     }
   }
 

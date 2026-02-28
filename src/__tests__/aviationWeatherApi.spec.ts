@@ -7,6 +7,8 @@ describe('fetchJsonWithFallback', () => {
   })
 
   it('tries multiple endpoints until one succeeds', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const fetchMock = vi
       .spyOn(globalThis, 'fetch')
       .mockRejectedValueOnce(new TypeError('Failed to fetch'))
@@ -35,5 +37,11 @@ describe('fetchJsonWithFallback', () => {
       3,
       'https://aviationweather.gov/api/data/metar?ids=KJFK&format=json',
     )
+    expect(logSpy).toHaveBeenCalledWith('[AviationWeather] JSON response:', [{ icaoId: 'KJFK' }])
+    expect(logSpy).toHaveBeenCalledWith('[AviationWeather] Success via:', {
+      url: 'https://aviationweather.gov/api/data/metar?ids=KJFK&format=json',
+      proxy: 'direct',
+    })
+    expect(warnSpy).toHaveBeenCalled()
   })
 })
