@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
 
-withDefaults(defineProps<{
-  theme?: 'light' | 'dark'
-}>(), {
-  theme: 'light',
-})
-
 const manualInput = defineModel<ManualWindInput>({ required: true })
 
 function updateField(
@@ -28,12 +22,8 @@ function setDeclinationDir(dir: 'E' | 'W') {
 <template>
   <div
     class="manual-entry"
-    :class="[
-      manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true',
-      { 'theme-dark': theme === 'dark' },
-    ]"
+    :class="manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'"
   >
-
     <!-- Source selector -->
     <div class="mode-toggle">
       <button
@@ -145,52 +135,83 @@ function setDeclinationDir(dir: 'E' | 'W') {
         <span class="field-hint">blank = auto &nbsp;·&nbsp; toggle sets sign</span>
       </div>
     </div>
-
   </div>
 </template>
 
 <style scoped>
+/* ─── Mode color tokens (light) ──────────────────────────────── */
+
+.mode-true {
+  --mode-bg: #fefce8;
+  --mode-border: #fde047;
+  --mode-label: #78350f;
+  --mode-accent: #eab308;
+  --mode-accent-text: #1c1917;
+  --mode-input-bg: #fffbeb;
+  --mode-input-text: #1c1917;
+  --mode-input-border: #fbbf24;
+  --mode-input-focus: #d97706;
+  --mode-input-placeholder: #78716c;
+  --mode-reminder-bg: #fef9c3;
+  --mode-reminder-text: #713f12;
+}
+
+.mode-magnetic {
+  --mode-bg: #f0fdf4;
+  --mode-border: #86efac;
+  --mode-label: #15803d;
+  --mode-accent: #22c55e;
+  --mode-accent-text: #14532d;
+  --mode-input-bg: #f0fdf4;
+  --mode-input-text: #14532d;
+  --mode-input-border: #86efac;
+  --mode-input-focus: #22c55e;
+  --mode-input-placeholder: #4d7c0f;
+  --mode-reminder-bg: #dcfce7;
+  --mode-reminder-text: #14532d;
+}
+
+/* ─── Mode color tokens (dark) ───────────────────────────────── */
+
+:global([data-theme='dark']) .mode-true {
+  --mode-bg: #2b1d08;
+  --mode-border: #b45309;
+  --mode-label: #fcd34d;
+  --mode-input-bg: #2b1d08;
+  --mode-input-text: #fef3c7;
+  --mode-input-border: #d97706;
+  --mode-input-focus: #b45309;
+  --mode-input-placeholder: #fcd34d;
+  --mode-reminder-bg: #3b2a10;
+  --mode-reminder-text: #fde68a;
+}
+
+:global([data-theme='dark']) .mode-magnetic {
+  --mode-bg: #0f2619;
+  --mode-border: #166534;
+  --mode-label: #86efac;
+  --mode-input-bg: #0f2619;
+  --mode-input-text: #dcfce7;
+  --mode-input-border: #16a34a;
+  --mode-input-focus: #22c55e;
+  --mode-input-placeholder: #86efac;
+  --mode-reminder-bg: #123221;
+  --mode-reminder-text: #bbf7d0;
+}
+
+/* ─── Layout ─────────────────────────────────────────────────── */
+
 .manual-entry {
   border-radius: 8px;
   padding: 1rem 1.25rem;
   margin: 1rem 0;
-  border: 1px solid;
+  border: 1px solid var(--mode-border);
+  background: var(--mode-bg);
   transition: background 0.2s, border-color 0.2s;
 }
 
-.mode-true {
-  --manual-input-bg: #fffbeb;
-  --manual-input-text: #1c1917;
-  --manual-input-placeholder: #78716c;
-  background: #fefce8;
-  border-color: #fde047;
-}
+/* ─── Mode toggle ────────────────────────────────────────────── */
 
-.mode-magnetic {
-  --manual-input-bg: #f0fdf4;
-  --manual-input-text: #14532d;
-  --manual-input-placeholder: #4d7c0f;
-  background: #f0fdf4;
-  border-color: #86efac;
-}
-
-.theme-dark.mode-true {
-  --manual-input-bg: #2b1d08;
-  --manual-input-text: #fef3c7;
-  --manual-input-placeholder: #fcd34d;
-  background: #2b1d08;
-  border-color: #b45309;
-}
-
-.theme-dark.mode-magnetic {
-  --manual-input-bg: #0f2619;
-  --manual-input-text: #dcfce7;
-  --manual-input-placeholder: #86efac;
-  background: #0f2619;
-  border-color: #166534;
-}
-
-/* Mode toggle */
 .mode-toggle {
   display: inline-flex;
   border-radius: 6px;
@@ -219,46 +240,25 @@ function setDeclinationDir(dir: 'E' | 'W') {
   border-left: 1.5px solid var(--color-border);
 }
 
-.mode-true .mode-btn.active {
-  background: #eab308;
-  color: #1c1917;
+.mode-btn.active {
+  background: var(--mode-accent);
+  color: var(--mode-accent-text);
 }
 
-.mode-magnetic .mode-btn.active {
-  background: #22c55e;
-  color: #14532d;
-}
+/* ─── Source reminder ────────────────────────────────────────── */
 
-/* Source reminder */
 .source-reminder {
   font-size: 0.82rem;
   margin-bottom: 0.875rem;
   padding: 0.4rem 0.65rem;
   border-radius: 5px;
   line-height: 1.4;
+  background: var(--mode-reminder-bg);
+  color: var(--mode-reminder-text);
 }
 
-.mode-true .source-reminder {
-  background: #fef9c3;
-  color: #713f12;
-}
+/* ─── Fields ─────────────────────────────────────────────────── */
 
-.mode-magnetic .source-reminder {
-  background: #dcfce7;
-  color: #14532d;
-}
-
-.theme-dark.mode-true .source-reminder {
-  background: #3b2a10;
-  color: #fde68a;
-}
-
-.theme-dark.mode-magnetic .source-reminder {
-  background: #123221;
-  color: #bbf7d0;
-}
-
-/* Fields */
 .fields {
   display: flex;
   flex-wrap: wrap;
@@ -275,22 +275,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
 .field label {
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.mode-true .field label {
-  color: #78350f;
-}
-
-.mode-magnetic .field label {
-  color: #15803d;
-}
-
-.theme-dark.mode-true .field label {
-  color: #fcd34d;
-}
-
-.theme-dark.mode-magnetic .field label {
-  color: #86efac;
+  color: var(--mode-label);
 }
 
 .field-hint {
@@ -299,6 +284,8 @@ function setDeclinationDir(dir: 'E' | 'W') {
   font-style: italic;
 }
 
+/* ─── Wind inputs ────────────────────────────────────────────── */
+
 .wind-input {
   padding: 0.4rem 0.6rem;
   border-radius: 5px;
@@ -306,39 +293,19 @@ function setDeclinationDir(dir: 'E' | 'W') {
   font-size: 1rem;
   width: 130px;
   outline: none;
-  border: 1.5px solid;
-  background: var(--manual-input-bg, var(--color-surface));
-  color: var(--manual-input-text, var(--color-text));
+  border: 1.5px solid var(--mode-input-border);
+  background: var(--mode-input-bg);
+  color: var(--mode-input-text);
   transition: border-color 0.15s;
 }
 
 .wind-input::placeholder {
-  color: var(--manual-input-placeholder, var(--color-text-muted));
+  color: var(--mode-input-placeholder);
   opacity: 1;
 }
 
-.mode-true .wind-input {
-  border-color: #fbbf24;
-}
-
-.mode-true .wind-input:focus {
-  border-color: #d97706;
-}
-
-.mode-magnetic .wind-input {
-  border-color: #86efac;
-}
-
-.mode-magnetic .wind-input:focus {
-  border-color: #22c55e;
-}
-
-.theme-dark.mode-true .wind-input {
-  border-color: #d97706;
-}
-
-.theme-dark.mode-magnetic .wind-input {
-  border-color: #16a34a;
+.wind-input:focus {
+  border-color: var(--mode-input-focus);
 }
 
 .wind-input.narrow {
@@ -348,6 +315,8 @@ function setDeclinationDir(dir: 'E' | 'W') {
 .wind-input.narrow-decl {
   width: 100px;
 }
+
+/* ─── Declination toggle ─────────────────────────────────────── */
 
 .declination-row {
   display: flex;
@@ -377,8 +346,8 @@ function setDeclinationDir(dir: 'E' | 'W') {
   border-left: 1.5px solid var(--color-border);
 }
 
-.mode-true .decl-btn.active {
-  background: #eab308;
-  color: #1c1917;
+.decl-btn.active {
+  background: var(--mode-accent);
+  color: var(--mode-accent-text);
 }
 </style>
