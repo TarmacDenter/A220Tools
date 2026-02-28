@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { FetchStatus, MetarData, ParsedWind } from '@/types/wind'
 import { fetchAviationWeatherJson } from '@/composables/aviationWeatherApi'
+import { isAvwxAvailable, fetchAvwxMetar } from '@/composables/avwxApi'
 
 function parseMetarIssuedAt(rawOb: string, nowMs: number): number | null {
   const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)
@@ -44,6 +45,47 @@ export function useMetar() {
     console.log('Fetching METAR…')
 
     try {
+      // --- Primary: avwx.rest (authenticated, native CORS, no proxy needed) ---
+      if (isAvwxAvailable()) {
+        try {
+          console.log('Trying AVWX…')
+          const avwxData = await fetchAvwxMetar(icao)
+
+          const rawOb = avwxData.raw ?? ''
+          const wdirRepr = avwxData.wind_direction?.repr ?? null
+          const wdirValue = avwxData.wind_direction?.value ?? null
+          const wdir: number | 'VRB' | null = wdirRepr === 'VRB' ? 'VRB' : wdirValue
+          const wgst: number | null = avwxData.wind_gust?.value ?? null
+
+          metar.value = {
+            icaoId: avwxData.station ?? icao.toUpperCase(),
+            rawOb,
+            issuedAt: parseMetarIssuedAt(rawOb, Date.now()),
+            wdir,
+            wspd: avwxData.wind_speed?.value ?? 0,
+            wgst,
+            lat: avwxData.info?.latitude ?? 0,
+            lon: avwxData.info?.longitude ?? 0,
+            name: avwxData.info?.name ?? '',
+          }
+
+          console.log('Parsed METAR (AVWX):', {
+            wdir: metar.value.wdir,
+            wspd: metar.value.wspd,
+            wgst: metar.value.wgst,
+            rawOb: metar.value.rawOb,
+          })
+
+          status.value = 'success'
+          lastFetchedAt.value = Date.now()
+          console.log('✓ METAR fetch complete (AVWX)')
+          return
+        } catch (avwxErr) {
+          console.warn('AVWX fetch failed, falling back to aviationweather.gov:', avwxErr)
+        }
+      }
+
+      // --- Fallback: aviationweather.gov (via CORS proxy chain) ---
       const path = `/metar?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
       console.log('Path:', path)
 
@@ -84,7 +126,7 @@ export function useMetar() {
         name: raw.name ?? '',
       }
 
-      console.log('Parsed METAR:', {
+      console.log('Parsed METAR (aviationweather.gov):', {
         wdir: metar.value.wdir,
         wspd: metar.value.wspd,
         wgst: metar.value.wgst,
@@ -93,7 +135,7 @@ export function useMetar() {
 
       status.value = 'success'
       lastFetchedAt.value = Date.now()
-      console.log('✓ METAR fetch complete')
+      console.log('✓ METAR fetch complete (aviationweather.gov)')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       error.value = msg
