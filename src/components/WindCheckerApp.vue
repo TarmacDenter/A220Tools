@@ -69,10 +69,10 @@ async function onFetch(icao: string) {
   if (!isOnline.value) return;
   useZeroDecl.value = false;
   activeIcao.value = icao.toUpperCase();
-  await Promise.all([
-    fetchMetar(icao),
-    fetchAirportInfo(icao),
-  ]);
+  // Requests are sequenced (not concurrent) to avoid triggering rate limiting
+  // on the Aviation Weather API and CORS proxies, which enforce a 1 req/min/thread limit.
+  await fetchMetar(icao);
+  await fetchAirportInfo(icao);
 }
 
 function enableManualMode() {
