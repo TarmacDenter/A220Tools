@@ -185,8 +185,10 @@ function formatElapsedMinutes(minutes: number): string {
 }
 
 const metarIssuedAgeMin = computed(() => {
-  if (!isMetarActive.value || metar.value?.issuedAt === null) return null;
-  const elapsedMs = Math.max(0, freshnessNowMs.value - metar.value.issuedAt);
+  if (!isMetarActive.value) return null;
+  const metarValue = metar.value;
+  if (!metarValue || metarValue.issuedAt === null) return null;
+  const elapsedMs = Math.max(0, freshnessNowMs.value - metarValue.issuedAt);
   return Math.floor(elapsedMs / 60_000);
 });
 
@@ -199,8 +201,10 @@ const metarIssuedStatus = computed(() => {
 });
 
 const metarIssuedAtUtc = computed(() => {
-  if (!isMetarActive.value || metar.value?.issuedAt === null) return null;
-  return formatUtcTime(metar.value.issuedAt);
+  if (!isMetarActive.value) return null;
+  const metarValue = metar.value;
+  if (!metarValue || metarValue.issuedAt === null) return null;
+  return formatUtcTime(metarValue.issuedAt);
 });
 
 const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value));
