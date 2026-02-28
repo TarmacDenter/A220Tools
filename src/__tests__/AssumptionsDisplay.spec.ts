@@ -35,11 +35,15 @@ describe('AssumptionsDisplay', () => {
     })
 
     const panel = wrapper.get('[data-testid="assumptions-panel"]')
-    expect(panel.isVisible()).toBe(false)
+    const toggle = wrapper.get('[data-testid="assumptions-toggle"]')
 
-    await wrapper.get('[data-testid="assumptions-toggle"]').trigger('click')
+    expect(toggle.attributes('aria-expanded')).toBe('false')
+    expect(panel.attributes('style')).toContain('display: none')
 
-    expect(panel.isVisible()).toBe(true)
+    await toggle.trigger('click')
+
+    expect(toggle.attributes('aria-expanded')).toBe('true')
+    expect(panel.attributes('style') ?? '').not.toContain('display: none')
   })
 
   it('does not render ATIS advisory copy for METAR results', () => {

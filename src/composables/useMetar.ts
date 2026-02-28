@@ -1,6 +1,47 @@
 import { ref } from 'vue'
 import type { FetchStatus, MetarData, ParsedWind } from '@/types/wind'
 import { fetchAviationWeatherJson } from '@/composables/aviationWeatherApi'
+import { METAR_MAX_AGE_MINUTES } from '@/constants/metar'
+
+function parseMetarIssuedAtFromRaw(rawOb: string, nowMs: number): number | null {
+  const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)
+  if (!match) return null
+
+  const day = Number(match[1])
+  const hour = Number(match[2])
+  const minute = Number(match[3])
+
+  if (day < 1 || day > 31 || hour > 23 || minute > 59) return null
+
+  const now = new Date(nowMs)
+  let year = now.getUTCFullYear()
+  let month = now.getUTCMonth()
+  let candidate = Date.UTC(year, month, day, hour, minute)
+
+  if (candidate > nowMs) {
+    month -= 1
+    if (month < 0) {
+      month = 11
+      year -= 1
+    }
+    candidate = Date.UTC(year, month, day, hour, minute)
+  }
+
+  return candidate
+}
+
+function resolveMetarIssuedAt(raw: Record<string, unknown>, nowMs: number): number | null {
+  const obsTime = raw.obsTime
+  if (typeof obsTime === 'string') {
+    const parsed = Date.parse(obsTime)
+    if (!Number.isNaN(parsed)) {
+      return parsed
+    }
+  }
+
+  const rawOb = typeof raw.rawOb === 'string' ? raw.rawOb : ''
+  return parseMetarIssuedAtFromRaw(rawOb, nowMs)
+}
 
 export function useMetar() {
   const status = ref<FetchStatus>('idle')
@@ -46,6 +87,17 @@ export function useMetar() {
 
       const wdir = raw.wdir === 'VRB' ? 'VRB' : typeof raw.wdir === 'number' ? raw.wdir : null
 
+      const nowMs = Date.now()
+      const issuedAt = resolveMetarIssuedAt(raw, nowMs)
+      if (issuedAt !== null) {
+        const ageMinutes = Math.floor((nowMs - issuedAt) / 60_000)
+        if (ageMinutes > METAR_MAX_AGE_MINUTES) {
+          throw new Error(
+            `METAR is stale (${ageMinutes} min old, max ${METAR_MAX_AGE_MINUTES} min). Use manual wind entry and verify ATIS/AWOS.`
+          )
+        }
+      }
+
       metar.value = {
         icaoId: raw.icaoId ?? icao.toUpperCase(),
         rawOb: raw.rawOb ?? '',
@@ -55,6 +107,7 @@ export function useMetar() {
         lat: raw.lat ?? 0,
         lon: raw.lon ?? 0,
         name: raw.name ?? '',
+        issuedAt,
       }
 
       console.log('Parsed METAR:', {
@@ -62,10 +115,11 @@ export function useMetar() {
         wspd: metar.value.wspd,
         wgst: metar.value.wgst,
         rawOb: metar.value.rawOb,
+        issuedAt: metar.value.issuedAt,
       })
 
       status.value = 'success'
-      lastFetchedAt.value = Date.now()
+      lastFetchedAt.value = nowMs
       console.log('✓ METAR fetch complete')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)

@@ -148,11 +148,15 @@ const manualModeToggle = computed({
 });
 
 const metarFreshnessText = computed(() => {
-  if (!isOnline.value || lastFetchedAt.value === null) return null;
-  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
+  if (!isOnline.value || metar.value === null) return null;
+  const referenceTime = metar.value.issuedAt ?? lastFetchedAt.value;
+  if (referenceTime === null) return null;
+
+  const elapsedMs = Math.max(0, freshnessNowMs.value - referenceTime);
   const elapsedMin = Math.floor(elapsedMs / 60_000);
-  const relative = elapsedMin === 0 ? 'Updated just now' : `Updated ${elapsedMin} min ago`;
-  const absolute = new Date(lastFetchedAt.value).toLocaleTimeString([], {
+  const prefix = metar.value.issuedAt !== null ? 'Observed' : 'Updated';
+  const relative = elapsedMin === 0 ? `${prefix} just now` : `${prefix} ${elapsedMin} min ago`;
+  const absolute = new Date(referenceTime).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });

@@ -136,12 +136,12 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    expect(wrapper.text()).toContain('Updated just now')
+    expect(wrapper.text()).toContain('Observed just now')
 
     await vi.advanceTimersByTimeAsync(60_000)
     await nextTick()
 
-    expect(wrapper.text()).toContain('Updated 1 min ago')
+    expect(wrapper.text()).toContain('Observed 1 min ago')
   })
 
   it('auto-refreshes METAR every 5 minutes while online after success', async () => {

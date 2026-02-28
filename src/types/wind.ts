@@ -7,6 +7,7 @@ export interface MetarData {
   lat: number
   lon: number
   name: string
+  issuedAt: number | null
 }
 
 export interface ParsedWind {
