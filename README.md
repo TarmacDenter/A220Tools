@@ -30,6 +30,23 @@ npm run dev
 
 Open the local URL shown by Nuxt (normally `http://localhost:3000`).
 
+## MCP server config (Nuxt)
+
+This repo includes a root `.mcp.json` configured for Nuxt MCP using `nuxi mcp`:
+
+```json
+{
+  "mcpServers": {
+    "nuxt": {
+      "command": "npx",
+      "args": ["nuxi", "mcp"]
+    }
+  }
+}
+```
+
+This lets MCP-compatible clients attach to Nuxt project context and tools from this workspace.
+
 ## Scripts
 
 - `npm run dev`: Start the Nuxt development server.
