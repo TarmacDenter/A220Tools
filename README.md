@@ -17,8 +17,7 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 
 ## Tech stack
 
-- Vue 3 + TypeScript
-- Vite
+- Nuxt 3 (Vue 3 + TypeScript, SSR enabled)
 - Vitest + Vue Test Utils
 - Playwright
 
@@ -29,13 +28,14 @@ npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite (normally `http://localhost:5173`).
+Open the local URL shown by Nuxt (normally `http://localhost:3000`).
 
 ## Scripts
 
-- `npm run dev`: Start the Vite dev server.
-- `npm run build`: Type-check and create a production build in `dist/`.
-- `npm run preview`: Serve the production build locally.
+- `npm run dev`: Start the Nuxt development server.
+- `npm run build`: Build the SSR app with Nitro output.
+- `npm run preview`: Serve the production Nuxt build locally.
+- `npm run type-check`: Run Nuxt type-checking.
 - `npm run test:unit`: Run Vitest unit tests.
 - `npm run test:e2e`: Run Playwright end-to-end tests.
 - `npm run lint`: Run lint auto-fixes (`oxlint` + `eslint`).
@@ -67,7 +67,7 @@ npm run test:e2e -- --debug
 
 ## Deployment
 
-GitHub Pages deployment is configured via `.github/workflows/deploy.yml` and publishes `dist/` to `gh-pages`.
+This project is configured for Nuxt SSR deployment to Netlify using Nitro's Netlify preset (`NITRO_PRESET=netlify`). The generated server/public output is managed by Nuxt/Nitro during `npm run build`.
 
 ## Branch strategy
 
