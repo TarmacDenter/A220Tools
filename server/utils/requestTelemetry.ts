@@ -47,11 +47,29 @@ export function incrementRepeatedRequestCount(fingerprint: string): number {
   return nextCount
 }
 
-export function extractRequestOrigin(headers: Headers, remoteAddress?: string | null): string {
-  return headers.get('x-forwarded-for')
-    ?? headers.get('x-real-ip')
-    ?? headers.get('cf-connecting-ip')
-    ?? headers.get('fly-client-ip')
+function readHeaderValue(headers: Headers | Record<string, string | string[] | undefined>, name: string): string | undefined {
+  if (typeof (headers as Headers).get === 'function') {
+    return (headers as Headers).get(name) ?? undefined
+  }
+
+  const recordHeaders = headers as Record<string, string | string[] | undefined>
+  const value = recordHeaders[name] ?? recordHeaders[name.toLowerCase()] ?? recordHeaders[name.toUpperCase()]
+
+  if (Array.isArray(value)) {
+    return value[0]
+  }
+
+  return value
+}
+
+export function extractRequestOrigin(
+  headers: Headers | Record<string, string | string[] | undefined>,
+  remoteAddress?: string | null,
+): string {
+  return readHeaderValue(headers, 'x-forwarded-for')
+    ?? readHeaderValue(headers, 'x-real-ip')
+    ?? readHeaderValue(headers, 'cf-connecting-ip')
+    ?? readHeaderValue(headers, 'fly-client-ip')
     ?? remoteAddress
     ?? 'unknown'
 }
