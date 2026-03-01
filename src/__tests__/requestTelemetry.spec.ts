@@ -33,4 +33,12 @@ describe('requestTelemetry helpers', () => {
 
     expect(extractRequestOrigin(headers, '127.0.0.1')).toBe('198.51.100.23')
   })
+
+  it('extracts request origin from plain object headers without throwing', () => {
+    const headers = {
+      'x-real-ip': '203.0.113.42',
+    }
+
+    expect(extractRequestOrigin(headers, '127.0.0.1')).toBe('203.0.113.42')
+  })
 })
