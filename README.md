@@ -67,7 +67,7 @@ npm run test:e2e -- --debug
 
 ## Deployment (Railway)
 
-This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration and `nixpacks.toml` to pin Node/build/start commands.
+This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration, `.nvmrc` to declare the Node version, and `package.json`'s `packageManager` field to pin npm.
 
 ### Railway runtime details
 
@@ -78,7 +78,7 @@ This project is configured for Nuxt SSR deployment to Railway using configuratio
 ### Deploy steps
 
 1. Create a new Railway project and link this repository.
-2. Ensure Railway is set to use the repo-root `railway.toml` + `nixpacks.toml` (default when present).
+2. Ensure Railway is set to use the repo-root `railway.toml` and the service builder is not overridden in the UI.
 3. Deploy from `master` (or your selected release branch).
 4. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
 
