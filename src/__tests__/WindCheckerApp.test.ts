@@ -13,8 +13,7 @@ function setOnline(value: boolean) {
 }
 
 function buildMetarResponse() {
-  return [
-    {
+  return {
       icaoId: 'KJFK',
       rawOb: 'KJFK 151000Z 27012KT 10SM CLR 05/M01 A2992',
       wdir: 270,
@@ -23,31 +22,28 @@ function buildMetarResponse() {
       lat: 40.64,
       lon: -73.78,
       name: 'John F Kennedy Intl',
-    },
-  ]
+    }
 }
 
 function buildAirportResponse() {
-  return [
-    {
+  return {
       icaoId: 'KJFK',
       name: 'John F Kennedy Intl',
       magdec: '13W',
       lat: 40.64,
       lon: -73.78,
-    },
-  ]
+    }
 }
 
 function mockSuccessfulFetches() {
   return vi.fn(async (url: string) => {
-    if (url.includes('/metar?')) {
+    if (url.includes('/api/metar/')) {
       return {
         ok: true,
         json: async () => buildMetarResponse(),
       }
     }
-    if (url.includes('/airport?')) {
+    if (url.includes('/api/airport/')) {
       return {
         ok: true,
         json: async () => buildAirportResponse(),
@@ -179,7 +175,7 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    const metarCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/metar?')).length
+    const metarCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/metar/')).length
     expect(metarCallCount()).toBe(1)
 
     await vi.advanceTimersByTimeAsync(300_000)

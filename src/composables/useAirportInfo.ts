@@ -1,6 +1,15 @@
 import { ref } from 'vue'
 import type { FetchStatus, MagneticCorrection } from '@/types/wind'
-import { fetchAviationWeatherJson } from '@/composables/aviationWeatherApi'
+import { fetchAirportFromServer } from '@/composables/aviationWeatherApi'
+
+
+interface AviationWeatherAirportRecord {
+  icaoId?: string
+  name?: string
+  magdec?: string | null
+  lat?: number
+  lon?: number
+}
 
 interface AirportInfo {
   icaoId: string
@@ -35,16 +44,7 @@ export function useAirportInfo() {
     console.log('Fetching airport info…')
 
     try {
-      const path = `/airport?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
-      console.log('Path:', path)
-
-      const data = await fetchAviationWeatherJson<unknown>(path)
-
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error(`No airport data found for ${icao.toUpperCase()}`)
-      }
-
-      const raw = data[0]
+      const raw = await fetchAirportFromServer<AviationWeatherAirportRecord>(icao)
       console.log('Raw API response:', raw)
 
       const magdecRaw: string | null = raw.magdec ?? null

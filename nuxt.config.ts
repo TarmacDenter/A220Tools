@@ -7,7 +7,6 @@ export default defineNuxtConfig({
     '@': '/src',
   },
   runtimeConfig: {
-    avwxToken: '',
     public: {
       appBaseUrl: '/',
     },
