@@ -24,7 +24,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      appBaseUrl: '/',
+      appBaseUrl: process.env.NUXT_PUBLIC_APP_BASE_URL || '/',
     },
   },
 })

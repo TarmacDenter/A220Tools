@@ -65,9 +65,24 @@ npm run test:e2e -- --debug
 - `src/__tests__/`: Unit tests.
 - `e2e/`: Playwright specs.
 
-## Deployment
+## Deployment (Railway)
 
-This project is configured for Nuxt SSR deployment to Netlify using Nitro's Netlify preset (`NITRO_PRESET=netlify`). The generated server/public output is managed by Nuxt/Nitro during `npm run build`.
+This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration and `nixpacks.toml` to pin Node/build/start commands.
+
+### Railway runtime details
+
+- Build command: `npm run build`
+- Runtime command: `node .output/server/index.mjs`
+- Health check path: `/`
+
+### Deploy steps
+
+1. Create a new Railway project and link this repository.
+2. Ensure Railway is set to use the repo-root `railway.toml` + `nixpacks.toml` (default when present).
+3. Deploy from `master` (or your selected release branch).
+4. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
+
+Nuxt/Nitro generates the production server bundle in `.output/` during `npm run build`, which Railway starts via the configured start command.
 
 ## Branch strategy
 
