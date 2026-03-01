@@ -11,6 +11,7 @@ const dismissedNative = ref(false)
 const dismissedIos = ref(false)
 const installed = ref(false)
 const isInStandalone = ref(false)
+const hasMounted = ref(false)
 const supportsBeforeInstallPrompt = ref(false)
 
 let standaloneMediaQuery: MediaQueryList | null = null
@@ -43,6 +44,7 @@ const showNativeInstallCta = computed(() =>
 )
 
 const showIosInstructions = computed(() =>
+  hasMounted.value &&
   isIos.value &&
   !supportsBeforeInstallPrompt.value &&
   !dismissedIos.value &&
@@ -82,6 +84,7 @@ async function triggerInstall() {
 }
 
 onMounted(() => {
+  hasMounted.value = true
   detectStandalone()
   standaloneMediaQuery = window.matchMedia?.('(display-mode: standalone)') ?? null
   standaloneMediaQuery?.addEventListener?.('change', detectStandalone)
