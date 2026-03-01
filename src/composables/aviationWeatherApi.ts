@@ -1,13 +1,7 @@
-function buildAviationWeatherEndpoint(path: string): string {
-  return `https://aviationweather.gov/api/data${path}`
-}
 
-function withCorsProxy(url: string): string {
-  return `https://corsproxy.io/?${encodeURIComponent(url)}`
-}
-
-function withIsomorphicCorsProxy(url: string): string {
-  return `https://cors.isomorphic-git.org/${url}`
+function resolveRequestUrl(url: string): string {
+  if (!url.startsWith('/') || typeof window === 'undefined') return url
+  return new URL(url, window.location.origin).toString()
 }
 
 function classifyProxy(url: string): string {
@@ -33,7 +27,7 @@ export async function fetchJsonWithFallback<T>(urls: string[]): Promise<T> {
   for (const url of urls) {
     try {
       console.log('[AviationWeather] Fetch attempt:', url)
-      const response = await fetch(url)
+      const response = await fetch(resolveRequestUrl(url))
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
@@ -52,17 +46,5 @@ export async function fetchJsonWithFallback<T>(urls: string[]): Promise<T> {
 }
 
 export async function fetchAviationWeatherJson<T>(path: string): Promise<T> {
-  const directUrl = buildAviationWeatherEndpoint(path)
-
-  if (import.meta.env.DEV) {
-    return fetchJsonWithFallback<T>([`/api/avwx${path}`])
-  }
-
-  // gh-pages deployments hit CORS restrictions when calling aviationweather.gov directly.
-  // Use CORS proxies in production to avoid direct-browser CORS failures.
-  return fetchJsonWithFallback<T>([
-    withIsomorphicCorsProxy(directUrl),
-    withCorsProxy(directUrl),
-    directUrl,
-  ])
+  return fetchJsonWithFallback<T>([`/api/avwx${path}`])
 }

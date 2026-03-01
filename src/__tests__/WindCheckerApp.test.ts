@@ -156,8 +156,10 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    expect(wrapper.text()).toContain('Issued at 10:00Z')
-    expect(wrapper.text()).toContain('Time now is 10:00Z')
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Issued at 10:00Z')
+      expect(wrapper.text()).toContain('Time now is 10:00Z')
+    })
 
     await vi.advanceTimersByTimeAsync(31 * 60_000)
     await flushAsyncUpdates()

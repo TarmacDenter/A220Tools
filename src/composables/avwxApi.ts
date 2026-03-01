@@ -1,4 +1,8 @@
-const AVWX_TOKEN: string | undefined = import.meta.env.VITE_AVWX_TOKEN
+
+function resolveRequestUrl(url: string): string {
+  if (!url.startsWith('/') || typeof window === 'undefined') return url
+  return new URL(url, window.location.origin).toString()
+}
 
 interface AvwxWindField {
   value: number | null
@@ -23,22 +27,14 @@ export interface AvwxMetarResponse {
 }
 
 export function isAvwxAvailable(): boolean {
-  return typeof AVWX_TOKEN === 'string' && AVWX_TOKEN.length > 0
+  return false
 }
 
 export async function fetchAvwxMetar(icao: string): Promise<AvwxMetarResponse> {
-  if (!AVWX_TOKEN) {
-    throw new Error('AVWX API token not configured')
-  }
-
-  // avwx.rest is a proper CORS-enabled API — no proxy needed.
-  // ?options=info includes station lat/lon/name in the response.
-  const url = `https://avwx.rest/api/metar/${encodeURIComponent(icao.toUpperCase())}?options=info`
+  const url = `/api/avwx-rest/metar/${encodeURIComponent(icao.toUpperCase())}`
   console.log('[AVWX] Fetch attempt:', url)
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Token ${AVWX_TOKEN}` },
-  })
+  const response = await fetch(resolveRequestUrl(url))
 
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`)
