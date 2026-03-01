@@ -14,14 +14,22 @@ const isInStandalone = ref(false)
 const supportsBeforeInstallPrompt = ref(false)
 
 let standaloneMediaQuery: MediaQueryList | null = null
+const hasNavigator = typeof window !== 'undefined' && typeof window.navigator !== 'undefined'
 
 function detectStandalone() {
+  if (!hasNavigator) {
+    isInStandalone.value = false
+    return
+  }
+
   const mediaStandalone = window.matchMedia?.('(display-mode: standalone)').matches ?? false
   const navigatorStandalone = 'standalone' in window.navigator && (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   isInStandalone.value = mediaStandalone || navigatorStandalone
 }
 
 const isIos = computed(() => {
+  if (!hasNavigator) return false
+
   const ua = window.navigator.userAgent
   const platform = window.navigator.platform
   const touchPoints = window.navigator.maxTouchPoints ?? 0

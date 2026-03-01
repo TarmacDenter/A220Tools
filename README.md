@@ -17,8 +17,7 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 
 ## Tech stack
 
-- Vue 3 + TypeScript
-- Vite
+- Nuxt 3 (Vue 3 + TypeScript, SSR enabled)
 - Vitest + Vue Test Utils
 - Playwright
 
@@ -29,13 +28,14 @@ npm install
 npm run dev
 ```
 
-Open the local URL shown by Vite (normally `http://localhost:5173`).
+Open the local URL shown by Nuxt (normally `http://localhost:3000`).
 
 ## Scripts
 
-- `npm run dev`: Start the Vite dev server.
-- `npm run build`: Type-check and create a production build in `dist/`.
-- `npm run preview`: Serve the production build locally.
+- `npm run dev`: Start the Nuxt development server.
+- `npm run build`: Build the SSR app with Nitro output.
+- `npm run preview`: Serve the production Nuxt build locally.
+- `npm run type-check`: Run Nuxt type-checking.
 - `npm run test:unit`: Run Vitest unit tests.
 - `npm run test:e2e`: Run Playwright end-to-end tests.
 - `npm run lint`: Run lint auto-fixes (`oxlint` + `eslint`).
@@ -65,9 +65,24 @@ npm run test:e2e -- --debug
 - `src/__tests__/`: Unit tests.
 - `e2e/`: Playwright specs.
 
-## Deployment
+## Deployment (Railway)
 
-GitHub Pages deployment is configured via `.github/workflows/deploy.yml` and publishes `dist/` to `gh-pages`.
+This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration, `.nvmrc` to declare the Node version, and `package.json`'s `packageManager` field to pin npm.
+
+### Railway runtime details
+
+- Build command: `npm run build`
+- Runtime command: `node .output/server/index.mjs`
+- Health check path: `/`
+
+### Deploy steps
+
+1. Create a new Railway project and link this repository.
+2. Ensure Railway is set to use the repo-root `railway.toml` and the service builder is not overridden in the UI.
+3. Deploy from `master` (or your selected release branch).
+4. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
+
+Nuxt/Nitro generates the production server bundle in `.output/` during `npm run build`, which Railway starts via the configured start command.
 
 ## Branch strategy
 

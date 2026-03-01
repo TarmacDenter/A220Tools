@@ -42,3 +42,5 @@ test-results/
 playwright-report/
 
 TODO.md
+.nuxt/
+.output/
