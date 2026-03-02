@@ -1,4 +1,18 @@
 export default defineNuxtPlugin(() => {
+  if (import.meta.dev) {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          registrations.forEach((registration) => registration.unregister())
+        })
+        .catch(() => {
+          // Best-effort cleanup; ignore errors in dev.
+        })
+    }
+    return
+  }
+
   if (!('serviceWorker' in navigator)) {
     return
   }

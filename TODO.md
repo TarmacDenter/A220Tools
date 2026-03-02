@@ -15,8 +15,12 @@ Use one block per task. Assign each block to exactly one agent.
 
 #### Scope
 - Allowed files:
-  - `src/...`
-  - `src/__tests__/...`
+  - `components/...`
+  - `composables/...`
+  - `constants/...`
+  - `types/...`
+  - `utils/...`
+  - `__tests__/...`
 - Out of scope:
   - Unrelated refactors
   - Removing/weakening pilot disclaimers
@@ -57,14 +61,13 @@ Use one block per task. Assign each block to exactly one agent.
 
 #### Scope
 - Allowed files:
-  - `vite.config.ts`
+  - `nuxt.config.ts`
+  - `plugins/pwa.client.ts`
   - `package.json` / lockfile (if dependency added)
-  - `index.html`
-  - `src/main.ts`
   - `public/*` (manifest, icons, static assets)
-  - `src/components/*` (install prompt UI only)
-  - `src/composables/*` (install prompt state handling only, if needed)
-  - `src/__tests__/*`
+  - `components/*` (install prompt UI only)
+  - `composables/*` (install prompt state handling only, if needed)
+  - `__tests__/*`
   - `e2e/vue.spec.ts` (if installability checks/UI smoke updated)
 - Out of scope:
   - Runtime caching of METAR/API responses
@@ -98,12 +101,12 @@ Add a new agent task to implement METAR recency visibility and enforce manual-en
 
 #### Scope
 - Allowed files:
-  - `src/components/WindCheckerApp.vue`
-  - `src/components/AirportInput.vue` (only if status display placement requires it)
-  - `src/composables/useMetar.ts`
-  - `src/types/wind.ts` (if new typed freshness/offline metadata is introduced)
-  - `src/__tests__/WindCheckerApp.test.ts`
-  - `src/__tests__/App.spec.ts` or related unit tests as needed
+  - `components/WindCheckerApp.vue`
+  - `components/AirportInput.vue` (only if status display placement requires it)
+  - `composables/useMetar.ts`
+  - `types/wind.ts` (if new typed freshness/offline metadata is introduced)
+  - `__tests__/WindCheckerApp.test.ts`
+  - `__tests__/App.spec.ts` or related unit tests as needed
   - `e2e/vue.spec.ts` (if UI flow assertions need updates)
 - Out of scope:
   - Changing wind calculation formulas

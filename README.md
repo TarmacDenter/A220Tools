@@ -75,11 +75,11 @@ npm run test:e2e -- --debug
 
 ## Project structure
 
-- `src/components/`: UI components (main app, input panels, readouts, tables).
-- `src/composables/`: Data fetch and wind calculation logic.
-- `src/constants/`: Operational limits and constants.
-- `src/types/`: Shared TypeScript models.
-- `src/__tests__/`: Unit tests.
+- `components/`: UI components (main app, input panels, readouts, tables).
+- `composables/`: Data fetch and wind calculation logic.
+- `constants/`: Operational limits and constants.
+- `types/`: Shared TypeScript models.
+- `__tests__/`: Unit tests.
 - `e2e/`: Playwright specs.
 
 ## Deployment (Railway)

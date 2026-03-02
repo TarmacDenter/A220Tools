@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 
 function readPublicFile(path: string) {
-  return readFileSync(new URL(`../../public/${path}`, import.meta.url), 'utf8')
+  return readFileSync(new URL(`../public/${path}`, import.meta.url), 'utf8')
 }
 
 describe('PWA assets', () => {

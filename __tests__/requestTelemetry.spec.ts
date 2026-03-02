@@ -4,7 +4,7 @@ import {
   extractRequestOrigin,
   incrementRepeatedRequestCount,
   resetRepeatedRequestCounts,
-} from '../../server/utils/requestTelemetry'
+} from '../server/utils/requestTelemetry'
 
 describe('requestTelemetry helpers', () => {
   beforeEach(() => {

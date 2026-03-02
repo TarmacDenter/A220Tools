@@ -52,7 +52,7 @@ export default defineConfigWithVueTs(
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
-  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.nuxt/**']),
 
   ...pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
@@ -64,11 +64,18 @@ export default defineConfigWithVueTs(
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['src/**/__tests__/*'],
+    files: ['**/__tests__/*'],
   },
 
   {
-    files: ['src/**/*.{vue,ts,mts,tsx}'],
+    files: [
+      'components/**/*.{vue,ts,mts,tsx}',
+      'composables/**/*.{vue,ts,mts,tsx}',
+      'constants/**/*.{vue,ts,mts,tsx}',
+      'types/**/*.{vue,ts,mts,tsx}',
+      'utils/**/*.{vue,ts,mts,tsx}',
+      'pages/**/*.{vue,ts,mts,tsx}',
+    ],
     plugins: {
       local: {
         rules: {
