@@ -133,6 +133,7 @@ describe('WindCheckerApp', () => {
     await flushAsyncUpdates()
 
     expect(wrapper.text()).toContain('Updated just now')
+    expect(wrapper.text()).toContain('METAR: KJFK 151000Z 27012KT 10SM CLR 05/M01 A2992')
 
     await vi.advanceTimersByTimeAsync(60_000)
     await nextTick()
