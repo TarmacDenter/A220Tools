@@ -15,6 +15,13 @@ defineProps<{
     </div>
 
     <!-- VARIABLE -->
+    <div v-else-if="result.parsedWind.isVariable && result.allHeadingsSafe" class="readout-safe">
+      <span class="icon">✓</span>
+      VARIABLE WINDS — {{ result.parsedWind.effectiveSpeed }} kt wind is below
+      {{ result.tailwindLimitKt }} kt limit
+    </div>
+
+    <!-- VARIABLE -->
     <div v-else-if="result.parsedWind.isVariable" class="readout-warning">
       <span class="icon">⚠</span>
       VARIABLE WINDS — any heading may receive full tailwind

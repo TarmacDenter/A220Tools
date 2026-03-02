@@ -138,9 +138,19 @@ describe('computeWindResult', () => {
     expect(result.h2).toBeNull()
   })
 
-  it('variable wind → allHeadingsSafe false, no critical headings', () => {
+  it('variable wind above limit → allHeadingsSafe false, no critical headings', () => {
     const result = computeWindResult(makeWind({ isVariable: true, directionTrue: 'VRB' }), magCorr)
     expect(result.allHeadingsSafe).toBe(false)
+    expect(result.h1).toBeNull()
+    expect(result.h2).toBeNull()
+  })
+
+  it('variable wind at or below limit → allHeadingsSafe true, no critical headings', () => {
+    const result = computeWindResult(
+      makeWind({ isVariable: true, directionTrue: 'VRB', speed: 10, effectiveSpeed: 10 }),
+      magCorr,
+    )
+    expect(result.allHeadingsSafe).toBe(true)
     expect(result.h1).toBeNull()
     expect(result.h2).toBeNull()
   })

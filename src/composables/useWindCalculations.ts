@@ -98,8 +98,13 @@ export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorre
   } else if (parsedWind.isCalm) {
     console.log('Calm winds — all headings safe, no arc math needed')
   } else if (parsedWind.isVariable) {
-    allHeadingsSafe = false
-    console.warn('Variable winds — cannot determine safe arcs, any heading may be unsafe')
+    if (parsedWind.effectiveSpeed <= limit) {
+      allHeadingsSafe = true
+      console.log('Variable winds within limit — treat as all headings safe')
+    } else {
+      allHeadingsSafe = false
+      console.warn('Variable winds — cannot determine safe arcs, any heading may be unsafe')
+    }
   }
 
   console.groupEnd()
