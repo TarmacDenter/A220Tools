@@ -184,4 +184,24 @@ describe('WindCheckerApp', () => {
 
     expect(metarCallCount()).toBe(2)
   })
+
+  it('propagates theme to manual entry panel for dark/light styling', async () => {
+    const wrapper = mount(WindCheckerApp, {
+      props: {
+        theme: 'dark',
+      },
+    })
+
+    const manualToggle = wrapper.find('input[type="checkbox"]')
+    await manualToggle.setValue(true)
+    await nextTick()
+
+    const manualEntry = wrapper.find('.manual-entry')
+    expect(manualEntry.attributes('data-theme')).toBe('dark')
+
+    await wrapper.setProps({ theme: 'light' })
+    await nextTick()
+
+    expect(manualEntry.attributes('data-theme')).toBe('light')
+  })
 })
