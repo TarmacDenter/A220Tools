@@ -172,6 +172,13 @@ const metarFreshnessText = computed(() => {
 
 const isMetarActive = computed(() => !manualMode.value && metarStatus.value === 'success' && metar.value !== null);
 
+const metarFreshnessRaw = computed(() => {
+  if (!isMetarActive.value || !rawMetar.value) return null;
+  const trimmed = rawMetar.value.trim();
+  if (!trimmed) return null;
+  return `METAR: ${trimmed}`;
+});
+
 function formatUtcTime(ms: number): string {
   const date = new Date(ms);
   const hours = String(date.getUTCHours()).padStart(2, '0');
@@ -300,7 +307,10 @@ watch(manualMode, (enabled) => {
 
     <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline" @fetch="onFetch" />
 
-    <p v-if="metarFreshnessText" class="metar-freshness">{{ metarFreshnessText }}</p>
+    <p v-if="metarFreshnessText" class="metar-freshness">
+      <span>{{ metarFreshnessText }}</span>
+      <span v-if="metarFreshnessRaw" class="metar-freshness-raw">{{ metarFreshnessRaw }}</span>
+    </p>
 
     <StatusMessage v-if="!isOnline" variant="warning">
       Offline: METAR retrieval is unavailable. Manual wind entry is required.
@@ -503,6 +513,14 @@ watch(manualMode, (enabled) => {
   margin: 0.25rem 0 0.75rem;
   font-size: 0.85rem;
   color: var(--color-text-subtle);
+}
+
+.metar-freshness-raw {
+  display: block;
+  margin-top: 0.15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
 }
 
 .metar-issued-panel {
