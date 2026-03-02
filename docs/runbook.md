@@ -32,7 +32,7 @@ npm install
 npm run dev
 ```
 
-Default URL is typically `http://localhost:5173`.
+Default URL is typically `http://localhost:3000`.
 
 ### Build production bundle
 
@@ -40,7 +40,7 @@ Default URL is typically `http://localhost:5173`.
 npm run build
 ```
 
-This runs type-check and Vite production build.
+This runs the Nuxt production build.
 
 ### Preview production build
 
@@ -59,7 +59,7 @@ npm run test:unit
 Run a specific test file:
 
 ```sh
-npm run test:unit -- src/__tests__/App.spec.ts
+npm run test:unit -- __tests__/App.spec.ts
 ```
 
 ### End-to-end tests
@@ -132,7 +132,7 @@ Symptom:
 - `Process from config.webServer was not able to start`
 
 Checks:
-1. Confirm no conflicting process on expected port (`5173` locally, `4173` on CI).
+1. Confirm no conflicting process on expected port (`3000` locally and on CI).
 2. Confirm `npm run dev` (or `npm run preview` on CI) starts cleanly.
 3. In sandboxed environments, port binding may be restricted; run with appropriate permissions.
 

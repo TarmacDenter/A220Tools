@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import App from '@/App.vue'
+import WindCheckerApp from '@/components/WindCheckerApp.vue'
 
 defineOptions({
   name: 'HomePage',
@@ -7,5 +7,11 @@ defineOptions({
 </script>
 
 <template>
-  <App />
+  <NuxtLayout v-slot="{ theme, themeToggleLabel, toggleTheme }">
+    <WindCheckerApp
+      :theme="theme"
+      :theme-toggle-label="themeToggleLabel"
+      @toggle-theme="toggleTheme"
+    />
+  </NuxtLayout>
 </template>

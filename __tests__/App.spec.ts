@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import App from '../App.vue'
+import { defineComponent, nextTick } from 'vue'
+import App from '../pages/index.vue'
+import DefaultLayout from '../layouts/default.vue'
 
 const originalNavigator = {
   userAgent: window.navigator.userAgent,
@@ -77,8 +78,23 @@ describe('App', () => {
     vi.restoreAllMocks()
   })
 
+  const NuxtLayoutStub = defineComponent({
+    components: { DefaultLayout },
+    template: '<DefaultLayout v-slot="slotProps"><slot v-bind="slotProps" /></DefaultLayout>',
+  })
+
+  function mountApp() {
+    return mount(App, {
+      global: {
+        stubs: {
+          NuxtLayout: NuxtLayoutStub,
+        },
+      },
+    })
+  }
+
   it('renders the wind checker heading', () => {
-    const wrapper = mount(App)
+    const wrapper = mountApp()
     expect(wrapper.text()).toContain('A220 Engine Start Wind Checker')
     expect(wrapper.text()).toContain(
       'Pilot advisory: This is not an official Airbus or airline app. Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures).'
@@ -86,7 +102,7 @@ describe('App', () => {
   })
 
   it('shows install CTA when browser emits beforeinstallprompt', async () => {
-    const wrapper = mount(App)
+    const wrapper = mountApp()
 
     dispatchInstallPromptEvent()
     await nextTick()
@@ -96,7 +112,7 @@ describe('App', () => {
   })
 
   it('dismisses install CTA when dismiss button is clicked', async () => {
-    const wrapper = mount(App)
+    const wrapper = mountApp()
 
     dispatchInstallPromptEvent()
     await nextTick()
@@ -115,7 +131,7 @@ describe('App', () => {
     })
     mockStandalone({ standaloneMatch: false, navigatorStandalone: false })
 
-    const wrapper = mount(App)
+    const wrapper = mountApp()
     await nextTick()
 
     expect(wrapper.text()).toContain('Install on iPhone:')
@@ -131,7 +147,7 @@ describe('App', () => {
     })
     mockStandalone({ standaloneMatch: true, navigatorStandalone: true })
 
-    const wrapper = mount(App)
+    const wrapper = mountApp()
     await nextTick()
 
     expect(wrapper.text()).not.toContain('Install on iPhone:')
@@ -139,7 +155,7 @@ describe('App', () => {
   })
 
   it('toggles dark mode and persists the selected theme', async () => {
-    const wrapper = mount(App)
+    const wrapper = mountApp()
     await nextTick()
 
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
