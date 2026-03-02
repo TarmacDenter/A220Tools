@@ -82,7 +82,7 @@ const arcDisplay = computed(() => {
   const { parsedWind, h1, h2, allHeadingsSafe } = result
 
   if (parsedWind.isCalm) return { type: 'all-safe' }
-  if (parsedWind.isVariable) return { type: 'variable' }
+  if (parsedWind.isVariable && !allHeadingsSafe) return { type: 'variable' }
   if (allHeadingsSafe) return { type: 'all-safe' }
   if (h1 === null || h2 === null) return { type: 'all-safe' }
 

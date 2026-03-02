@@ -406,6 +406,12 @@ watch(manualMode, (enabled) => {
       <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
         No table shown for calm winds.
       </StatusMessage>
+      <StatusMessage
+        v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe"
+        variant="calm"
+      >
+        Table not available for variable winds — speed is within the tailwind limit.
+      </StatusMessage>
       <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
         Table not available for variable winds — any heading may be unsafe.
       </StatusMessage>
