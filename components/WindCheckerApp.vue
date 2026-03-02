@@ -325,7 +325,7 @@ watch(manualMode, (enabled) => {
     </div>
 
     <!-- Manual entry panel -->
-    <ManualWindEntry v-if="manualMode" v-model="manualInputs" />
+    <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
     <!-- Loading indicator -->
     <StatusMessage v-if="isLoading" variant="loading">

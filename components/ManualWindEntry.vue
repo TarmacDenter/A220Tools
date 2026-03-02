@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
 
+withDefaults(defineProps<{ theme?: 'light' | 'dark' }>(), {
+  theme: 'light',
+})
+
 const manualInput = defineModel<ManualWindInput>({ required: true })
 
 function updateField(
@@ -23,6 +27,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
   <div
     class="manual-entry"
     :class="manualInput.source === 'atis_mag' ? 'mode-magnetic' : 'mode-true'"
+    :data-theme="theme"
   >
     <!-- Source selector -->
     <div class="mode-toggle">
@@ -173,7 +178,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
 
 /* ─── Mode color tokens (dark) ───────────────────────────────── */
 
-:global([data-theme='dark']) .mode-true {
+.manual-entry[data-theme='dark'].mode-true {
   --mode-bg: #2b1d08;
   --mode-border: #b45309;
   --mode-label: #fcd34d;
@@ -186,7 +191,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
   --mode-reminder-text: #fde68a;
 }
 
-:global([data-theme='dark']) .mode-magnetic {
+.manual-entry[data-theme='dark'].mode-magnetic {
   --mode-bg: #0f2619;
   --mode-border: #166534;
   --mode-label: #86efac;
