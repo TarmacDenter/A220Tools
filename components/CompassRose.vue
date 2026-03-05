@@ -2,9 +2,12 @@
 import { computed } from 'vue'
 import type { WindResult } from '@/types/wind'
 
-const { result } = defineProps<{
+const props = defineProps<{
   result: WindResult
+  showTaxi?: boolean
 }>()
+
+const result = computed(() => props.result)
 
 const CX = 200
 const CY = 200
@@ -47,31 +50,32 @@ function fullCirclePath(r: number): string {
 
 // Tick marks
 const ticks = computed(() => {
-  const result = []
+  const items = []
   for (let deg = 0; deg < 360; deg += 10) {
     const isLong = deg % 30 === 0
     const inner = polarPoint(R - (isLong ? 16 : 8), deg)
     const outer = polarPoint(R, deg)
-    result.push({ inner, outer, deg, isLong })
+    items.push({ inner, outer, deg, isLong })
   }
-  return result
+  return items
 })
 
 // Labels every 30°, cardinals at 0/90/180/270
 const labels = computed(() => {
-  const result = []
+  const items = []
   const cardinals: Record<number, string> = { 0: 'N', 90: 'E', 180: 'S', 270: 'W' }
   for (let deg = 0; deg < 360; deg += 30) {
     const pos = polarPoint(R - 30, deg)
-    result.push({ pos, text: cardinals[deg] ?? String(deg), isCardinal: deg in cardinals })
+    items.push({ pos, text: cardinals[deg] ?? String(deg), isCardinal: deg in cardinals })
   }
-  return result
+  return items
 })
 
 // Wind arrow (from direction)
 const windArrow = computed(() => {
-  if (result.parsedWind.isCalm || result.parsedWind.isVariable) return null
-  const dir = result.windDirectionMagnetic
+  const r = result.value
+  if (r.parsedWind.isCalm || r.parsedWind.isVariable) return null
+  const dir = r.windDirectionMagnetic
   const tip = polarPoint(R - 5, dir)
   // Arrow points FROM the wind direction toward center (wind is blowing FROM that direction)
   return { x1: CX, y1: CY, x2: tip.x, y2: tip.y }
@@ -79,17 +83,43 @@ const windArrow = computed(() => {
 
 // Arc display
 const arcDisplay = computed(() => {
-  const { parsedWind, h1, h2, allHeadingsSafe } = result
+  const r = result.value
+  const { parsedWind, h1, h2, h1Taxi, h2Taxi, allHeadingsSafe } = r
 
-  if (parsedWind.isCalm) return { type: 'all-safe' }
-  if (parsedWind.isVariable && !allHeadingsSafe) return { type: 'variable' }
-  if (allHeadingsSafe) return { type: 'all-safe' }
-  if (h1 === null || h2 === null) return { type: 'all-safe' }
+  if (parsedWind.isCalm) return { type: 'all-safe' as const }
+  if (parsedWind.isVariable && !allHeadingsSafe) return { type: 'variable' as const }
+  if (allHeadingsSafe) return { type: 'all-safe' as const }
+  if (h1 === null || h2 === null) return { type: 'all-safe' as const }
 
-  // Safe arc: H2 clockwise to H1
-  // Unsafe arc: H1 clockwise to H2
+  // When taxi display is enabled and taxi headings exist, show three zones
+  if (props.showTaxi && h1Taxi !== null && h2Taxi !== null) {
+    return {
+      type: 'arcs-taxi' as const,
+      safeStart: h2,
+      safeEnd: h1,
+      taxiStart1: h1,
+      taxiEnd1: h1Taxi,
+      taxiStart2: h2Taxi,
+      taxiEnd2: h2,
+      unsafeStart: h1Taxi,
+      unsafeEnd: h2Taxi,
+    }
+  }
+
+  // When taxi display is enabled but all unsafe headings are taxi-manageable
+  if (props.showTaxi && h1Taxi === null) {
+    return {
+      type: 'arcs' as const,
+      safeStart: h2,
+      safeEnd: h1,
+      unsafeStart: h1,
+      unsafeEnd: h2,
+    }
+  }
+
+  // Default: standard unsafe arc (red)
   return {
-    type: 'arcs',
+    type: 'arcs-no-taxi' as const,
     safeStart: h2,
     safeEnd: h1,
     unsafeStart: h1,
@@ -130,10 +160,70 @@ const arcDisplay = computed(() => {
         </text>
       </template>
 
-      <template v-else-if="arcDisplay.type === 'arcs' && arcDisplay.safeStart !== undefined">
+      <template v-else-if="arcDisplay.type === 'arcs-taxi'">
         <!-- Safe arc: h2 → h1 clockwise (green) -->
         <path
-          :d="arcPath(ARC_R, arcDisplay.safeStart, arcDisplay.safeEnd!)"
+          :d="arcPath(ARC_R, arcDisplay.safeStart, arcDisplay.safeEnd)"
+          fill="none"
+          :stroke="'var(--color-safe)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+        <!-- Taxi-manageable arc 1: h1 → h1Taxi clockwise (amber) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.taxiStart1, arcDisplay.taxiEnd1)"
+          fill="none"
+          :stroke="'var(--color-warning)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+        <!-- Taxi-manageable arc 2: h2Taxi → h2 clockwise (amber) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.taxiStart2, arcDisplay.taxiEnd2)"
+          fill="none"
+          :stroke="'var(--color-warning)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+        <!-- Truly unsafe arc: h1Taxi → h2Taxi clockwise (red) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.unsafeStart, arcDisplay.unsafeEnd)"
+          fill="none"
+          :stroke="'var(--color-unsafe)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+      </template>
+
+      <template v-else-if="arcDisplay.type === 'arcs'">
+        <!-- Safe arc: h2 → h1 clockwise (green) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.safeStart!, arcDisplay.safeEnd!)"
+          fill="none"
+          :stroke="'var(--color-safe)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+        <!-- Taxi-manageable arc: h1 → h2 clockwise (amber — all within taxi range) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.unsafeStart!, arcDisplay.unsafeEnd!)"
+          fill="none"
+          :stroke="'var(--color-warning)'"
+          :stroke-width="ARC_WIDTH"
+          stroke-linecap="butt"
+          opacity="0.8"
+        />
+      </template>
+
+      <template v-else-if="arcDisplay.type === 'arcs-no-taxi'">
+        <!-- Safe arc: h2 → h1 clockwise (green) -->
+        <path
+          :d="arcPath(ARC_R, arcDisplay.safeStart!, arcDisplay.safeEnd!)"
           fill="none"
           :stroke="'var(--color-safe)'"
           :stroke-width="ARC_WIDTH"

@@ -46,16 +46,20 @@ export function buildHeadingTable(windMag: number, spd: number, limit: number): 
   const rows: HeadingRow[] = []
   for (let hdg = 0; hdg < 360; hdg += 5) {
     const hw = headwindComponent(windMag, hdg, spd)
+    // tailwind magnitude is -hw when hw < 0; taxi speed reduces tailwind directly
+    const tailwind = hw < 0 ? -hw : 0
+    const minTaxi = tailwind > limit ? Math.ceil(tailwind - limit) : 0
     rows.push({
       heading: hdg,
       headwindComponent: hw,
       isSafe: hw >= -limit, // safe when tailwind doesn't exceed limit
+      minTaxiSpeed: minTaxi,
     })
   }
   return rows
 }
 
-export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorrection): WindResult {
+export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorrection, maxTaxiSpeed: number = 0): WindResult {
   const limit = TAILWIND_LIMIT_KT
 
   console.group('[WindCalc] computeWindResult')
@@ -74,9 +78,13 @@ export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorre
     rawMagdecString: magCorr.rawMagdecString,
   })
 
+  const taxiLimit = limit + maxTaxiSpeed
+
   let windDirectionMagnetic = 0
   let h1: number | null = null
   let h2: number | null = null
+  let h1Taxi: number | null = null
+  let h2Taxi: number | null = null
   let allHeadingsSafe = true
 
   if (!parsedWind.isCalm && !parsedWind.isVariable) {
@@ -92,6 +100,16 @@ export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorre
       allHeadingsSafe = false
       console.log(`Critical headings: H1=${h1.toFixed(1)}°M, H2=${h2.toFixed(1)}°M`)
       console.log(`Unsafe arc: ${h1.toFixed(1)}°M → ${h2.toFixed(1)}°M (clockwise)`)
+
+      // Taxi-adjusted critical headings: where tailwind exceeds limit + max taxi speed
+      const critTaxi = criticalHeadings(windDirectionMagnetic, parsedWind.effectiveSpeed, taxiLimit)
+      if (critTaxi) {
+        h1Taxi = critTaxi.h1
+        h2Taxi = critTaxi.h2
+        console.log(`Taxi-exceeded headings: H1T=${h1Taxi.toFixed(1)}°M, H2T=${h2Taxi.toFixed(1)}°M`)
+      } else {
+        console.log('All headings manageable with taxi ≤ ' + maxTaxiSpeed + ' kt')
+      }
     } else {
       console.log('All headings safe — effective speed ≤ limit')
     }
@@ -116,6 +134,8 @@ export function computeWindResult(parsedWind: ParsedWind, magCorr: MagneticCorre
     tailwindLimitKt: limit,
     h1,
     h2,
+    h1Taxi,
+    h2Taxi,
     allHeadingsSafe,
   }
 }

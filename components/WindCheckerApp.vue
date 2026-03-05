@@ -4,7 +4,7 @@ import { useMetar, parseMetarWind } from '@/composables/useMetar';
 import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
 import { useInterval } from '@/composables/useInterval';
-import { TAILWIND_LIMIT_KT } from '@/constants/windLimits';
+import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLimits';
 import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 
@@ -43,6 +43,16 @@ const manualInputs = ref<ManualWindInput>({
 });
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false);
+
+// Taxi speed display
+const showTaxiSpeed = ref(false);
+const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT));
+const maxTaxiSpeed = computed(() => {
+  if (!showTaxiSpeed.value) return 0;
+  const parsed = parseInt(maxTaxiSpeedInput.value, 10);
+  if (isNaN(parsed) || parsed < 1) return 0;
+  return parsed;
+});
 
 const { status: metarStatus, metar, error: metarError, lastFetchedAt, fetchMetar, clearMetar } = useMetar();
 const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo();
@@ -137,7 +147,7 @@ const windResult = computed(() => {
   if (!pw || !mc) return null;
   // Don't compute if we're blocked waiting for user to choose a fallback
   if (onlyAirportFailed.value) return null;
-  return computeWindResult(pw, mc);
+  return computeWindResult(pw, mc, maxTaxiSpeed.value);
 });
 
 const headingRows = computed(() => {
@@ -324,6 +334,26 @@ watch(manualMode, (enabled) => {
       </label>
     </div>
 
+    <!-- Taxi speed display toggle -->
+    <div class="taxi-toggle">
+      <label class="toggle-label">
+        <input type="checkbox" v-model="showTaxiSpeed" />
+        <span>Show minimum taxi speed</span>
+      </label>
+      <div v-if="showTaxiSpeed" class="taxi-speed-input">
+        <label class="taxi-input-label">
+          Max taxi speed warning (kt):
+          <input
+            type="number"
+            v-model="maxTaxiSpeedInput"
+            min="1"
+            max="20"
+            class="taxi-input"
+          />
+        </label>
+      </div>
+    </div>
+
     <!-- Manual entry panel -->
     <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
@@ -411,8 +441,8 @@ watch(manualMode, (enabled) => {
 
       <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
       <SafetyReadout :result="windResult" />
-      <CompassRose :result="windResult" />
-      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" />
+      <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
+      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed" :max-taxi-speed="maxTaxiSpeed" />
       <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
         No table shown for calm winds.
       </StatusMessage>
@@ -573,5 +603,32 @@ watch(manualMode, (enabled) => {
   text-align: center;
   color: var(--color-text-muted);
   font-size: 0.95rem;
+}
+
+.taxi-toggle {
+  margin: 0.5rem 0;
+}
+
+.taxi-speed-input {
+  margin-top: 0.4rem;
+  padding-left: 1.5rem;
+}
+
+.taxi-input-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--color-text-subtle);
+}
+
+.taxi-input {
+  width: 4rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 </style>
