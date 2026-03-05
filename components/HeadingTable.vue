@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import type { HeadingRow } from '@/types/wind'
 
-defineProps<{
+const props = defineProps<{
   rows: HeadingRow[]
+  showTaxi: boolean
+  maxTaxiSpeed: number
 }>()
 
 function formatComponent(hw: number): string {
   if (hw >= 0) return `+${hw.toFixed(1)} HW`
   return `${hw.toFixed(1)} TW`
+}
+
+function formatTaxiSpeed(speed: number): string {
+  if (speed === 0) return '—'
+  return `${speed} kt`
 }
 </script>
 
@@ -18,6 +25,7 @@ function formatComponent(hw: number): string {
         <tr>
           <th>Heading (°M)</th>
           <th>Component</th>
+          <th v-if="showTaxi">Min Taxi</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -25,14 +33,18 @@ function formatComponent(hw: number): string {
         <tr
           v-for="row in rows"
           :key="row.heading"
-          :class="{ 'row-unsafe': !row.isSafe }"
+          :class="{ 'row-unsafe': !row.isSafe && (!showTaxi || row.minTaxiSpeed > maxTaxiSpeed) }"
         >
           <td class="col-heading">{{ String(row.heading).padStart(3, '0') }}°</td>
           <td class="col-component" :class="row.headwindComponent < 0 ? 'tailwind' : 'headwind'">
             {{ formatComponent(row.headwindComponent) }}
           </td>
+          <td v-if="showTaxi" class="col-taxi" :class="{ 'taxi-needed': row.minTaxiSpeed > 0, 'taxi-exceeded': row.minTaxiSpeed > maxTaxiSpeed }">
+            {{ formatTaxiSpeed(row.minTaxiSpeed) }}
+          </td>
           <td class="col-status">
             <span v-if="row.isSafe" class="badge safe">Safe</span>
+            <span v-else-if="showTaxi && row.minTaxiSpeed <= maxTaxiSpeed" class="badge taxi">Taxi {{ row.minTaxiSpeed }} kt</span>
             <span v-else class="badge unsafe">Unsafe</span>
           </td>
         </tr>
@@ -114,5 +126,26 @@ function formatComponent(hw: number): string {
 .badge.unsafe {
   background: var(--color-unsafe-bg);
   color: var(--color-unsafe-text);
+}
+
+.badge.taxi {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border: 1px solid var(--color-warning-border);
+}
+
+.col-taxi {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.taxi-needed {
+  color: var(--color-warning-text);
+  font-weight: 600;
+}
+
+.taxi-exceeded {
+  color: var(--color-unsafe-text);
+  font-weight: 600;
 }
 </style>
