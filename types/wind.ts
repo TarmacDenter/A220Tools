@@ -32,7 +32,9 @@ export interface WindResult {
   windDirectionMagnetic: number
   tailwindLimitKt: number
   h1: number | null
-  h2: number | null // critical headings
+  h2: number | null // critical headings where tailwind = limit
+  h1Taxi: number | null
+  h2Taxi: number | null // critical headings where tailwind = limit + max taxi speed
   allHeadingsSafe: boolean
 }
 
@@ -40,6 +42,7 @@ export interface HeadingRow {
   heading: number
   headwindComponent: number
   isSafe: boolean
+  minTaxiSpeed: number // minimum taxi speed (kt) to reduce tailwind to within limit; 0 if already safe
 }
 
 export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'
