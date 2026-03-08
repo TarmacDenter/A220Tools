@@ -295,15 +295,26 @@ watch(manualMode, (enabled) => {
       seriously... I made this at the hotel.
     </div>
 
-    <!-- Manual mode toggle -->
-    <BaseToggle id="manual-mode-toggle" v-model="manualMode" style="min-width: 18rem;" :disabled="!isOnline"
-      active-label="Switch to Live Data" inactive-label="Switch to Manual Input" variant="info" />
+    <!-- Controls row -->
+    <div class="grid controls-row">
+      <BaseToggle id="manual-mode-toggle" v-model="manualMode" class="col-4" :disabled="!isOnline"
+        active-label="Switch to Live Data" inactive-label="Switch to Manual Input" variant="info" />
+      <BaseToggle id="taxi-speed-toggle" v-model="showTaxiSpeed" class="col-4" active-label="Hide taxi speed"
+        inactive-label="Show minimum taxi speed" variant="primary" />
+      <div v-if="showTaxiSpeed" class="col-4 taxi-speed-input">
+        <label class="taxi-input-label">
+          Max taxi speed warning (kt):
+          <input type="number" v-model="maxTaxiSpeedInput" min="1" max="20" class="taxi-input" />
+        </label>
+      </div>
+    </div>
 
     <!-- Manual entry panel -->
     <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
-    <AirportInput v-model="icaoInput" :style="{ display: manualMode ? 'none' : 'block' }" :status="metarStatus"
-      :disabled="!isOnline || manualMode" @fetch="onFetch" />
+    <div v-if="!manualMode">
+      <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline || manualMode" @fetch="onFetch" />
+    </div>
 
     <p v-if="metarFreshnessText" class="metar-freshness">
       <span>{{ metarFreshnessText }}</span>
@@ -560,13 +571,14 @@ watch(manualMode, (enabled) => {
   font-size: 0.95rem;
 }
 
-.taxi-toggle {
-  margin: 0.5rem 0;
+.controls-row {
+  margin: 0.75rem 0;
+  align-items: center;
 }
 
 .taxi-speed-input {
-  margin-top: 0.4rem;
-  padding-left: 1.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .taxi-input-label {

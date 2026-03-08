@@ -108,8 +108,8 @@ describe('WindCheckerApp', () => {
     expect(wrapper.text()).toContain('Offline: METAR retrieval is unavailable. Manual wind entry is required.')
     expect(manualToggle.attributes('aria-pressed')).toBe('true')
     expect(manualToggle.attributes('disabled')).toBeDefined()
-    expect(icaoInput.element).toHaveProperty('disabled', true)
-    expect(fetchButton.element).toHaveProperty('disabled', true)
+    expect(icaoInput.exists()).toBe(false)
+    expect(fetchButton.exists()).toBe(false)
   })
 
   it('stays in manual mode after reconnect until user changes it', async () => {
