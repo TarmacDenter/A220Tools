@@ -12,6 +12,12 @@ function setOnline(value: boolean) {
   })
 }
 
+async function selectManualInputBtn(wrapper: ReturnType<typeof mount>, manualMode = true) {
+  const manualToggleBtn = wrapper.find('#manual-mode-toggle')
+  if (manualMode) await manualToggleBtn.trigger('click')
+  return manualToggleBtn
+}
+
 function buildMetarResponse() {
   return {
       icaoId: 'KJFK',
@@ -80,8 +86,7 @@ describe('WindCheckerApp', () => {
   it('defaults manual declination direction to west', async () => {
     const wrapper = mount(WindCheckerApp)
 
-    const manualToggle = wrapper.find('input[type="checkbox"]')
-    await manualToggle.setValue(true)
+    await selectManualInputBtn(wrapper, true)
     await nextTick()
 
     const declButtons = wrapper.findAll('.decl-btn')
@@ -96,15 +101,15 @@ describe('WindCheckerApp', () => {
     window.dispatchEvent(new Event('offline'))
     await nextTick()
 
-    const manualToggle = wrapper.find('input[type="checkbox"]')
+    const manualToggle = wrapper.find('#manual-mode-toggle')
     const icaoInput = wrapper.find('#icao-input')
     const fetchButton = wrapper.find('.fetch-btn')
 
     expect(wrapper.text()).toContain('Offline: METAR retrieval is unavailable. Manual wind entry is required.')
-    expect(manualToggle.element).toHaveProperty('checked', true)
-    expect(manualToggle.element).toHaveProperty('disabled', true)
-    expect(icaoInput.element).toHaveProperty('disabled', true)
-    expect(fetchButton.element).toHaveProperty('disabled', true)
+    expect(manualToggle.attributes('aria-pressed')).toBe('true')
+    expect(manualToggle.attributes('disabled')).toBeDefined()
+    expect(icaoInput.exists()).toBe(false)
+    expect(fetchButton.exists()).toBe(false)
   })
 
   it('stays in manual mode after reconnect until user changes it', async () => {
@@ -115,9 +120,9 @@ describe('WindCheckerApp', () => {
     window.dispatchEvent(new Event('online'))
     await nextTick()
 
-    const manualToggle = wrapper.find('input[type="checkbox"]')
-    expect(manualToggle.element).toHaveProperty('checked', true)
-    expect(manualToggle.element).toHaveProperty('disabled', false)
+    const manualToggle = wrapper.find('#manual-mode-toggle')
+    expect(manualToggle.attributes('aria-pressed')).toBe('true')
+    expect(manualToggle.attributes('disabled')).toBeUndefined()
   })
 
   it('updates METAR freshness text every minute', async () => {
@@ -192,8 +197,7 @@ describe('WindCheckerApp', () => {
       },
     })
 
-    const manualToggle = wrapper.find('input[type="checkbox"]')
-    await manualToggle.setValue(true)
+     await selectManualInputBtn(wrapper, true)
     await nextTick()
 
     const manualEntry = wrapper.find('.manual-entry')

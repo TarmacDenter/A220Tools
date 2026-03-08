@@ -18,18 +18,19 @@ import CompassRose from './CompassRose.vue';
 import HeadingTable from './HeadingTable.vue';
 import StatusMessage from './ui/StatusMessage.vue';
 import ErrorPanel from './ui/ErrorPanel.vue';
+import BaseToggle from './ui/BaseToggle.vue';
 
 withDefaults(defineProps<{
-  theme?: 'light' | 'dark'
-  themeToggleLabel?: string
+  theme?: 'light' | 'dark';
+  themeToggleLabel?: string;
 }>(), {
   theme: 'light',
   themeToggleLabel: 'Toggle theme',
-})
+});
 
 const emit = defineEmits<{
-  toggleTheme: []
-}>()
+  toggleTheme: [];
+}>();
 
 // --- State ---
 const manualMode = ref(false);
@@ -41,6 +42,7 @@ const manualInputs = ref<ManualWindInput>({
   declinationMagnitude: '',
   declinationDir: 'W',
 });
+
 // User chose to continue with 0° declination despite airport fetch failure
 const useZeroDecl = ref(false);
 
@@ -160,13 +162,6 @@ const headingRows = computed(() => {
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);
 const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading');
-const manualModeToggle = computed({
-  get: () => manualMode.value,
-  set: (value: boolean) => {
-    if (!isOnline.value && !value) return;
-    manualMode.value = value;
-  },
-});
 
 const metarFreshnessText = computed(() => {
   if (!isOnline.value || lastFetchedAt.value === null) return null;
@@ -260,11 +255,17 @@ onUnmounted(() => {
   window.removeEventListener('online', handleOnline);
 });
 
-watch(manualMode, (enabled) => {
-  if (!enabled) return;
-  clearMetar();
-  icaoInput.value = '';
-  useZeroDecl.value = false;
+watch(manualMode, async (enabled) => {
+  if (enabled) {
+    clearMetar();
+    icaoInput.value = '';
+    useZeroDecl.value = false;
+  } else {
+    if (activeIcao.value.length >= 3) {
+      icaoInput.value = activeIcao.value;
+      await onFetch(activeIcao.value);
+    }
+  }
 });
 </script>
 
@@ -273,18 +274,8 @@ watch(manualMode, (enabled) => {
     <header class="app-header">
       <div class="title-row">
         <h1 class="app-title">A220 Engine Start Wind Checker</h1>
-        <button
-          class="theme-toggle"
-          type="button"
-          :aria-label="themeToggleLabel"
-          @click="emit('toggleTheme')"
-        >
-          <svg
-            v-if="theme === 'dark'"
-            class="theme-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
+        <button class="theme-toggle" type="button" :aria-label="themeToggleLabel" @click="emit('toggleTheme')">
+          <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
             <line x1="12" y1="1.5" x2="12" y2="5.2" />
             <line x1="12" y1="18.8" x2="12" y2="22.5" />
@@ -295,12 +286,7 @@ watch(manualMode, (enabled) => {
             <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
             <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
           </svg>
-          <svg
-            v-else
-            class="theme-icon"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
+          <svg v-else class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
           </svg>
           <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
@@ -315,7 +301,26 @@ watch(manualMode, (enabled) => {
       seriously... I made this at the hotel.
     </div>
 
-    <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline" @fetch="onFetch" />
+    <!-- Controls row -->
+    <div class="grid controls-row">
+      <BaseToggle id="manual-mode-toggle" v-model="manualMode" class="col-4" :disabled="!isOnline"
+        active-label="Switch to Live Data" inactive-label="Switch to Manual Input" variant="info" />
+      <BaseToggle id="taxi-speed-toggle" v-model="showTaxiSpeed" class="col-4" active-label="Hide taxi speed"
+        inactive-label="Show minimum taxi speed" variant="primary" />
+      <div v-if="showTaxiSpeed" class="col-4 taxi-speed-input">
+        <label class="taxi-input-label">
+          Max taxi speed warning (kt):
+          <input type="number" v-model="maxTaxiSpeedInput" min="1" max="20" class="taxi-input" />
+        </label>
+      </div>
+    </div>
+
+    <!-- Manual entry panel -->
+    <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
+
+    <div v-if="!manualMode">
+      <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline || manualMode" @fetch="onFetch" />
+    </div>
 
     <p v-if="metarFreshnessText" class="metar-freshness">
       <span>{{ metarFreshnessText }}</span>
@@ -326,36 +331,7 @@ watch(manualMode, (enabled) => {
       Offline: METAR retrieval is unavailable. Manual wind entry is required.
     </StatusMessage>
 
-    <!-- Manual mode toggle -->
-    <div class="manual-toggle">
-      <label class="toggle-label">
-        <input type="checkbox" v-model="manualModeToggle" :disabled="!isOnline" />
-        <span>Enter winds manually</span>
-      </label>
-    </div>
 
-    <!-- Taxi speed display toggle -->
-    <div class="taxi-toggle">
-      <label class="toggle-label">
-        <input type="checkbox" v-model="showTaxiSpeed" />
-        <span>Show minimum taxi speed</span>
-      </label>
-      <div v-if="showTaxiSpeed" class="taxi-speed-input">
-        <label class="taxi-input-label">
-          Max taxi speed warning (kt):
-          <input
-            type="number"
-            v-model="maxTaxiSpeedInput"
-            min="1"
-            max="20"
-            class="taxi-input"
-          />
-        </label>
-      </div>
-    </div>
-
-    <!-- Manual entry panel -->
-    <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
     <!-- Loading indicator -->
     <StatusMessage v-if="isLoading" variant="loading">
@@ -363,10 +339,7 @@ watch(manualMode, (enabled) => {
     </StatusMessage>
 
     <!-- Both fetches failed -->
-    <ErrorPanel
-      v-else-if="bothFailed && !manualMode"
-      title="Could not retrieve data"
-    >
+    <ErrorPanel v-else-if="bothFailed && !manualMode" title="Could not retrieve data">
       <p class="error-detail"><strong>METAR:</strong> {{ metarError }}</p>
       <p class="error-detail"><strong>Airport info:</strong> {{ airportError }}</p>
       <div class="error-actions">
@@ -377,12 +350,10 @@ watch(manualMode, (enabled) => {
     </ErrorPanel>
 
     <!-- Only METAR failed -->
-    <ErrorPanel
-      v-else-if="onlyMetarFailed && !manualMode"
-      title="METAR fetch failed"
-    >
+    <ErrorPanel v-else-if="onlyMetarFailed && !manualMode" title="METAR fetch failed">
       <p class="error-detail">{{ metarError }}</p>
-      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.</p>
+      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.
+      </p>
       <div class="error-actions">
         <button class="action-btn primary" @click="enableManualMode">
           Enter winds manually
@@ -391,11 +362,7 @@ watch(manualMode, (enabled) => {
     </ErrorPanel>
 
     <!-- METAR succeeded but airport info failed — user must choose -->
-    <ErrorPanel
-      v-else-if="onlyAirportFailed"
-      variant="warn"
-      title="Airport declination unavailable"
-    >
+    <ErrorPanel v-else-if="onlyAirportFailed" variant="warn" title="Airport declination unavailable">
       <p class="error-detail">{{ airportError }}</p>
       <p class="error-hint">
         METAR winds are reported in <strong>TRUE</strong> degrees. Without a declination value they
@@ -421,11 +388,7 @@ watch(manualMode, (enabled) => {
         Magnetic variation at this airport is unknown. Verify against ATIS/AWOS.
       </StatusMessage>
 
-      <div
-        v-if="isMetarActive"
-        class="metar-issued-panel"
-        :class="`metar-issued-${metarIssuedStatus}`"
-      >
+      <div v-if="isMetarActive" class="metar-issued-panel" :class="`metar-issued-${metarIssuedStatus}`">
         <div class="metar-issued-row">
           <strong v-if="metarIssuedAtUtc">
             Issued at {{ metarIssuedAtUtc }}
@@ -442,14 +405,12 @@ watch(manualMode, (enabled) => {
       <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
       <SafetyReadout :result="windResult" />
       <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
-      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed" :max-taxi-speed="maxTaxiSpeed" />
+      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed"
+        :max-taxi-speed="maxTaxiSpeed" />
       <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
         No table shown for calm winds.
       </StatusMessage>
-      <StatusMessage
-        v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe"
-        variant="calm"
-      >
+      <StatusMessage v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe" variant="calm">
         Table not available for variable winds — speed is within the tailwind limit.
       </StatusMessage>
       <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
@@ -463,15 +424,11 @@ watch(manualMode, (enabled) => {
     </div>
 
     <footer class="app-footer">
-      <a
-        href="https://github.com/TarmacDenter/A220Tools"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="github-link"
-        aria-label="View source on GitHub"
-      >
+      <a href="https://github.com/TarmacDenter/A220Tools" target="_blank" rel="noopener noreferrer" class="github-link"
+        aria-label="View source on GitHub">
         <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          <path fill-rule="evenodd"
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
         </svg>
         Contribute on GitHub
       </a>
@@ -590,7 +547,7 @@ watch(manualMode, (enabled) => {
   color: var(--color-unsafe-text);
 }
 
-.metar-issued-row + .metar-issued-row {
+.metar-issued-row+.metar-issued-row {
   margin-top: 0.25rem;
 }
 
@@ -620,13 +577,14 @@ watch(manualMode, (enabled) => {
   font-size: 0.95rem;
 }
 
-.taxi-toggle {
-  margin: 0.5rem 0;
+.controls-row {
+  margin: 0.75rem 0;
+  align-items: center;
 }
 
 .taxi-speed-input {
-  margin-top: 0.4rem;
-  padding-left: 1.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .taxi-input-label {
