@@ -255,11 +255,17 @@ onUnmounted(() => {
   window.removeEventListener('online', handleOnline);
 });
 
-watch(manualMode, (enabled) => {
-  if (!enabled) return;
-  clearMetar();
-  icaoInput.value = '';
-  useZeroDecl.value = false;
+watch(manualMode, async (enabled) => {
+  if (enabled) {
+    clearMetar();
+    icaoInput.value = '';
+    useZeroDecl.value = false;
+  } else {
+    if (activeIcao.value.length >= 3) {
+      icaoInput.value = activeIcao.value;
+      await onFetch(activeIcao.value);
+    }
+  }
 });
 </script>
 
