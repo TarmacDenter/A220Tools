@@ -103,8 +103,7 @@ Nuxt/Nitro generates the production server bundle in `.output/` during `npm run 
 
 ## Branch strategy
 
-- `dev`: default integration branch for day-to-day work.
-- `master`: release branch; merges here trigger deployment.
-- Feature branches: branch from `dev`, then merge back into `dev`.
-- Promote to production by merging `dev` into `master` only when ready to deploy.
-- Do not merge `master` back into `dev`; keep merges one-way (`dev` -> `master`) to avoid bi-directional history.
+- `master`: main working branch; all day-to-day development lands here and merges trigger deployment.
+- Feature branches: branch from `master`, then merge back into `master` via PR.
+- Keep feature branches short-lived to minimize drift and merge conflicts.
+- No long-lived `dev` branch; `master` is always the single source of truth.
