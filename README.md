@@ -107,3 +107,26 @@ Nuxt/Nitro generates the production server bundle in `.output/` during `npm run 
 - Feature branches: branch from `master`, then merge back into `master` via PR.
 - Keep feature branches short-lived to minimize drift and merge conflicts.
 - No long-lived `dev` branch; `master` is always the single source of truth.
+
+### Recommended GitHub branch protections for `master`
+
+Configure these under **Settings > Branches > Branch protection rules** for `master`:
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Require a pull request before merging | On | Prevents direct pushes; all changes go through PR review. |
+| Require approvals | 1 (or skip if solo) | Code review gate for team repos. Solo devs can set to 0. |
+| Require status checks to pass | On | Gate merges on `test:unit` and `lint` passing in CI. |
+| Require branches to be up to date | On | Ensures feature branches are rebased on latest `master` before merge. |
+| Require linear history | On | Enforces rebase-merge or squash-merge, keeping history clean and preventing merge commits. |
+| Allow force pushes | Off | Protects `master` from history rewrites. |
+| Allow deletions | Off | Prevents accidental branch deletion. |
+
+### Cleanup steps to migrate from `dev`
+
+1. **Merge any open `dev` PRs**: Retarget them to `master` or close if stale.
+2. **Change GitHub default branch**: Go to **Settings > General > Default branch** and switch from `dev` to `master`.
+3. **Update Railway/Netlify deploy branch** (if applicable): Confirm deploy triggers point at `master`.
+4. **Delete the remote `dev` branch**: `git push origin --delete dev` once all work is migrated.
+5. **Clean up local branches**: `git branch -d dev` to remove the local tracking branch.
+6. **Notify collaborators**: Let anyone with local clones know to `git fetch --prune` and base new work on `master`.
