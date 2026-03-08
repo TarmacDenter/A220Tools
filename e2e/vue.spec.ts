@@ -16,10 +16,10 @@ test('manual entry reflects theme toggle for dark/light backgrounds', async ({ p
   await expect(page.locator('h1')).toHaveText('A220 Engine Start Wind Checker')
   await expect(page.locator('html')).toHaveAttribute('data-theme', /dark|light/)
 
-  const manualToggle = page.locator('.manual-toggle input[type="checkbox"]')
+  const manualToggle = page.locator('#manual-mode-toggle')
   await expect(manualToggle).toBeEnabled()
-  await manualToggle.check()
-  await expect(manualToggle).toBeChecked()
+  await manualToggle.click()
+  await expect(manualToggle).toHaveAttribute('aria-pressed', 'true')
 
   const manualEntry = page.locator('.manual-entry')
   await expect(manualEntry).toHaveCount(1)
