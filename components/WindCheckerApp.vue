@@ -424,6 +424,13 @@ watch(manualMode, async (enabled) => {
     </div>
 
     <footer class="app-footer">
+      <a href="https://www.buymeacoffee.com/tarmacdenter" target="_blank" rel="noopener noreferrer">
+        <img
+          src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+          alt="Buy Me A Coffee"
+          class="bmc-button"
+        >
+      </a>
       <a href="https://github.com/TarmacDenter/A220Tools" target="_blank" rel="noopener noreferrer" class="github-link"
         aria-label="View source on GitHub">
         <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
@@ -610,6 +617,15 @@ watch(manualMode, async (enabled) => {
   padding: 1.25rem 0 0.5rem;
   border-top: 1px solid var(--color-border);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bmc-button {
+  height: 60px;
+  width: 217px;
 }
 
 .github-link {
