@@ -1,4 +1,4 @@
-const AIRPORT_STORAGE_KEY = 'hits/';
+const AIRPORT_STORAGE_KEY = 'cache';
 
 export type AirportHits = { icao: string, timestamps: number[]; };
 
