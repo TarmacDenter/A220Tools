@@ -25,11 +25,10 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    devStorage: {
-      cache: { driver: 'memory' },
-    },
     storage: {
-      cache: { driver: 'redis', url: process.env.REDIS_URL },
+      hits: process.env.REDIS_URL
+        ? { driver: 'redis', url: process.env.REDIS_URL }
+        : { driver: 'memory' },
     },
     experimental: {
       tasks: true,

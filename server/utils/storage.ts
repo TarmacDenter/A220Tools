@@ -1,6 +1,6 @@
-const AIRPORT_STORAGE_KEY = 'cache';
+const AIRPORT_STORAGE_KEY = 'hits';
 
-export type AirportHits = { icao: string, timestamps: number[]; };
+export type AirportHits = { icao: string; timestamps: number[]; origins: string[] };
 
 type HitsStore = ReturnType<typeof useStorage<AirportHits>>;
 
@@ -18,14 +18,16 @@ const pruneTimestamps = (rangeMs: number, stamps: number[]): number[] => {
 };
 
 const getAirportHits = async (store: HitsStore, icao: string): Promise<AirportHits> => {
-  return await store.getItem(icao) || { icao, timestamps: [] };
+  return await store.getItem(icao) || { icao, timestamps: [], origins: [] };
 };
 
-const addAirportHit = async (store: HitsStore, icao: string): Promise<AirportHits> => {
+const addAirportHit = async (store: HitsStore, icao: string, origin: string): Promise<{ isNew: boolean }> => {
   const existing = await getAirportHits(store, icao);
+  const isNew = !existing.origins.includes(origin);
   existing.timestamps.push(Date.now());
+  if (isNew) existing.origins.push(origin);
   await store.setItem(icao, existing);
-  return existing;
+  return { isNew };
 };
 
 export const getAllAirportKeys = async () => storeFactory().getKeys();
@@ -34,7 +36,7 @@ export const pruneOlderThan = async (rangeMs: number, icao: string): Promise<voi
   const store = storeFactory();
   const hits = await getAirportHits(store, icao);
   const pruned = pruneTimestamps(rangeMs, hits.timestamps);
-  await store.setItem(icao, { icao, timestamps: pruned });
+  await store.setItem(icao, { icao, timestamps: pruned, origins: hits.origins });
 };
 
 export const pruneAllOlderThan = async (rangeMs: number): Promise<number> => {
@@ -49,13 +51,14 @@ export const useAirportStorage = () => {
 
   const _getAirportHits = async (icao: string): Promise<AirportHits> => getAirportHits(storage, icao);
 
-  const _addAirportHit = async (icao: string): Promise<AirportHits> => addAirportHit(storage, icao);
+  const _addAirportHit = async (icao: string, origin: string): Promise<{ isNew: boolean }> => addAirportHit(storage, icao, origin);
 
   const getHitsInRange = async (rangeMs: number, icao: string): Promise<AirportHits> => {
     const hits = await getAirportHits(storage, icao);
     return {
       icao,
-      timestamps: pruneTimestamps(rangeMs, hits.timestamps)
+      timestamps: pruneTimestamps(rangeMs, hits.timestamps),
+      origins: hits.origins,
     };
   };
 
