@@ -424,6 +424,7 @@ watch(manualMode, async (enabled) => {
     </div>
 
     <footer class="app-footer">
+      <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
       <a href="https://www.buymeacoffee.com/tarmacdenter" target="_blank" rel="noopener noreferrer">
         <img
           src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
@@ -646,5 +647,16 @@ watch(manualMode, async (enabled) => {
   width: 1.1rem;
   height: 1.1rem;
   fill: currentColor;
+}
+
+.activity-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.8rem;
+  transition: color 0.15s ease;
+}
+
+.activity-link:hover {
+  color: var(--color-text);
 }
 </style>

@@ -18,7 +18,9 @@ const pruneTimestamps = (rangeMs: number, stamps: number[]): number[] => {
 };
 
 const getAirportHits = async (store: HitsStore, icao: string): Promise<AirportHits> => {
-  return await store.getItem(icao) || { icao, timestamps: [], origins: [] };
+  const raw = await store.getItem(icao);
+  if (!raw) return { icao, timestamps: [], origins: [] };
+  return { icao: raw.icao, timestamps: raw.timestamps ?? [], origins: raw.origins ?? [] };
 };
 
 const addAirportHit = async (store: HitsStore, icao: string, origin: string): Promise<{ isNew: boolean }> => {
