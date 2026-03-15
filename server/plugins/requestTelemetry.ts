@@ -1,6 +1,6 @@
 export default defineNitroPlugin((nitroApp) => {
-  nitroApp.hooks.hook('error', (error, { event }) => {
-    const telemetry = event?.context.requestTelemetry
+  nitroApp.hooks.hook('error', (error: Error & { statusCode?: number }, { event }) => {
+    const telemetry = event?.context.requestTelemetry;
 
     console.error(
       '[request:error]',
@@ -13,6 +13,6 @@ export default defineNitroPlugin((nitroApp) => {
         statusCode: error?.statusCode ?? 500,
         message: error?.message ?? 'Unknown server error',
       }),
-    )
-  })
-})
+    );
+  });
+});
