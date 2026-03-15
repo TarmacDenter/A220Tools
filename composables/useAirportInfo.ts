@@ -27,6 +27,13 @@ function parseMagdecString(magdec: string): number | null {
   return sign * value
 }
 
+interface CachedAirport {
+  airport: AirportInfo
+  magneticCorrection: MagneticCorrection
+}
+
+const clientCache = new Map<string, CachedAirport>()
+
 export function useAirportInfo() {
   const status = ref<FetchStatus>('idle')
   const airport = ref<AirportInfo | null>(null)
@@ -39,16 +46,19 @@ export function useAirportInfo() {
     magneticCorrection.value = null
     error.value = null
 
-    const tag = `[Airport] ${icao.toUpperCase()}`
-    console.group(tag)
-    console.log('Fetching airport info…')
+    const key = icao.toUpperCase()
+    const cached = clientCache.get(key)
+    if (cached) {
+      airport.value = cached.airport
+      magneticCorrection.value = cached.magneticCorrection
+      status.value = 'success'
+      return
+    }
 
     try {
       const raw = await fetchAirportFromServer<AviationWeatherAirportRecord>(icao)
-      console.log('Raw API response:', raw)
 
       const magdecRaw: string | null = raw.magdec ?? null
-      console.log('magdec field:', magdecRaw ?? '(absent)')
 
       airport.value = {
         icaoId: raw.icaoId ?? icao.toUpperCase(),
@@ -64,19 +74,14 @@ export function useAirportInfo() {
 
       if (magdecRaw) {
         declination = parseMagdecString(magdecRaw)
-        if (declination !== null) {
-          console.log(`Declination from airport API: ${declination}° (parsed from "${magdecRaw}")`)
-        } else {
-          console.warn(`Failed to parse magdec string "${magdecRaw}" — falling back to geomagnetism`)
+        if (declination === null) {
+          console.warn(`[airport] failed to parse magdec "${magdecRaw}" — falling back to geomagnetism`)
         }
-      } else {
-        console.warn('magdec field absent from airport API — falling back to geomagnetism package')
       }
 
       if (declination === null) {
         const useLat = airport.value.lat || lat || 0
         const useLon = airport.value.lon || lon || 0
-        console.log(`Geomagnetism fallback: lat=${useLat}, lon=${useLon}`)
         try {
           const geomagnetism = await import('geomagnetism')
           const model = geomagnetism.default.model(new Date())
@@ -84,9 +89,8 @@ export function useAirportInfo() {
           declination = point.decl
           source = 'geomagnetism_package'
           rawMagdecString = null
-          console.log(`Declination from geomagnetism WMM: ${declination.toFixed(2)}°`)
         } catch (geoErr) {
-          console.error('Geomagnetism fallback failed:', geoErr)
+          console.error('[airport] geomagnetism fallback failed', geoErr)
           throw new Error('Failed to determine magnetic declination from both airport API and fallback.')
         }
       }
@@ -97,15 +101,13 @@ export function useAirportInfo() {
         rawMagdecString,
       }
 
+      clientCache.set(key, { airport: airport.value, magneticCorrection: magneticCorrection.value })
       status.value = 'success'
-      console.log('✓ Airport fetch complete:', { declination: declination!, source })
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       error.value = msg
       status.value = 'error'
-      console.error('✗ Airport fetch failed:', msg)
-    } finally {
-      console.groupEnd()
+      console.error('[airport] fetch failed', msg)
     }
   }
 
