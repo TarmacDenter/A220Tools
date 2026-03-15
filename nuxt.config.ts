@@ -24,4 +24,17 @@ export default defineNuxtConfig({
       appBaseUrl: process.env.NUXT_PUBLIC_APP_BASE_URL || '/',
     },
   },
-})
+  nitro: {
+    storage: {
+      cache: process.env.REDIS_URL
+        ? { driver: 'redis', url: process.env.REDIS_URL }
+        : { driver: 'memory' },
+    },
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0-59/30 * * * *': ['cache:prune-hits'],
+    },
+  },
+});
