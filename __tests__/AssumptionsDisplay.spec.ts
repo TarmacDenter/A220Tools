@@ -23,6 +23,8 @@ const baseResult: WindResult = {
   tailwindLimitKt: 18,
   h1: null,
   h2: null,
+  h1Taxi: null,
+  h2Taxi: null,
   allHeadingsSafe: true,
 }
 
