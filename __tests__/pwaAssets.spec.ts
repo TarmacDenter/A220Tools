@@ -22,6 +22,7 @@ describe('PWA assets', () => {
 
     expect(serviceWorker).toContain("'/api/metar/'")
     expect(serviceWorker).toContain("'/api/airport/'")
+    expect(serviceWorker).toContain("'/api/activity'")
     expect(serviceWorker).toContain('API_CACHE')
   })
 })
