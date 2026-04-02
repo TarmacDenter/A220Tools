@@ -17,7 +17,7 @@ export function useLocation() {
     return 'idle';
   });
 
-  const locBtnText = computed(() => {
+  const locBtnText = computed<string>(() => {
     switch (locBtnState.value) {
       case 'idle': return 'Use My Location';
       case 'loading': return 'Locating\u2026';

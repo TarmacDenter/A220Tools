@@ -5,11 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { mockGetQuery, mockFetch } = vi.hoisted(() => {
   const mockGetQuery = vi.fn()
   const mockFetch = vi.fn()
-
-  globalThis.defineEventHandler = (fn: (event: unknown) => unknown) => fn
-  globalThis.getQuery = mockGetQuery
-  globalThis.$fetch = mockFetch
-  globalThis.createError = (opts: { statusCode: number; statusMessage: string; data?: unknown }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const g = globalThis as any
+  g.defineEventHandler = (fn: (event: unknown) => unknown) => fn
+  g.getQuery = mockGetQuery
+  g.$fetch = mockFetch
+  g.createError = (opts: { statusCode: number; statusMessage: string; data?: unknown }) => {
     return Object.assign(new Error(opts.statusMessage), opts)
   }
 
@@ -18,7 +19,8 @@ const { mockGetQuery, mockFetch } = vi.hoisted(() => {
 
 import handler from '../server/api/nearest-airport'
 
-const MOCK_EVENT = {}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MOCK_EVENT = {} as any
 
 describe('GET /api/nearest-airport', () => {
   beforeEach(() => {
