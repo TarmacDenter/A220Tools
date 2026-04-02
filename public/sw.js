@@ -1,7 +1,7 @@
 const CACHE_VERSION = 'a220tools-v2'
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`
 const API_CACHE = `${CACHE_VERSION}-api`
-const API_ROUTE_PREFIXES = ['/api/metar/', '/api/airport/', '/api/activity']
+const API_ROUTE_PREFIXES = ['/api/metar/', '/api/airport/', '/api/activity', '/api/nearest-airport']
 
 function getScopePath() {
   const scopeUrl = new URL(self.registration.scope)
