@@ -31,11 +31,7 @@ export default defineNuxtConfig({
   },
   nitro: {
     storage: {
-      hits: process.env.UPSTASH_REDIS_REST_URL
-        ? { driver: 'upstash', url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN }
-        : process.env.REDIS_URL
-          ? { driver: 'redis', url: process.env.REDIS_URL }
-          : { driver: 'memory' },
+      hits: { driver: 'memory' },
     },
     experimental: {
       tasks: true,
