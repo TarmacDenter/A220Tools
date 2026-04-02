@@ -3,30 +3,27 @@ import { fetchAirportFromServer, fetchMetarFromServer } from '@/composables/avia
 
 describe('aviationWeatherApi', () => {
   afterEach(() => {
+    vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
   it('fetches METAR data from backend server route', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ icaoId: 'KJFK' }),
-    } as Response)
+    const fetchMock = vi.fn().mockResolvedValueOnce({ icaoId: 'KJFK' })
+    vi.stubGlobal('$fetch', fetchMock)
 
     const result = await fetchMetarFromServer<{ icaoId: string }>('kjfk')
 
     expect(result).toEqual({ icaoId: 'KJFK' })
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/api/metar/KJFK')
+    expect(fetchMock).toHaveBeenCalledWith('/api/metar/KJFK')
   })
 
   it('fetches airport data from backend server route', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ icaoId: 'KSEA', magdec: '16E' }),
-    } as Response)
+    const fetchMock = vi.fn().mockResolvedValueOnce({ icaoId: 'KSEA', magdec: '16E' })
+    vi.stubGlobal('$fetch', fetchMock)
 
     const result = await fetchAirportFromServer<{ icaoId: string; magdec: string }>('ksea')
 
     expect(result).toEqual({ icaoId: 'KSEA', magdec: '16E' })
-    expect(fetchMock).toHaveBeenCalledWith('http://localhost:3000/api/airport/KSEA')
+    expect(fetchMock).toHaveBeenCalledWith('/api/airport/KSEA')
   })
 })

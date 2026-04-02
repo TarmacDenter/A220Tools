@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useMetar, parseMetarWind } from '@/composables/useMetar';
 import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
@@ -62,6 +62,7 @@ const icaoInput = ref('');
 const activeIcao = ref('');
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
 const freshnessNowMs = ref(Date.now());
+const readoutRef = ref<HTMLElement | null>(null);
 
 // --- Intervals ---
 useInterval(() => {
@@ -162,6 +163,10 @@ const headingRows = computed(() => {
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);
 const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading');
+
+watch(windResult, (result) => {
+  if (result) nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
+});
 
 const metarFreshnessText = computed(() => {
   if (!isOnline.value || lastFetchedAt.value === null) return null;
@@ -381,6 +386,7 @@ watch(manualMode, async (enabled) => {
     </ErrorPanel>
 
     <!-- Results -->
+    <div ref="readoutRef" />
     <template v-if="windResult">
       <!-- Zero-decl warning banner -->
       <StatusMessage v-if="useZeroDecl" variant="warning">
@@ -426,11 +432,7 @@ watch(manualMode, async (enabled) => {
     <footer class="app-footer">
       <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
       <a href="https://www.buymeacoffee.com/tarmacdenter" target="_blank" rel="noopener noreferrer">
-        <img
-          src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-          alt="Buy Me A Coffee"
-          class="bmc-button"
-        >
+        <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" class="bmc-button">
       </a>
       <a href="https://github.com/TarmacDenter/A220Tools" target="_blank" rel="noopener noreferrer" class="github-link"
         aria-label="View source on GitHub">

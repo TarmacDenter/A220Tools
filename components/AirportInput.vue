@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { watch } from 'vue';
 import type { FetchStatus } from '@/types/wind';
+import { useLocation } from '@/composables/useLocation';
 
 const { status, disabled = false } = defineProps<{
   status: FetchStatus;
@@ -21,14 +23,33 @@ function onFetch() {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter') onFetch();
 }
+
+const { locBtnState, locBtnText, fetchedIcao, onLocClick } = useLocation();
+
+watch(fetchedIcao, (icao) => {
+  if (icao) {
+    icaoInput.value = icao;
+    emit('fetch', icao);
+  }
+});
+
+function onLocButtonClick() {
+  onLocClick();
+}
 </script>
 
 <template>
   <div class="airport-input grid">
     <label for="icao-input" class="label col-12">Airport ICAO</label>
-    <input id="icao-input" v-model="icaoInput" type="text" placeholder="e.g. KLAX" maxlength="4" class="icao-field col-4"
-      :disabled="status === 'loading' || disabled" @keydown="onKeydown" autocomplete="off" autocapitalize="characters"
-      spellcheck="false" />
+    <input id="icao-input" v-model="icaoInput" type="text" placeholder="e.g. KLAX" maxlength="4"
+      class="icao-field col-4" :disabled="status === 'loading' || disabled" @keydown="onKeydown" autocomplete="off"
+      autocapitalize="characters" spellcheck="false" />
+    <ClientOnly>
+      <button v-if="locBtnState !== 'unsupported'" class="fetch-btn col-4"
+        :disabled="locBtnState === 'loading'" @click="onLocButtonClick">
+        {{ locBtnText }}
+      </button>
+    </ClientOnly>
     <button class="fetch-btn col-4" :disabled="status === 'loading' || disabled || icaoInput.trim().length < 3"
       @click="onFetch">
       <span v-if="status === 'loading'">Loading…</span>
@@ -80,6 +101,7 @@ function onKeydown(e: KeyboardEvent) {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+  align-self: stretch;
 }
 
 .fetch-btn:hover:not(:disabled) {

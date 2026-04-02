@@ -13,6 +13,7 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 - Computes safe/unsafe heading sectors against the A220 engine-start tailwind limit.
 - Supports manual entry modes for ATIS (MAG) and METAR/AeroData (TRUE).
 - Shows assumptions and source transparency so pilots can cross-check quickly.
+- Locates the nearest airport via browser geolocation and auto-populates the ICAO input.
 - Supports PWA install flow with an in-app install prompt and basic offline app-shell availability.
 
 ## Tech stack
@@ -29,23 +30,6 @@ npm run dev
 ```
 
 Open the local URL shown by Nuxt (normally `http://localhost:3000`).
-
-## MCP server config (Nuxt)
-
-This repo includes a root `.mcp.json` configured for Nuxt MCP using `nuxi mcp`:
-
-```json
-{
-  "mcpServers": {
-    "nuxt": {
-      "command": "npx",
-      "args": ["nuxi", "mcp"]
-    }
-  }
-}
-```
-
-This lets MCP-compatible clients attach to Nuxt project context and tools from this workspace.
 
 ## Scripts
 

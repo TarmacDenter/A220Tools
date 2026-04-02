@@ -43,25 +43,9 @@ function buildAirportResponse() {
 
 function mockSuccessfulFetches() {
   return vi.fn(async (url: string) => {
-    if (url.includes('/api/metar/')) {
-      return {
-        ok: true,
-        json: async () => buildMetarResponse(),
-      }
-    }
-    if (url.includes('/api/airport/')) {
-      return {
-        ok: true,
-        json: async () => buildAirportResponse(),
-      }
-    }
-
-    return {
-      ok: false,
-      status: 404,
-      statusText: 'Not Found',
-      json: async () => ({}),
-    }
+    if (url.includes('/api/metar/')) return buildMetarResponse()
+    if (url.includes('/api/airport/')) return buildAirportResponse()
+    throw Object.assign(new Error('Not Found'), { status: 404 })
   })
 }
 
@@ -72,6 +56,8 @@ async function flushAsyncUpdates() {
 }
 
 describe('WindCheckerApp', () => {
+  let wrapper: ReturnType<typeof mount>
+
   beforeEach(() => {
     vi.useFakeTimers()
     vi.setSystemTime(baseTime)
@@ -79,12 +65,13 @@ describe('WindCheckerApp', () => {
   })
 
   afterEach(() => {
+    wrapper?.unmount()
     vi.unstubAllGlobals()
     vi.useRealTimers()
   })
 
   it('defaults manual declination direction to west', async () => {
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
 
     await selectManualInputBtn(wrapper, true)
     await nextTick()
@@ -96,7 +83,7 @@ describe('WindCheckerApp', () => {
   })
 
   it('forces manual mode and disables METAR input when going offline', async () => {
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
 
     window.dispatchEvent(new Event('offline'))
     await nextTick()
@@ -113,7 +100,7 @@ describe('WindCheckerApp', () => {
   })
 
   it('stays in manual mode after reconnect until user changes it', async () => {
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
 
     window.dispatchEvent(new Event('offline'))
     await nextTick()
@@ -127,9 +114,9 @@ describe('WindCheckerApp', () => {
 
   it('updates METAR freshness text every minute', async () => {
     const fetchMock = mockSuccessfulFetches()
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('$fetch', fetchMock)
 
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
     const icaoInput = wrapper.find('#icao-input')
     const fetchButton = wrapper.find('.fetch-btn')
 
@@ -148,9 +135,9 @@ describe('WindCheckerApp', () => {
 
   it('shows METAR issued time in UTC and warns when older than 30 minutes', async () => {
     const fetchMock = mockSuccessfulFetches()
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('$fetch', fetchMock)
 
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
     const icaoInput = wrapper.find('#icao-input')
     const fetchButton = wrapper.find('.fetch-btn')
 
@@ -171,9 +158,9 @@ describe('WindCheckerApp', () => {
 
   it('auto-refreshes METAR every 5 minutes while online after success', async () => {
     const fetchMock = mockSuccessfulFetches()
-    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('$fetch', fetchMock)
 
-    const wrapper = mount(WindCheckerApp)
+    wrapper = mount(WindCheckerApp)
     const icaoInput = wrapper.find('#icao-input')
     const fetchButton = wrapper.find('.fetch-btn')
 
@@ -191,7 +178,7 @@ describe('WindCheckerApp', () => {
   })
 
   it('propagates theme to manual entry panel for dark/light styling', async () => {
-    const wrapper = mount(WindCheckerApp, {
+    wrapper = mount(WindCheckerApp, {
       props: {
         theme: 'dark',
       },
