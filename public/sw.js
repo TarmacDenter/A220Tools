@@ -28,7 +28,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((res) => {
-          if (res.ok) caches.open(API_CACHE).then((c) => c.put(event.request, res.clone()))
+          if (res.ok) { const copy = res.clone(); caches.open(API_CACHE).then((c) => c.put(event.request, copy)) }
           return res
         })
         .catch(() => caches.match(event.request).then((c) => c ?? Promise.reject(new Error('offline'))))
@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => cached ?? fetch(event.request).then((res) => {
-      if (res.ok && res.type === 'basic') caches.open(APP_SHELL_CACHE).then((c) => c.put(event.request, res.clone()))
+      if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(APP_SHELL_CACHE).then((c) => c.put(event.request, copy)) }
       return res
     }))
   )
