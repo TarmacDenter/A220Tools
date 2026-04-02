@@ -28,7 +28,7 @@ const addAirportHit = async (store: HitsStore, icao: string, origin: string): Pr
   const isNew = !existing.origins.includes(origin);
   existing.timestamps.push(Date.now());
   if (isNew) existing.origins.push(origin);
-  await store.setItem(icao, existing);
+  await store.setItem(icao, existing, { ttl: 60 * 60 * 24 * 7 });
   return { isNew };
 };
 
