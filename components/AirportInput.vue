@@ -101,6 +101,7 @@ function onLocButtonClick() {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
+  align-self: stretch;
 }
 
 .fetch-btn:hover:not(:disabled) {

@@ -52,7 +52,7 @@ describe('useLocation', () => {
 
     expect(fetchedIcao.value).toBe('EGLL')
     expect(locBtnState.value).toBe('fetched')
-    expect(locBtnText.value).toBe('Refresh Location (EGLL)')
+    expect(locBtnText.value).toBe('Refresh Location')
   })
 
   it('calls /api/nearest-airport with the coordinates from geolocation', async () => {

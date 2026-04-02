@@ -21,7 +21,7 @@ export function useLocation() {
     switch (locBtnState.value) {
       case 'idle': return 'Use My Location';
       case 'loading': return 'Locating\u2026';
-      case 'fetched': return `Refresh Location (${fetchedIcao.value})`;
+      case 'fetched': return 'Refresh Location';
       case 'error': return 'Location unavailable';
       case 'unsupported': return '';
     }
