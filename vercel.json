@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/prune-hits",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

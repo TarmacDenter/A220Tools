@@ -33,11 +33,5 @@ export default defineNuxtConfig({
     storage: {
       hits: { driver: 'memory' },
     },
-    experimental: {
-      tasks: true,
-    },
-    scheduledTasks: {
-      '0-59/30 * * * *': ['cache:prune-hits'],
-    },
   },
 });
