@@ -29,9 +29,4 @@ export default defineNuxtConfig({
       appBaseUrl: process.env.NUXT_PUBLIC_APP_BASE_URL || '/',
     },
   },
-  nitro: {
-    storage: {
-      hits: { driver: 'memory' },
-    },
-  },
 });
