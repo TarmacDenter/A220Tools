@@ -3,8 +3,10 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useMetar, parseMetarWind } from '@/composables/useMetar';
 import { useAirportInfo } from '@/composables/useAirportInfo';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
+import { buildTowerWindMatrix, getCurrentWindComponentReadout } from '@/composables/useTowerWindMatrix';
 import { useInterval } from '@/composables/useInterval';
 import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLimits';
+import type { RCAM_KEYS } from '@/constants/windLimits';
 import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 
@@ -16,6 +18,7 @@ import AssumptionsDisplay from './AssumptionsDisplay.vue';
 import SafetyReadout from './SafetyReadout.vue';
 import CompassRose from './CompassRose.vue';
 import HeadingTable from './HeadingTable.vue';
+import TowerWindMatrix from './TowerWindMatrix.vue';
 import StatusMessage from './ui/StatusMessage.vue';
 import ErrorPanel from './ui/ErrorPanel.vue';
 import BaseToggle from './ui/BaseToggle.vue';
@@ -32,7 +35,10 @@ const emit = defineEmits<{
   toggleTheme: [];
 }>();
 
+type Phase = 'start' | 'takeoff' | 'landing';
+
 // --- State ---
+const activePhase = ref<Phase>('start');
 const manualMode = ref(false);
 const manualInputs = ref<ManualWindInput>({
   direction: '',
@@ -49,11 +55,25 @@ const useZeroDecl = ref(false);
 // Taxi speed display
 const showTaxiSpeed = ref(false);
 const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT));
+const runwayHeadingInput = ref('360');
+const rcamCodeInput = ref('6');
 const maxTaxiSpeed = computed(() => {
   if (!showTaxiSpeed.value) return 0;
   const parsed = parseInt(maxTaxiSpeedInput.value, 10);
   if (isNaN(parsed) || parsed < 1) return 0;
   return parsed;
+});
+
+const runwayHeading = computed(() => {
+  const parsed = Number(runwayHeadingInput.value);
+  if (!Number.isFinite(parsed)) return 0;
+  return ((parsed % 360) + 360) % 360;
+});
+
+const selectedRcamCode = computed<RCAM_KEYS>(() => {
+  const parsed = Number(rcamCodeInput.value);
+  if (parsed >= 1 && parsed <= 6) return parsed as RCAM_KEYS;
+  return 6;
 });
 
 const { status: metarStatus, metar, error: metarError, lastFetchedAt, fetchMetar, clearMetar } = useMetar();
@@ -159,6 +179,42 @@ const headingRows = computed(() => {
   const { parsedWind: pw, windDirectionMagnetic } = result;
   if (pw.isCalm || pw.isVariable) return [];
   return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT);
+});
+
+const runwayPhase = computed(() => {
+  if (activePhase.value === 'takeoff' || activePhase.value === 'landing') return activePhase.value;
+  return null;
+});
+
+const towerReferenceWindDirection = computed(() => {
+  const result = windResult.value;
+  if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable) return runwayHeading.value;
+  return result.windDirectionMagnetic;
+});
+
+const towerWindMatrix = computed(() => {
+  const phase = runwayPhase.value;
+  if (!phase || !windResult.value) return null;
+  return buildTowerWindMatrix({
+    phase,
+    rcamCode: selectedRcamCode.value,
+    runwayHeading: runwayHeading.value,
+    referenceWindDirection: towerReferenceWindDirection.value,
+  });
+});
+
+const currentTowerWindReadout = computed(() => {
+  const phase = runwayPhase.value;
+  const result = windResult.value;
+  if (!phase || !result) return null;
+  if (result.parsedWind.isVariable) return null;
+  return getCurrentWindComponentReadout({
+    phase,
+    rcamCode: selectedRcamCode.value,
+    runwayHeading: runwayHeading.value,
+    windDirection: towerReferenceWindDirection.value,
+    windSpeed: result.parsedWind.effectiveSpeed,
+  });
 });
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);
@@ -278,7 +334,7 @@ watch(manualMode, async (enabled) => {
   <main class="app-main">
     <header class="app-header">
       <div class="title-row">
-        <h1 class="app-title">A220 Engine Start Wind Checker</h1>
+        <h1 class="app-title">A220 Wind Limits</h1>
         <button class="theme-toggle" type="button" :aria-label="themeToggleLabel" @click="emit('toggleTheme')">
           <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
@@ -297,7 +353,7 @@ watch(manualMode, async (enabled) => {
           <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
         </button>
       </div>
-      <p class="app-subtitle">Verify tailwind ≤ 18 kt limit for first engine start, or any stationary start</p>
+      <p class="app-subtitle">Quick-reference wind limits for start, takeoff, and landing</p>
     </header>
 
     <div class="pilot-disclaimer" role="note">
@@ -306,13 +362,46 @@ watch(manualMode, async (enabled) => {
       seriously... I made this at the hotel.
     </div>
 
+    <div class="phase-selector" role="group" aria-label="Phase of flight">
+      <button
+        id="phase-start"
+        class="phase-btn"
+        :class="{ active: activePhase === 'start' }"
+        type="button"
+        :aria-pressed="activePhase === 'start'"
+        @click="activePhase = 'start'"
+      >
+        Start
+      </button>
+      <button
+        id="phase-takeoff"
+        class="phase-btn"
+        :class="{ active: activePhase === 'takeoff' }"
+        type="button"
+        :aria-pressed="activePhase === 'takeoff'"
+        @click="activePhase = 'takeoff'"
+      >
+        Takeoff
+      </button>
+      <button
+        id="phase-landing"
+        class="phase-btn"
+        :class="{ active: activePhase === 'landing' }"
+        type="button"
+        :aria-pressed="activePhase === 'landing'"
+        @click="activePhase = 'landing'"
+      >
+        Landing
+      </button>
+    </div>
+
     <!-- Controls row -->
     <div class="grid controls-row">
       <BaseToggle id="manual-mode-toggle" v-model="manualMode" class="col-4" :disabled="!isOnline"
         active-label="Switch to Live Data" inactive-label="Switch to Manual Input" variant="info" />
-      <BaseToggle id="taxi-speed-toggle" v-model="showTaxiSpeed" class="col-4" active-label="Hide taxi speed"
+      <BaseToggle v-if="activePhase === 'start'" id="taxi-speed-toggle" v-model="showTaxiSpeed" class="col-4" active-label="Hide taxi speed"
         inactive-label="Show minimum taxi speed" variant="primary" />
-      <div v-if="showTaxiSpeed" class="col-4 taxi-speed-input">
+      <div v-if="activePhase === 'start' && showTaxiSpeed" class="col-4 taxi-speed-input">
         <label class="taxi-input-label">
           Max taxi speed warning (kt):
           <input type="number" v-model="maxTaxiSpeedInput" min="1" max="20" class="taxi-input" />
@@ -336,7 +425,32 @@ watch(manualMode, async (enabled) => {
       Offline: METAR retrieval is unavailable. Manual wind entry is required.
     </StatusMessage>
 
-
+    <section v-if="runwayPhase" class="runway-card">
+      <div class="runway-setup">
+        <label class="runway-field">
+          Runway heading (°M)
+          <input
+            id="runway-heading-input"
+            v-model="runwayHeadingInput"
+            type="number"
+            min="0"
+            max="360"
+            step="1"
+          />
+        </label>
+        <label class="runway-field">
+          RCAM
+          <select id="rcam-code-select" v-model="rcamCodeInput">
+            <option value="6">6</option>
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+          </select>
+        </label>
+      </div>
+    </section>
 
     <!-- Loading indicator -->
     <StatusMessage v-if="isLoading" variant="loading">
@@ -408,20 +522,31 @@ watch(manualMode, async (enabled) => {
         </div>
       </div>
 
-      <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
-      <SafetyReadout :result="windResult" />
-      <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
-      <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed"
-        :max-taxi-speed="maxTaxiSpeed" />
-      <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
-        No table shown for calm winds.
-      </StatusMessage>
-      <StatusMessage v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe" variant="calm">
-        Table not available for variable winds — speed is within the tailwind limit.
-      </StatusMessage>
-      <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
-        Table not available for variable winds — any heading may be unsafe.
-      </StatusMessage>
+      <template v-if="activePhase === 'start'">
+        <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
+        <SafetyReadout :result="windResult" />
+        <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
+        <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed"
+          :max-taxi-speed="maxTaxiSpeed" />
+        <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
+          No table shown for calm winds.
+        </StatusMessage>
+        <StatusMessage v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe" variant="calm">
+          Table not available for variable winds — speed is within the tailwind limit.
+        </StatusMessage>
+        <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
+          Table not available for variable winds — any heading may be unsafe.
+        </StatusMessage>
+      </template>
+
+      <section v-else>
+        <TowerWindMatrix
+          v-if="runwayPhase && towerWindMatrix"
+          :phase="runwayPhase"
+          :matrix="towerWindMatrix"
+          :current-readout="currentTowerWindReadout"
+        />
+      </section>
     </template>
 
     <!-- Idle state -->
@@ -515,6 +640,39 @@ watch(manualMode, async (enabled) => {
   line-height: 1.5;
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
+}
+
+.phase-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-muted);
+}
+
+.phase-btn {
+  min-height: 2.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.phase-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.phase-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary-hover);
+  color: var(--color-primary-text);
 }
 
 .manual-toggle {
@@ -615,6 +773,37 @@ watch(manualMode, async (enabled) => {
   color: var(--color-text);
 }
 
+.runway-card {
+  margin: 1rem 0;
+}
+
+.runway-setup {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.runway-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--color-text-subtle);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.runway-field input,
+.runway-field select {
+  min-height: 2.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: 0.35rem 0.55rem;
+}
+
 .app-footer {
   margin-top: 2.5rem;
   padding: 1.25rem 0 0.5rem;
@@ -660,5 +849,11 @@ watch(manualMode, async (enabled) => {
 
 .activity-link:hover {
   color: var(--color-text);
+}
+
+@media (max-width: 600px) {
+  .runway-setup {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

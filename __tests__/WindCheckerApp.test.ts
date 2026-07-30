@@ -31,6 +31,15 @@ function buildMetarResponse() {
     }
 }
 
+function buildVariableMetarResponse() {
+  return {
+      ...buildMetarResponse(),
+      rawOb: 'KJFK 151000Z VRB05KT 10SM CLR 05/M01 A2992',
+      wdir: 'VRB' as const,
+      wspd: 5,
+    }
+}
+
 function buildAirportResponse() {
   return {
       icaoId: 'KJFK',
@@ -194,5 +203,73 @@ describe('WindCheckerApp', () => {
     await nextTick()
 
     expect(manualEntry.attributes('data-theme')).toBe('light')
+  })
+
+  it('shows the takeoff tower wind matrix from the shared manual wind source', async () => {
+    wrapper = mount(WindCheckerApp)
+
+    expect(wrapper.find('#phase-start').attributes('aria-pressed')).toBe('true')
+
+    await selectManualInputBtn(wrapper, true)
+    await nextTick()
+
+    const atisButton = wrapper.findAll('.mode-btn').find((button) => button.text() === 'ATIS (MAG)')
+    await atisButton?.trigger('click')
+    const windInputs = wrapper.findAll('.manual-entry .wind-input')
+    await windInputs[0]?.setValue('070')
+    await windInputs[1]?.setValue('30')
+
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await nextTick()
+    await wrapper.find('#runway-heading-input').setValue('360')
+    await wrapper.find('#rcam-code-select').setValue('6')
+    await nextTick()
+
+    expect(wrapper.find('#phase-takeoff').attributes('aria-pressed')).toBe('true')
+    expect(wrapper.text()).toContain('XW limit 32 kt / TW limit 10 kt')
+    expect(wrapper.text()).toContain('XW 28/32')
+    expect(wrapper.text()).toContain('HW 10')
+
+    const matrix = wrapper.find('.tower-wind-matrix')
+    expect(matrix.exists()).toBe(true)
+    expect(matrix.text()).toContain('Tower Wind Matrix')
+    expect(matrix.text()).toContain('070°')
+    expect(matrix.text()).toContain('090°')
+    expect(matrix.text()).toContain('32 kt')
+    expect(matrix.text()).toContain('XW')
+  })
+
+  it('shows runway setup immediately for runway phases before wind exists', async () => {
+    wrapper = mount(WindCheckerApp)
+
+    await wrapper.find('#phase-landing').trigger('click')
+    await nextTick()
+
+    expect(wrapper.find('#runway-heading-input').exists()).toBe(true)
+    expect(wrapper.find('#rcam-code-select').exists()).toBe(true)
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(false)
+  })
+
+  it('builds the tower wind matrix for variable wind without fake current components', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes('/api/metar/')) return buildVariableMetarResponse()
+      if (url.includes('/api/airport/')) return buildAirportResponse()
+      throw Object.assign(new Error('Not Found'), { status: 404 })
+    })
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-landing').trigger('click')
+    await wrapper.find('#runway-heading-input').setValue('360')
+    const icaoInput = wrapper.find('#icao-input')
+    const fetchButton = wrapper.find('.fetch-btn')
+
+    await icaoInput.setValue('KJFK')
+    await fetchButton.trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Current components unavailable for variable wind.')
+    expect(wrapper.text()).toContain('000°')
   })
 })
