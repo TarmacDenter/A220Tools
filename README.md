@@ -66,24 +66,29 @@ npm run test:e2e -- --debug
 - `__tests__/`: Unit tests.
 - `e2e/`: Playwright specs.
 
-## Deployment (Railway)
+## Deployment (Vercel)
 
-This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration, `.nvmrc` to declare the Node version, and `package.json`'s `packageManager` field to pin npm.
+This project deploys to Vercel as a Nuxt 3 SSR application. Nitro auto-detects the Vercel environment and uses the Vercel preset at build time.
 
-### Railway runtime details
+### Required environment variables
 
-- Build command: `npm run build`
-- Runtime command: `node .output/server/index.mjs`
-- Health check path: `/`
+| Variable | Source | Purpose |
+|---|---|---|
+| `UPSTASH_REDIS_REST_URL` | Upstash integration | Hit-tracking storage |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash integration | Hit-tracking storage auth |
+| `CRON_SECRET` | Set manually | Guards `/api/internal/prune-hits` |
+| `NUXT_PUBLIC_APP_BASE_URL` | Set manually (optional) | Custom domain base URL |
 
 ### Deploy steps
 
-1. Create a new Railway project and link this repository.
-2. Ensure Railway is set to use the repo-root `railway.toml` and the service builder is not overridden in the UI.
-3. Deploy from `master` (or your selected release branch).
-4. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
+1. Import the repository into Vercel and let it auto-detect the Nuxt framework.
+2. Add the **Upstash Redis** integration from the Vercel Marketplace — this automatically binds `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+3. Set `CRON_SECRET` to a random secret string in your Vercel project environment variables (Production + Preview).
+4. Deploy from `master`. The `vercel.json` cron entry schedules `/api/internal/prune-hits` every 30 minutes automatically.
 
-Nuxt/Nitro generates the production server bundle in `.output/` during `npm run build`, which Railway starts via the configured start command.
+### Cron job
+
+`vercel.json` registers a cron that calls `POST /api/internal/prune-hits` every 30 minutes. Vercel sends `Authorization: Bearer <CRON_SECRET>` with each invocation; the endpoint rejects all other callers with HTTP 401.
 
 ## Branch strategy
 
