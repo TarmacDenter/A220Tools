@@ -24,6 +24,7 @@ export function useLocation() {
       case 'fetched': return 'Refresh Location';
       case 'error': return 'Location unavailable';
       case 'unsupported': return '';
+      default: return '';
     }
   });
 

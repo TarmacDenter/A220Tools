@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, nextTick } from 'vue'
-import App from '../pages/index.vue'
-import DefaultLayout from '../layouts/default.vue'
+import App from '../app/pages/index.vue'
+import DefaultLayout from '../app/layouts/default.vue'
 
 const originalNavigator = {
   userAgent: window.navigator.userAgent,

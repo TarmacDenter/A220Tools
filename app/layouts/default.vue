@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import InstallPrompt from '@/components/InstallPrompt.vue'
 
+defineOptions({ name: 'DefaultLayout' })
+
 type Theme = 'light' | 'dark'
 
 const THEME_STORAGE_KEY = 'a220-theme'

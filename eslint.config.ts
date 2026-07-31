@@ -69,12 +69,14 @@ export default defineConfigWithVueTs(
 
   {
     files: [
-      'components/**/*.{vue,ts,mts,tsx}',
-      'composables/**/*.{vue,ts,mts,tsx}',
-      'constants/**/*.{vue,ts,mts,tsx}',
-      'types/**/*.{vue,ts,mts,tsx}',
-      'utils/**/*.{vue,ts,mts,tsx}',
-      'pages/**/*.{vue,ts,mts,tsx}',
+      'app/components/**/*.{vue,ts,mts,tsx}',
+      'app/composables/**/*.{vue,ts,mts,tsx}',
+      'app/constants/**/*.{vue,ts,mts,tsx}',
+      'app/types/**/*.{vue,ts,mts,tsx}',
+      'app/utils/**/*.{vue,ts,mts,tsx}',
+      'app/pages/**/*.{vue,ts,mts,tsx}',
+      'app/layouts/**/*.{vue,ts,mts,tsx}',
+      'app/plugins/**/*.{vue,ts,mts,tsx}',
     ],
     plugins: {
       local: {

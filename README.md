@@ -18,7 +18,7 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 
 ## Tech stack
 
-- Nuxt 3 (Vue 3 + TypeScript, SSR enabled)
+- Nuxt 4 (Vue 3 + TypeScript, SSR enabled)
 - Vitest + Vue Test Utils
 - Playwright
 
@@ -40,6 +40,7 @@ Open the local URL shown by Nuxt (normally `http://localhost:3000`).
 - `npm run test:unit`: Run Vitest unit tests.
 - `npm run test:e2e`: Run Playwright end-to-end tests.
 - `npm run lint`: Run lint auto-fixes (`oxlint` + `eslint`).
+- `npm run lint:check`: Check lint rules without changing files.
 
 ## Testing notes
 
@@ -59,10 +60,15 @@ npm run test:e2e -- --debug
 
 ## Project structure
 
-- `components/`: UI components (main app, input panels, readouts, tables).
-- `composables/`: Data fetch and wind calculation logic.
-- `constants/`: Operational limits and constants.
-- `types/`: Shared TypeScript models.
+- `app/components/`: UI components (main app, input panels, readouts, tables).
+- `app/composables/`: Data fetch and wind calculation logic.
+- `app/constants/`: Operational limits and constants.
+- `app/types/`: Shared TypeScript models.
+- `app/layouts/`: Shared page layouts.
+- `app/pages/`: File-based application routes.
+- `app/plugins/`: Nuxt client and application plugins.
+- `server/`: Nitro API routes, middleware, plugins, tasks, and utilities.
+- `public/`: Static PWA assets.
 - `__tests__/`: Unit tests.
 - `e2e/`: Playwright specs.
 
