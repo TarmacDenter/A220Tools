@@ -4,7 +4,7 @@ Operational runbook for local development, testing, and troubleshooting in `A220
 
 ## Purpose
 
-Use this document to execute common workflows quickly and consistently, especially when working as an automated agent.
+Use this document to execute common workflows quickly and consistently, especially when onboarding or handing off work.
 
 ## Prerequisites
 
