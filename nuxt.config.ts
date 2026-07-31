@@ -1,7 +1,15 @@
 export default defineNuxtConfig({
   ssr: true,
   compatibilityDate: '2025-01-01',
+  future: { compatibilityVersion: 4 },
   devtools: { enabled: true },
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        noUnusedLocals: true,
+      },
+    },
+  },
   css: ['~/assets/css/theme.css'],
   app: {
     head: {

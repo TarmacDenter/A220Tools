@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('cache:prune-hits task runs and returns result', async ({ request }) => {
-  const response = await request.post('/_nitro/tasks/run/cache:prune-hits')
+  const response = await request.post('/_nitro/tasks/cache:prune-hits')
 
   expect(response.ok()).toBe(true)
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HeadingRow } from '@/types/wind'
 
-const props = defineProps<{
+defineProps<{
   rows: HeadingRow[]
   showTaxi: boolean
   maxTaxiSpeed: number
