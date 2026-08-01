@@ -102,6 +102,16 @@ describe('App', () => {
     )
   })
 
+  it('shows the public site link with a share icon', () => {
+    const wrapper = mountApp()
+    const siteLink = wrapper.get('a.site-link')
+
+    expect(siteLink.text()).toBe('www.220stuff.app')
+    expect(siteLink.attributes('href')).toBe('https://www.220stuff.app')
+    expect(siteLink.attributes('target')).toBe('_blank')
+    expect(siteLink.find('svg.share-icon').exists()).toBe(true)
+  })
+
   it('shows install CTA when browser emits beforeinstallprompt', async () => {
     const wrapper = mountApp()
 

@@ -335,23 +335,38 @@ watch(manualMode, async (enabled) => {
     <header class="app-header">
       <div class="title-row">
         <h1 class="app-title">A220 Wind Limits</h1>
-        <button class="theme-toggle" type="button" :aria-label="themeToggleLabel" @click="emit('toggleTheme')">
-          <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="4" />
-            <line x1="12" y1="1.5" x2="12" y2="5.2" />
-            <line x1="12" y1="18.8" x2="12" y2="22.5" />
-            <line x1="1.5" y1="12" x2="5.2" y2="12" />
-            <line x1="18.8" y1="12" x2="22.5" y2="12" />
-            <line x1="4.3" y1="4.3" x2="6.9" y2="6.9" />
-            <line x1="17.1" y1="17.1" x2="19.7" y2="19.7" />
-            <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
-            <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
-          </svg>
-          <svg v-else class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
-          </svg>
-          <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
-        </button>
+        <div class="header-actions">
+          <a
+            class="site-link"
+            href="https://www.220stuff.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open www.220stuff.app in a new tab"
+          >
+            <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12m0-12L8 7m4-4 4 4" />
+              <path d="M7 10H5v10h14V10h-2" />
+            </svg>
+            <span>www.220stuff.app</span>
+          </a>
+          <button class="theme-toggle" type="button" :aria-label="themeToggleLabel" @click="emit('toggleTheme')">
+            <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <line x1="12" y1="1.5" x2="12" y2="5.2" />
+              <line x1="12" y1="18.8" x2="12" y2="22.5" />
+              <line x1="1.5" y1="12" x2="5.2" y2="12" />
+              <line x1="18.8" y1="12" x2="22.5" y2="12" />
+              <line x1="4.3" y1="4.3" x2="6.9" y2="6.9" />
+              <line x1="17.1" y1="17.1" x2="19.7" y2="19.7" />
+              <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
+              <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
+            </svg>
+            <svg v-else class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
+            </svg>
+            <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
+          </button>
+        </div>
       </div>
       <p class="app-subtitle">Quick-reference wind limits for start, takeoff, and landing</p>
     </header>
@@ -595,6 +610,40 @@ watch(manualMode, async (enabled) => {
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.3rem 0;
+  text-decoration: none;
+}
+
+.site-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.share-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .theme-toggle {
