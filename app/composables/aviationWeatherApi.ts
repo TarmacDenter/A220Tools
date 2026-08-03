@@ -1,16 +1,11 @@
-function fetchJson<T>(endpoint: string): Promise<T> {
-  const request = $fetch as unknown as <Response>(url: string) => Promise<Response>
-  return request<T>(endpoint)
+import type { AirportApiRecord, MetarApiRecord } from '#shared/types/api'
+
+export async function fetchMetarFromServer(icao: string): Promise<MetarApiRecord> {
+  const normalizedIcao = encodeURIComponent(icao.toUpperCase())
+  return $fetch<MetarApiRecord>(`/api/metar/${normalizedIcao}`)
 }
 
-export async function fetchMetarFromServer<T>(icao: string): Promise<T> {
+export async function fetchAirportFromServer(icao: string): Promise<AirportApiRecord> {
   const normalizedIcao = encodeURIComponent(icao.toUpperCase())
-  const endpoint: string = `/api/metar/${normalizedIcao}`
-  return fetchJson<T>(endpoint)
-}
-
-export async function fetchAirportFromServer<T>(icao: string): Promise<T> {
-  const normalizedIcao = encodeURIComponent(icao.toUpperCase())
-  const endpoint: string = `/api/airport/${normalizedIcao}`
-  return fetchJson<T>(endpoint)
+  return $fetch<AirportApiRecord>(`/api/airport/${normalizedIcao}`)
 }

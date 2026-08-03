@@ -8,7 +8,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<NearestAirportResponse> => {
   const query = getQuery(event);
   const lat = Number(query.lat);
   const lon = Number(query.lon);
@@ -52,3 +52,4 @@ export default defineEventHandler(async (event) => {
 
   return { icao: closest.icaoId };
 });
+import type { NearestAirportResponse } from '#shared/types/api'

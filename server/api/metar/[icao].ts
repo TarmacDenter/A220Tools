@@ -1,7 +1,8 @@
 import { errorFields, logEvent } from '../../utils/logger'
 import { coarseRequestOrigin } from '../../utils/requestTelemetry'
+import type { MetarApiRecord } from '#shared/types/api'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<MetarApiRecord> => {
   const icao = getRouterParam(event, 'icao')
   if (!icao) {
     throw createError({ statusCode: 400, statusMessage: 'Missing ICAO code' })
@@ -10,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const upstreamUrl = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
 
   try {
-    const data = await $fetch<unknown[]>(upstreamUrl)
+    const data = await $fetch<MetarApiRecord[]>(upstreamUrl)
     if (!Array.isArray(data) || data.length === 0) {
       throw createError({ statusCode: 404, statusMessage: `No METAR data found for ${icao.toUpperCase()}` })
     }
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return data[0]
+    return data[0]!
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 

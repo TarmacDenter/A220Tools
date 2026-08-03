@@ -39,7 +39,7 @@ export function useLocation() {
         navigator.geolocation.getCurrentPosition(resolve, reject);
       });
 
-      const data = await $fetch<{ icao: string }>('/api/nearest-airport', {
+      const data = await $fetch('/api/nearest-airport', {
         query: { lat: position.coords.latitude, lon: position.coords.longitude },
       });
 

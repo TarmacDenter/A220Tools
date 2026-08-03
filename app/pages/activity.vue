@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'ActivityPage' })
 
-const { data, status } = await useFetch<{ icao: string; hits: number; uniqueCallers: number }[]>('/api/activity')
+const { data, status } = await useFetch('/api/activity')
 </script>
 
 <template>

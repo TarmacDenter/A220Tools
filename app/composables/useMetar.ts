@@ -2,17 +2,6 @@ import { ref } from 'vue'
 import type { FetchStatus, MetarData, ParsedWind } from '@/types/wind'
 import { fetchMetarFromServer } from '@/composables/aviationWeatherApi'
 
-interface AviationWeatherMetarRecord {
-  icaoId?: string
-  rawOb?: string
-  wdir?: number | 'VRB' | null
-  wspd?: number
-  wgst?: number | null
-  lat?: number
-  lon?: number
-  name?: string
-}
-
 function parseMetarIssuedAt(rawOb: string, nowMs: number): number | null {
   const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)
   if (!match) return null
@@ -55,7 +44,7 @@ export function useMetar() {
     console.log('Fetching METAR…')
 
     try {
-      const raw = await fetchMetarFromServer<AviationWeatherMetarRecord>(icao)
+      const raw = await fetchMetarFromServer(icao)
       console.log('Raw API response:', raw)
 
       // Parse gust: use wgst field if present, else fall back to rawOb regex

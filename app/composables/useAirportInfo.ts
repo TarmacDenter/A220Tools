@@ -3,14 +3,6 @@ import type { FetchStatus, MagneticCorrection } from '@/types/wind'
 import { fetchAirportFromServer } from '@/composables/aviationWeatherApi'
 
 
-interface AviationWeatherAirportRecord {
-  icaoId?: string
-  name?: string
-  magdec?: string | null
-  lat?: number
-  lon?: number
-}
-
 interface AirportInfo {
   icaoId: string
   name: string
@@ -56,7 +48,7 @@ export function useAirportInfo() {
     }
 
     try {
-      const raw = await fetchAirportFromServer<AviationWeatherAirportRecord>(icao)
+      const raw = await fetchAirportFromServer(icao)
 
       const magdecRaw: string | null = raw.magdec ?? null
 
