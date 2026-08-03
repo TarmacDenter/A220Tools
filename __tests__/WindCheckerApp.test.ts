@@ -52,8 +52,9 @@ function buildAirportResponse() {
 
 function mockSuccessfulFetches() {
   return vi.fn(async (url: string) => {
-    if (url.includes('/api/metar/')) return buildMetarResponse()
-    if (url.includes('/api/airport/')) return buildAirportResponse()
+    if (url.includes('/api/airport-conditions/')) {
+      return { metar: buildMetarResponse(), airport: buildAirportResponse() }
+    }
     throw Object.assign(new Error('Not Found'), { status: 404 })
   })
 }
@@ -177,13 +178,13 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    const metarCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/metar/')).length
-    expect(metarCallCount()).toBe(1)
+    const conditionsCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/airport-conditions/')).length
+    expect(conditionsCallCount()).toBe(1)
 
     await vi.advanceTimersByTimeAsync(300_000)
     await flushAsyncUpdates()
 
-    expect(metarCallCount()).toBe(2)
+    expect(conditionsCallCount()).toBe(2)
   })
 
   it('propagates theme to manual entry panel for dark/light styling', async () => {
@@ -252,8 +253,9 @@ describe('WindCheckerApp', () => {
 
   it('builds the tower wind matrix for variable wind without fake current components', async () => {
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.includes('/api/metar/')) return buildVariableMetarResponse()
-      if (url.includes('/api/airport/')) return buildAirportResponse()
+      if (url.includes('/api/airport-conditions/')) {
+        return { metar: buildVariableMetarResponse(), airport: buildAirportResponse() }
+      }
       throw Object.assign(new Error('Not Found'), { status: 404 })
     })
     vi.stubGlobal('$fetch', fetchMock)

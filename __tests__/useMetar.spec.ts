@@ -1,82 +1,74 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useMetar } from '@/composables/useMetar'
-import { fetchMetarFromServer } from '@/composables/aviationWeatherApi'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useAirportConditions } from '@/composables/useAirportConditions'
+import { fetchAirportConditionsFromServer } from '@/composables/aviationWeatherApi'
 
 vi.mock('@/composables/aviationWeatherApi', () => ({
-  fetchMetarFromServer: vi.fn(),
+  fetchAirportConditionsFromServer: vi.fn(),
 }))
 
-describe('useMetar', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
+const conditions = {
+  metar: {
+    icaoId: 'KSEA',
+    rawOb: 'KSEA 151000Z 24015KT 10SM CLR 03/M02 A3010',
+    wdir: 240,
+    wspd: 15,
+    wgst: null,
+    lat: 47.45,
+    lon: -122.31,
+    name: 'Seattle Tacoma Intl',
+  },
+  airport: {
+    icaoId: 'KSEA',
+    name: 'Seattle Tacoma Intl',
+    magdec: '16E',
+    lat: 47.45,
+    lon: -122.31,
+  },
+}
 
+describe('useAirportConditions', () => {
   afterEach(() => {
     vi.useRealTimers()
+    vi.clearAllMocks()
   })
 
-  it('stores lastFetchedAt on successful METAR fetch', async () => {
+  it('stores lastFetchedAt on successful conditions fetch', async () => {
+    vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-01-15T10:00:00'))
-    vi.mocked(fetchMetarFromServer).mockResolvedValue({
-      icaoId: 'KSEA',
-      rawOb: 'KSEA 151000Z 24015KT 10SM CLR 03/M02 A3010',
-      wdir: 240,
-      wspd: 15,
-      wgst: null,
-      lat: 47.45,
-      lon: -122.31,
-      name: 'Seattle Tacoma Intl',
-    })
+    vi.mocked(fetchAirportConditionsFromServer).mockResolvedValue(conditions)
 
-    const metar = useMetar()
-    await metar.fetchMetar('KSEA')
+    const result = useAirportConditions()
+    await result.fetchAirportConditions('KSEA')
 
-    expect(metar.status.value).toBe('success')
-    expect(metar.lastFetchedAt.value).toBe(new Date('2026-01-15T10:00:00').getTime())
+    expect(result.status.value).toBe('success')
+    expect(result.lastFetchedAt.value).toBe(new Date('2026-01-15T10:00:00').getTime())
   })
 
-  it('parses issued time from raw METAR observation', async () => {
-    const now = new Date(Date.UTC(2026, 0, 15, 10, 0, 0))
-    vi.setSystemTime(now)
-    vi.mocked(fetchMetarFromServer).mockResolvedValue({
-      icaoId: 'KSEA',
-      rawOb: 'KSEA 151000Z 24015KT 10SM CLR 03/M02 A3010',
-      wdir: 240,
-      wspd: 15,
-      wgst: null,
-      lat: 47.45,
-      lon: -122.31,
-      name: 'Seattle Tacoma Intl',
-    })
+  it('parses issued time from the returned METAR', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(Date.UTC(2026, 0, 15, 10, 0, 0)))
+    vi.mocked(fetchAirportConditionsFromServer).mockResolvedValue(conditions)
 
-    const metar = useMetar()
-    await metar.fetchMetar('KSEA')
+    const result = useAirportConditions()
+    await result.fetchAirportConditions('KSEA')
 
-    expect(metar.metar.value?.issuedAt).toBe(Date.UTC(2026, 0, 15, 10, 0, 0))
+    expect(result.metar.value?.issuedAt).toBe(Date.UTC(2026, 0, 15, 10, 0, 0))
   })
 
   it('retains lastFetchedAt after a later fetch error', async () => {
+    vi.useFakeTimers()
     const firstSuccessTime = new Date('2026-01-15T10:00:00')
     vi.setSystemTime(firstSuccessTime)
-    vi.mocked(fetchMetarFromServer).mockResolvedValueOnce({
-      icaoId: 'KSEA',
-      rawOb: 'KSEA 151000Z 24015KT 10SM CLR 03/M02 A3010',
-      wdir: 240,
-      wspd: 15,
-      wgst: null,
-      lat: 47.45,
-      lon: -122.31,
-      name: 'Seattle Tacoma Intl',
-    })
+    vi.mocked(fetchAirportConditionsFromServer).mockResolvedValueOnce(conditions)
 
-    const metar = useMetar()
-    await metar.fetchMetar('KSEA')
+    const result = useAirportConditions()
+    await result.fetchAirportConditions('KSEA')
 
     vi.setSystemTime(new Date('2026-01-15T10:05:00'))
-    vi.mocked(fetchMetarFromServer).mockRejectedValueOnce(new Error('Network down'))
-    await metar.fetchMetar('KSEA')
+    vi.mocked(fetchAirportConditionsFromServer).mockRejectedValueOnce(new Error('Network down'))
+    await result.fetchAirportConditions('KSEA')
 
-    expect(metar.status.value).toBe('error')
-    expect(metar.lastFetchedAt.value).toBe(firstSuccessTime.getTime())
+    expect(result.status.value).toBe('error')
+    expect(result.lastFetchedAt.value).toBe(firstSuccessTime.getTime())
   })
 })

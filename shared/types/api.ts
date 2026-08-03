@@ -27,3 +27,8 @@ export interface MetarApiRecord {
   lon?: number
   name?: string
 }
+
+export interface AirportConditionsResponse {
+  airport: AirportApiRecord
+  metar: MetarApiRecord
+}

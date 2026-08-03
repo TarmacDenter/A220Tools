@@ -1,7 +1,7 @@
 const CACHE_VERSION = 'a220tools-v3'
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`
 const API_CACHE = `${CACHE_VERSION}-api`
-const API_ROUTE_PREFIXES = ['/api/metar/', '/api/airport/', '/api/activity', '/api/nearest-airport']
+const API_ROUTE_PREFIXES = ['/api/airport-conditions/', '/api/metar/', '/api/airport/', '/api/activity', '/api/nearest-airport']
 
 const APP_SHELL_ASSETS = ['/', '/manifest.webmanifest', '/favicon.ico', '/icons/android-chrome-192x192.png', '/icons/android-chrome-512x512.png']
 

@@ -1,4 +1,5 @@
 import type { AirportApiRecord } from '#shared/types/api'
+import { getCachedAirportRecord } from '../../utils/aviationWeather'
 
 export default defineCachedEventHandler(async (event): Promise<AirportApiRecord> => {
   const icao = getRouterParam(event, 'icao')?.toUpperCase();
@@ -6,16 +7,8 @@ export default defineCachedEventHandler(async (event): Promise<AirportApiRecord>
     throw createError({ statusCode: 400, statusMessage: 'Missing ICAO code' });
   }
 
-  const upstreamUrl = `https://aviationweather.gov/api/data/airport?ids=${encodeURIComponent(icao)}&format=json`;
-
   try {
-    const data = await $fetch<AirportApiRecord[]>(upstreamUrl);
-    if (!Array.isArray(data) || data.length === 0) {
-      console.warn('[airport] not found', icao);
-      throw createError({ statusCode: 404, statusMessage: `No airport data found for ${icao}` });
-    }
-
-    return data[0]!;
+    return await getCachedAirportRecord(icao)
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error;
 

@@ -1,5 +1,6 @@
 import { errorFields, logEvent } from '../../utils/logger'
-import { coarseRequestOrigin } from '../../utils/requestTelemetry'
+import { getCachedMetarRecord } from '../../utils/aviationWeather'
+import { recordAirportLookup } from '../../utils/airportLookup'
 import type { MetarApiRecord } from '#shared/types/api'
 
 export default defineEventHandler(async (event): Promise<MetarApiRecord> => {
@@ -8,32 +9,11 @@ export default defineEventHandler(async (event): Promise<MetarApiRecord> => {
     throw createError({ statusCode: 400, statusMessage: 'Missing ICAO code' })
   }
 
-  const upstreamUrl = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(icao.toUpperCase())}&format=json`
-
   try {
-    const data = await $fetch<MetarApiRecord[]>(upstreamUrl)
-    if (!Array.isArray(data) || data.length === 0) {
-      throw createError({ statusCode: 404, statusMessage: `No METAR data found for ${icao.toUpperCase()}` })
-    }
-
-    try {
-      const origin = coarseRequestOrigin(event.context.requestTelemetry?.origin ?? 'unknown')
-      const { isNew } = await useAirportStorage().addAirportHit(icao.toUpperCase(), origin)
-      logEvent('info', 'airport.lookup', {
-        requestId: event.context.requestTelemetry?.requestId ?? null,
-        icao: icao.toUpperCase(),
-        outcome: 'success',
-        uniqueCaller: isNew,
-      })
-    } catch (error) {
-      logEvent('error', 'airport.hit_storage_failed', {
-        requestId: event.context.requestTelemetry?.requestId ?? null,
-        icao: icao.toUpperCase(),
-        ...errorFields(error),
-      })
-    }
-
-    return data[0]!
+    const normalizedIcao = icao.toUpperCase()
+    const metar = await getCachedMetarRecord(normalizedIcao)
+    await recordAirportLookup(event, normalizedIcao)
+    return metar
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
