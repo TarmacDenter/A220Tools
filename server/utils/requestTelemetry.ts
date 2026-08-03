@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 export interface RequestFingerprintInput {
   method: string
   pathname: string
@@ -5,7 +7,19 @@ export interface RequestFingerprintInput {
   body?: unknown
 }
 
+export interface RequestTelemetry {
+  requestId: string
+  fingerprint: string
+  origin: string
+  repeatedRequestCount: number
+  startTimeNs: bigint
+}
+
 const repeatedRequestCounts = new Map<string, number>()
+
+export function createRequestId(): string {
+  return randomUUID()
+}
 
 function normalizeSearch(search = ''): string {
   const searchParams = new URLSearchParams(search)
@@ -72,6 +86,22 @@ export function extractRequestOrigin(
     ?? readHeaderValue(headers, 'fly-client-ip')
     ?? remoteAddress
     ?? 'unknown'
+}
+
+export function coarseRequestOrigin(origin: string): string {
+  if (origin === 'unknown') return origin
+
+  if (origin.includes('.')) {
+    const parts = origin.split('.')
+    return parts.length === 4 ? `${parts[0]}.${parts[1]}.${parts[2]}.0/24` : 'ipv4:unknown'
+  }
+
+  if (origin.includes(':')) {
+    const parts = origin.split(':').filter(Boolean)
+    return parts.length >= 4 ? `${parts.slice(0, 4).join(':')}::/64` : 'ipv6:unknown'
+  }
+
+  return 'unknown'
 }
 
 export function resetRepeatedRequestCounts(): void {

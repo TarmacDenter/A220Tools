@@ -1,18 +1,18 @@
+import { errorFields, logEvent, logLevelForStatus } from '../utils/logger'
+
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('error', (error: Error & { statusCode?: number }, { event }) => {
     const telemetry = event?.context.requestTelemetry;
 
-    console.error(
-      '[request:error]',
-      JSON.stringify({
-        method: event?.method,
-        path: event ? getRequestURL(event).pathname : 'unknown',
-        origin: telemetry?.origin ?? 'unknown',
-        repeatedRequestCount: telemetry?.repeatedRequestCount ?? null,
-        fingerprint: telemetry?.fingerprint ?? null,
-        statusCode: error?.statusCode ?? 500,
-        message: error?.message ?? 'Unknown server error',
-      }),
-    );
+    const statusCode = error?.statusCode ?? 500
+
+    logEvent(logLevelForStatus(statusCode), 'request.error', {
+      requestId: telemetry?.requestId ?? null,
+      method: event?.method ?? 'unknown',
+      path: event ? getRequestURL(event).pathname : 'unknown',
+      repeatedRequestCount: telemetry?.repeatedRequestCount ?? null,
+      statusCode,
+      ...errorFields(error),
+    })
   });
 });

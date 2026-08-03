@@ -1,3 +1,6 @@
+import { errorFields, logEvent } from '../../utils/logger'
+import { coarseRequestOrigin } from '../../utils/requestTelemetry'
+
 export default defineEventHandler(async (event) => {
   const icao = getRouterParam(event, 'icao')
   if (!icao) {
@@ -13,18 +16,32 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-      const origin = event.context.requestTelemetry?.origin ?? 'unknown'
+      const origin = coarseRequestOrigin(event.context.requestTelemetry?.origin ?? 'unknown')
       const { isNew } = await useAirportStorage().addAirportHit(icao.toUpperCase(), origin)
-      console.log('[hits:debug] write succeeded', { icao: icao.toUpperCase(), isNew, origin })
+      logEvent('info', 'airport.lookup', {
+        requestId: event.context.requestTelemetry?.requestId ?? null,
+        icao: icao.toUpperCase(),
+        outcome: 'success',
+        uniqueCaller: isNew,
+      })
     } catch (error) {
-      console.error('[hits] failed to record hit for', icao.toUpperCase(), error)
+      logEvent('error', 'airport.hit_storage_failed', {
+        requestId: event.context.requestTelemetry?.requestId ?? null,
+        icao: icao.toUpperCase(),
+        ...errorFields(error),
+      })
     }
 
     return data[0]
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
-    console.warn('[metar] upstream failed', { icao: icao.toUpperCase(), error })
+    logEvent('warn', 'metar.lookup', {
+      requestId: event.context.requestTelemetry?.requestId ?? null,
+      icao: icao.toUpperCase(),
+      outcome: 'upstream_failure',
+      ...errorFields(error),
+    })
     throw createError({
       statusCode: 502,
       statusMessage: 'AviationWeather METAR upstream request failed',
