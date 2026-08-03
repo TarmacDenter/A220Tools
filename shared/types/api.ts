@@ -1,3 +1,10 @@
+export type {
+  AirportApiRecord,
+  AirportConditionsResponse,
+  MetarApiRecord,
+  RunwaySelection,
+} from '../schemas/airportConditions'
+
 export interface ActivityRow {
   icao: string
   hits: number
@@ -7,23 +14,4 @@ export interface ActivityRow {
 
 export interface NearestAirportResponse {
   icao: string
-}
-
-export interface AirportApiRecord {
-  icaoId?: string
-  name?: string
-  magdec?: string | null
-  lat?: number
-  lon?: number
-}
-
-export interface MetarApiRecord {
-  icaoId?: string
-  rawOb?: string
-  wdir?: number | 'VRB' | null
-  wspd?: number
-  wgst?: number | null
-  lat?: number
-  lon?: number
-  name?: string
 }

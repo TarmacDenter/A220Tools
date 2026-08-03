@@ -43,10 +43,10 @@ function formatPhase(phase: TowerWindPhase): string {
 
     <div class="matrix-table-wrapper">
       <table class="matrix-table">
-        <caption>Tower Wind Matrix</caption>
+        <caption>Tower Wind Matrix (Magnetic)</caption>
         <thead>
           <tr>
-            <th>Wind Dir</th>
+            <th>Wind Dir (°M)</th>
             <th>Max Wind</th>
             <th>Limit</th>
           </tr>

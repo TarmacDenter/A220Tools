@@ -20,6 +20,7 @@ describe('PWA assets', () => {
   it('service worker handles Nuxt backend API routes', () => {
     const serviceWorker = readPublicFile('sw.js')
 
+    expect(serviceWorker).toContain("'/api/airport-conditions/'")
     expect(serviceWorker).toContain("'/api/metar/'")
     expect(serviceWorker).toContain("'/api/airport/'")
     expect(serviceWorker).toContain("'/api/activity'")

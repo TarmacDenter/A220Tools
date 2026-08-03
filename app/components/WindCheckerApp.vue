@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { useMetar, parseMetarWind } from '@/composables/useMetar';
-import { useAirportInfo } from '@/composables/useAirportInfo';
+import { parseMetarWind } from '@/composables/useMetar';
+import { useAirportConditions } from '@/composables/useAirportConditions';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
 import { buildTowerWindMatrix, getCurrentWindComponentReadout } from '@/composables/useTowerWindMatrix';
 import { useInterval } from '@/composables/useInterval';
@@ -9,6 +9,7 @@ import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLi
 import type { RCAM_KEYS } from '@/constants/windLimits';
 import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
+import type { RunwaySelection } from '#shared/types/api';
 
 import AirportInput from './AirportInput.vue';
 import ManualWindEntry from './ManualWindEntry.vue';
@@ -49,13 +50,12 @@ const manualInputs = ref<ManualWindInput>({
   declinationDir: 'W',
 });
 
-// User chose to continue with 0° declination despite airport fetch failure
-const useZeroDecl = ref(false);
-
 // Taxi speed display
 const showTaxiSpeed = ref(false);
 const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT));
-const runwayHeadingInput = ref('360');
+const runwayHeadingInput = ref('');
+const runwaySelectionValue = ref('manual');
+const selectedRunway = ref<RunwaySelection | null>(null);
 const rcamCodeInput = ref('6');
 const maxTaxiSpeed = computed(() => {
   if (!showTaxiSpeed.value) return 0;
@@ -64,20 +64,22 @@ const maxTaxiSpeed = computed(() => {
   return parsed;
 });
 
-const runwayHeading = computed(() => {
-  const parsed = Number(runwayHeadingInput.value);
-  if (!Number.isFinite(parsed)) return 0;
-  return ((parsed % 360) + 360) % 360;
-});
-
 const selectedRcamCode = computed<RCAM_KEYS>(() => {
   const parsed = Number(rcamCodeInput.value);
   if (parsed >= 1 && parsed <= 6) return parsed as RCAM_KEYS;
   return 6;
 });
 
-const { status: metarStatus, metar, error: metarError, lastFetchedAt, fetchMetar, clearMetar } = useMetar();
-const { status: airportStatus, magneticCorrection, error: airportError, fetchAirportInfo } = useAirportInfo();
+const {
+  status: conditionsStatus,
+  metar,
+  magneticCorrection,
+  runways,
+  error: conditionsError,
+  lastFetchedAt,
+  fetchAirportConditions,
+  clearConditions,
+} = useAirportConditions();
 const icaoInput = ref('');
 const activeIcao = ref('');
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
@@ -92,41 +94,69 @@ useInterval(() => {
 useInterval(() => {
   if (!isOnline.value) return;
   if (manualMode.value) return;
-  if (metarStatus.value !== 'success') return;
+  if (conditionsStatus.value !== 'success') return;
   if (activeIcao.value.length < 3) return;
-  void fetchMetar(activeIcao.value);
+  void fetchAirportConditions(activeIcao.value);
 }, 300_000);
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
   if (!isOnline.value) return;
-  useZeroDecl.value = false;
-  activeIcao.value = icao.toUpperCase();
-  // Requests are sequenced (not concurrent) to avoid triggering rate limiting
-  // on the Aviation Weather API and CORS proxies, which enforce a 1 req/min/thread limit.
-  await fetchMetar(icao);
-  await fetchAirportInfo(icao);
+  const normalizedIcao = icao.toUpperCase();
+  const isNewAirport = activeIcao.value !== normalizedIcao;
+  if (isNewAirport) {
+    selectedRunway.value = null;
+    runwaySelectionValue.value = 'manual';
+    runwayHeadingInput.value = '';
+    runways.value = [];
+  }
+  activeIcao.value = normalizedIcao;
+  await fetchAirportConditions(icao);
+  if (isNewAirport) {
+    runwaySelectionValue.value = runways.value.length > 0 ? '' : 'manual';
+  }
 }
 
 function enableManualMode() {
   manualMode.value = true;
 }
 
-function continueWithZeroDecl() {
-  useZeroDecl.value = true;
-  console.warn('[WindCheckerApp] User chose to continue with 0° declination — METAR winds are TRUE, no magnetic correction applied');
+// --- Error state helpers ---
+const conditionsFailed = computed(() => conditionsStatus.value === 'error');
+
+const runwayOptions = computed(() => {
+  const options = [...runways.value];
+  if (selectedRunway.value && !options.some((runway) => runway.name === selectedRunway.value?.name)) {
+    options.push(selectedRunway.value);
+  }
+  return options.sort((a, b) => a.heading - b.heading || a.name.localeCompare(b.name));
+});
+
+function onRunwaySelectionChange() {
+  if (runwaySelectionValue.value === 'manual' || runwaySelectionValue.value === '') {
+    selectedRunway.value = null;
+    return;
+  }
+  selectedRunway.value = runwayOptions.value.find((runway) => runway.name === runwaySelectionValue.value) ?? null;
 }
 
-// --- Error state helpers ---
-const bothFailed = computed(() =>
-  metarStatus.value === 'error' && airportStatus.value === 'error'
-);
-const onlyMetarFailed = computed(() =>
-  metarStatus.value === 'error' && airportStatus.value !== 'error'
-);
-const onlyAirportFailed = computed(() =>
-  metarStatus.value === 'success' && airportStatus.value === 'error' && !useZeroDecl.value
-);
+watch(runwaySelectionValue, onRunwaySelectionChange);
+
+watch(runways, (updatedRunways) => {
+  if (!selectedRunway.value) return;
+  const refreshed = updatedRunways.find((runway) => runway.name === selectedRunway.value?.name);
+  if (refreshed) selectedRunway.value = refreshed;
+}, { deep: true });
+
+const runwayHeading = computed<number | null>(() => {
+  if (selectedRunway.value) return selectedRunway.value.heading;
+  if (runwaySelectionValue.value !== 'manual') return null;
+  const raw = String(runwayHeadingInput.value ?? '').trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 360) return null;
+  return parsed === 360 ? 0 : parsed;
+});
 
 // --- Computed wind result ---
 const parsedWind = computed<ParsedWind | null>(() => {
@@ -140,9 +170,6 @@ const parsedWind = computed<ParsedWind | null>(() => {
 });
 
 const effectiveMagCorr = computed<MagneticCorrection | null>(() => {
-  if (useZeroDecl.value) {
-    return { declination: 0, source: 'airport_api', rawMagdecString: null };
-  }
   if (manualMode.value && manualInputs.value.source === 'atis_mag') {
     return { declination: 0, source: 'manual_magnetic', rawMagdecString: null };
   }
@@ -169,7 +196,6 @@ const windResult = computed(() => {
   const mc = effectiveMagCorr.value;
   if (!pw || !mc) return null;
   // Don't compute if we're blocked waiting for user to choose a fallback
-  if (onlyAirportFailed.value) return null;
   return computeWindResult(pw, mc, maxTaxiSpeed.value);
 });
 
@@ -187,6 +213,7 @@ const runwayPhase = computed(() => {
 });
 
 const towerReferenceWindDirection = computed(() => {
+  if (runwayHeading.value === null) return null;
   const result = windResult.value;
   if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable) return runwayHeading.value;
   return result.windDirectionMagnetic;
@@ -194,7 +221,7 @@ const towerReferenceWindDirection = computed(() => {
 
 const towerWindMatrix = computed(() => {
   const phase = runwayPhase.value;
-  if (!phase || !windResult.value) return null;
+  if (!phase || !windResult.value || runwayHeading.value === null || towerReferenceWindDirection.value === null) return null;
   return buildTowerWindMatrix({
     phase,
     rcamCode: selectedRcamCode.value,
@@ -206,7 +233,7 @@ const towerWindMatrix = computed(() => {
 const currentTowerWindReadout = computed(() => {
   const phase = runwayPhase.value;
   const result = windResult.value;
-  if (!phase || !result) return null;
+  if (!phase || !result || runwayHeading.value === null || towerReferenceWindDirection.value === null) return null;
   if (result.parsedWind.isVariable) return null;
   return getCurrentWindComponentReadout({
     phase,
@@ -218,7 +245,7 @@ const currentTowerWindReadout = computed(() => {
 });
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);
-const isLoading = computed(() => metarStatus.value === 'loading' || airportStatus.value === 'loading');
+const isLoading = computed(() => conditionsStatus.value === 'loading');
 
 watch(windResult, (result) => {
   if (result) nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
@@ -236,7 +263,7 @@ const metarFreshnessText = computed(() => {
   return `${relative} (${absolute} local)`;
 });
 
-const isMetarActive = computed(() => !manualMode.value && metarStatus.value === 'success' && metar.value !== null);
+const isMetarActive = computed(() => !manualMode.value && conditionsStatus.value === 'success' && metar.value !== null);
 
 const metarFreshnessRaw = computed(() => {
   if (!isMetarActive.value || !rawMetar.value) return null;
@@ -293,6 +320,21 @@ const metarFetchedAtUtc = computed(() => {
   return formatUtcTime(lastFetchedAt.value);
 });
 
+const metarConversionSummary = computed(() => {
+  if (!isMetarActive.value || !windResult.value) return null;
+  const result = windResult.value;
+  if (result.parsedWind.isCalm) {
+    return 'Calm wind — no directional conversion is needed.';
+  }
+  if (result.parsedWind.isVariable) {
+    return 'Variable direction — no fixed magnetic direction is available.';
+  }
+  const declination = result.magneticCorrection.declination;
+  const absDeclination = Math.abs(declination).toFixed(1);
+  const direction = result.parsedWind.directionTrue;
+  return `${direction}°T → ${result.windDirectionMagnetic.toFixed(0).padStart(3, '0')}°M (${absDeclination}°${declination >= 0 ? 'E' : 'W'} declination)`;
+});
+
 function handleOffline() {
   isOnline.value = false;
   manualMode.value = true;
@@ -318,9 +360,8 @@ onUnmounted(() => {
 
 watch(manualMode, async (enabled) => {
   if (enabled) {
-    clearMetar();
+    clearConditions();
     icaoInput.value = '';
-    useZeroDecl.value = false;
   } else {
     if (activeIcao.value.length >= 3) {
       icaoInput.value = activeIcao.value;
@@ -428,7 +469,7 @@ watch(manualMode, async (enabled) => {
     <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
     <div v-if="!manualMode">
-      <AirportInput v-model="icaoInput" :status="metarStatus" :disabled="!isOnline || manualMode" @fetch="onFetch" />
+      <AirportInput v-model="icaoInput" :status="conditionsStatus" :disabled="!isOnline || manualMode" @fetch="onFetch" />
     </div>
 
     <p v-if="metarFreshnessText" class="metar-freshness">
@@ -442,8 +483,22 @@ watch(manualMode, async (enabled) => {
 
     <section v-if="runwayPhase" class="runway-card">
       <div class="runway-setup">
-        <label class="runway-field">
-          Runway heading (°M)
+        <label v-if="runwayOptions.length > 0" class="runway-field">
+          Runway
+          <select
+            id="runway-selector"
+            v-model="runwaySelectionValue"
+            :disabled="isLoading"
+          >
+            <option value="" disabled>Select runway…</option>
+            <option v-for="runway in runwayOptions" :key="runway.name" :value="runway.name">
+              {{ runway.name }} — {{ String(runway.heading).padStart(3, '0') }}°M
+            </option>
+            <option value="manual">Manual heading</option>
+          </select>
+        </label>
+        <label v-if="runwayOptions.length === 0 || runwaySelectionValue === 'manual'" class="runway-field">
+          {{ runwayOptions.length === 0 ? 'Runway heading (°M)' : 'Manual heading (°M)' }}
           <input
             id="runway-heading-input"
             v-model="runwayHeadingInput"
@@ -451,8 +506,12 @@ watch(manualMode, async (enabled) => {
             min="0"
             max="360"
             step="1"
+            :disabled="isLoading"
           />
         </label>
+        <p v-if="!isLoading && runwayOptions.length === 0" class="runway-hint">
+          Runway data unavailable—enter a magnetic heading manually.
+        </p>
         <label class="runway-field">
           RCAM
           <select id="rcam-code-select" v-model="rcamCodeInput">
@@ -472,44 +531,12 @@ watch(manualMode, async (enabled) => {
       Fetching data…
     </StatusMessage>
 
-    <!-- Both fetches failed -->
-    <ErrorPanel v-else-if="bothFailed && !manualMode" title="Could not retrieve data">
-      <p class="error-detail"><strong>METAR:</strong> {{ metarError }}</p>
-      <p class="error-detail"><strong>Airport info:</strong> {{ airportError }}</p>
+    <!-- Conditions fetch failed -->
+    <ErrorPanel v-else-if="conditionsFailed && !manualMode" title="Could not retrieve airport conditions">
+      <p class="error-detail">{{ conditionsError }}</p>
       <div class="error-actions">
         <button class="action-btn primary" @click="enableManualMode">
           Enter winds manually
-        </button>
-      </div>
-    </ErrorPanel>
-
-    <!-- Only METAR failed -->
-    <ErrorPanel v-else-if="onlyMetarFailed && !manualMode" title="METAR fetch failed">
-      <p class="error-detail">{{ metarError }}</p>
-      <p class="error-hint">You can enter winds manually below. Airport magnetic declination was retrieved successfully.
-      </p>
-      <div class="error-actions">
-        <button class="action-btn primary" @click="enableManualMode">
-          Enter winds manually
-        </button>
-      </div>
-    </ErrorPanel>
-
-    <!-- METAR succeeded but airport info failed — user must choose -->
-    <ErrorPanel v-else-if="onlyAirportFailed" variant="warn" title="Airport declination unavailable">
-      <p class="error-detail">{{ airportError }}</p>
-      <p class="error-hint">
-        METAR winds are reported in <strong>TRUE</strong> degrees. Without a declination value they
-        cannot be converted to magnetic. Choose an option:
-      </p>
-      <div class="error-actions">
-        <button class="action-btn secondary" @click="continueWithZeroDecl">
-          Continue with 0° declination
-          <span class="action-note">(treat METAR winds as magnetic — adjust mentally)</span>
-        </button>
-        <button class="action-btn primary" @click="enableManualMode">
-          Enter winds manually
-          <span class="action-note">(enter magnetic direction directly)</span>
         </button>
       </div>
     </ErrorPanel>
@@ -517,12 +544,6 @@ watch(manualMode, async (enabled) => {
     <!-- Results -->
     <div ref="readoutRef" />
     <template v-if="windResult">
-      <!-- Zero-decl warning banner -->
-      <StatusMessage v-if="useZeroDecl" variant="warning">
-        <strong>Warning:</strong> No declination applied — METAR winds are TRUE degrees.
-        Magnetic variation at this airport is unknown. Verify against ATIS/AWOS.
-      </StatusMessage>
-
       <div v-if="isMetarActive" class="metar-issued-panel" :class="`metar-issued-${metarIssuedStatus}`">
         <div class="metar-issued-row">
           <strong v-if="metarIssuedAtUtc">
@@ -535,10 +556,15 @@ watch(manualMode, async (enabled) => {
         <div class="metar-issued-row" v-if="metarFetchedAgeMin !== null && metarFetchedAtUtc">
           Fetched {{ formatElapsedMinutes(metarFetchedAgeMin) }} at {{ metarFetchedAtUtc }}.
         </div>
+        <div class="metar-conversion-notice" data-testid="metar-conversion-notice">
+          <strong>METAR winds: TRUE → MAGNETIC</strong>
+          <span>{{ metarConversionSummary }}</span>
+        </div>
       </div>
 
+      <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
+
       <template v-if="activePhase === 'start'">
-        <AssumptionsDisplay :result="windResult" :raw-metar="rawMetar" />
         <SafetyReadout :result="windResult" />
         <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
         <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed"
@@ -565,7 +591,7 @@ watch(manualMode, async (enabled) => {
     </template>
 
     <!-- Idle state -->
-    <div v-else-if="!isLoading && metarStatus === 'idle' && !manualMode" class="idle-prompt">
+    <div v-else-if="!isLoading && conditionsStatus === 'idle' && !manualMode" class="idle-prompt">
       Enter an ICAO identifier above and click <strong>Check METAR</strong>, or enable manual entry.
     </div>
 
@@ -768,6 +794,22 @@ watch(manualMode, async (enabled) => {
   margin-top: 0.25rem;
 }
 
+.metar-conversion-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  align-items: baseline;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+}
+
+.metar-conversion-notice strong {
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
 .toggle-label {
   display: flex;
   align-items: center;
@@ -851,6 +893,13 @@ watch(manualMode, async (enabled) => {
   font-family: var(--font-mono);
   font-size: 1rem;
   padding: 0.35rem 0.55rem;
+}
+
+.runway-hint {
+  margin: 0;
+  align-self: end;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
 }
 
 .app-footer {

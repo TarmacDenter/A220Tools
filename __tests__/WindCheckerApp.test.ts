@@ -52,8 +52,16 @@ function buildAirportResponse() {
 
 function mockSuccessfulFetches() {
   return vi.fn(async (url: string) => {
-    if (url.includes('/api/metar/')) return buildMetarResponse()
-    if (url.includes('/api/airport/')) return buildAirportResponse()
+    if (url.includes('/api/airport-conditions/')) {
+      return {
+        metar: buildMetarResponse(),
+        airport: buildAirportResponse(),
+        runways: [
+          { name: '04L', heading: 44 },
+          { name: '22R', heading: 224 },
+        ],
+      }
+    }
     throw Object.assign(new Error('Not Found'), { status: 404 })
   })
 }
@@ -142,6 +150,21 @@ describe('WindCheckerApp', () => {
     expect(wrapper.text()).toContain('Updated 1 min ago')
   })
 
+  it('clearly shows the METAR true-to-magnetic conversion', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    const notice = wrapper.get('[data-testid="metar-conversion-notice"]')
+    expect(notice.text()).toContain('METAR winds: TRUE → MAGNETIC')
+    expect(notice.text()).toContain('270°T → 283°M')
+    expect(notice.text()).toContain('13.0°W')
+  })
+
   it('shows METAR issued time in UTC and warns when older than 30 minutes', async () => {
     const fetchMock = mockSuccessfulFetches()
     vi.stubGlobal('$fetch', fetchMock)
@@ -177,13 +200,110 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    const metarCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/metar/')).length
-    expect(metarCallCount()).toBe(1)
+    const conditionsCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/airport-conditions/')).length
+    expect(conditionsCallCount()).toBe(1)
 
     await vi.advanceTimersByTimeAsync(300_000)
     await flushAsyncUpdates()
 
-    expect(metarCallCount()).toBe(2)
+    expect(conditionsCallCount()).toBe(2)
+  })
+
+  it('offers magnetic runway selections shared by takeoff and landing', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    const runwaySelector = wrapper.find('#runway-selector')
+    expect(runwaySelector.findAll('option').map((option) => option.text())).toContain('04L — 044°M')
+    expect(runwaySelector.findAll('option').map((option) => option.text())).toContain('22R — 224°M')
+
+    await runwaySelector.setValue('04L')
+    await wrapper.find('#phase-landing').trigger('click')
+
+    expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+    expect(wrapper.find('#runway-heading-input').exists()).toBe(false)
+  })
+
+  it('shows assumptions and data sources for takeoff and landing', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('[data-testid="assumptions-toggle"]').exists()).toBe(true)
+
+    await wrapper.find('#phase-takeoff').trigger('click')
+    expect(wrapper.find('[data-testid="assumptions-toggle"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Assumptions & Data Sources')
+
+    await wrapper.find('#phase-landing').trigger('click')
+    expect(wrapper.find('[data-testid="assumptions-toggle"]').exists()).toBe(true)
+  })
+
+  it('requires an explicit manual heading when no runway data is available', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.includes('/api/airport-conditions/')) {
+        return { metar: buildMetarResponse(), airport: buildAirportResponse(), runways: [] }
+      }
+      throw Object.assign(new Error('Not Found'), { status: 404 })
+    })
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('#runway-heading-input').exists()).toBe(true)
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(false)
+
+    await wrapper.find('#runway-heading-input').setValue('90')
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+  })
+
+  it('preserves the selected runway during background refresh', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+    await wrapper.find('#runway-selector').setValue('04L')
+
+    await vi.advanceTimersByTimeAsync(300_000)
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+  })
+
+  it('clears the selected runway when the airport changes', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+    await wrapper.find('#runway-selector').setValue('04L')
+
+    await wrapper.find('#icao-input').setValue('KLAX')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '')
   })
 
   it('propagates theme to manual entry panel for dark/light styling', async () => {
@@ -232,7 +352,8 @@ describe('WindCheckerApp', () => {
 
     const matrix = wrapper.find('.tower-wind-matrix')
     expect(matrix.exists()).toBe(true)
-    expect(matrix.text()).toContain('Tower Wind Matrix')
+    expect(matrix.text()).toContain('Tower Wind Matrix (Magnetic)')
+    expect(matrix.text()).toContain('Wind Dir (°M)')
     expect(matrix.text()).toContain('070°')
     expect(matrix.text()).toContain('090°')
     expect(matrix.text()).toContain('32 kt')
@@ -252,8 +373,16 @@ describe('WindCheckerApp', () => {
 
   it('builds the tower wind matrix for variable wind without fake current components', async () => {
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.includes('/api/metar/')) return buildVariableMetarResponse()
-      if (url.includes('/api/airport/')) return buildAirportResponse()
+      if (url.includes('/api/airport-conditions/')) {
+        return {
+          metar: buildVariableMetarResponse(),
+          airport: buildAirportResponse(),
+          runways: [
+            { name: '04L', heading: 44 },
+            { name: '22R', heading: 224 },
+          ],
+        }
+      }
       throw Object.assign(new Error('Not Found'), { status: 404 })
     })
     vi.stubGlobal('$fetch', fetchMock)
@@ -268,8 +397,11 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
+    await wrapper.find('#runway-selector').setValue('04L')
+    await flushAsyncUpdates()
+
     expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
     expect(wrapper.text()).toContain('Current components unavailable for variable wind.')
-    expect(wrapper.text()).toContain('000°')
+    expect(wrapper.text()).toContain('040°')
   })
 })
