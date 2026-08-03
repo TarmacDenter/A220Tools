@@ -1,10 +1,12 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import {
   buildRequestFingerprint,
+  coarseRequestOrigin,
   extractRequestOrigin,
   incrementRepeatedRequestCount,
   resetRepeatedRequestCounts,
 } from '../server/utils/requestTelemetry'
+import { logLevelForStatus } from '../server/utils/logger'
 
 describe('requestTelemetry helpers', () => {
   beforeEach(() => {
@@ -40,5 +42,17 @@ describe('requestTelemetry helpers', () => {
     }
 
     expect(extractRequestOrigin(headers, '127.0.0.1')).toBe('203.0.113.42')
+  })
+
+  it('coarsens caller origins before they are persisted', () => {
+    expect(coarseRequestOrigin('198.51.100.23')).toBe('198.51.100.0/24')
+    expect(coarseRequestOrigin('2001:db8:1234:5678:abcd::1')).toBe('2001:db8:1234:5678::/64')
+  })
+
+  it('classifies expected input failures below error severity', () => {
+    expect(logLevelForStatus(400)).toBe('info')
+    expect(logLevelForStatus(404)).toBe('info')
+    expect(logLevelForStatus(429)).toBe('warn')
+    expect(logLevelForStatus(500)).toBe('error')
   })
 })
