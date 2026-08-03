@@ -6,7 +6,8 @@ export const MetarUpstreamSchema = z.object({
   obsTime: z.number().optional(),
   wdir: z.union([z.number(), z.literal('VRB'), z.null()]),
   wspd: z.number(),
-  wgst: z.union([z.number(), z.null()]),
+  // AviationWeather omits wgst when the observation has no reported gust.
+  wgst: z.number().nullable().optional(),
   lat: z.number().optional(),
   lon: z.number().optional(),
   name: z.string().optional(),

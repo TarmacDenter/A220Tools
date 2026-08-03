@@ -91,4 +91,25 @@ describe('getAirportConditions', () => {
 
     await expect(getAirportConditions('KJFK')).rejects.toMatchObject({ statusCode: 502 })
   })
+
+  it('normalizes an omitted gust value from AviationWeather', async () => {
+    mockFetch
+      .mockResolvedValueOnce([{
+        icaoId: 'KJFK',
+        rawOb: 'METAR KJFK 032151Z 18008KT 10SM CLR',
+        wdir: 180,
+        wspd: 8,
+      }])
+      .mockResolvedValueOnce([{
+        icaoId: 'KJFK',
+        name: 'NEW YORK/JOHN F KENNEDY INTL',
+        lat: 40.6399,
+        lon: -73.7787,
+        magdec: '13W',
+      }])
+
+    const result = await getAirportConditions('KJFK')
+
+    expect(result.metar.wgst).toBeNull()
+  })
 })

@@ -119,7 +119,7 @@ export async function getAirportConditions(icao: string): Promise<AirportConditi
     obsTime: rawMetar.obsTime,
     wdir: rawMetar.wdir,
     wspd: rawMetar.wspd,
-    wgst: rawMetar.wgst,
+    wgst: rawMetar.wgst ?? null,
     lat: rawMetar.lat,
     lon: rawMetar.lon,
     name: rawMetar.name,
