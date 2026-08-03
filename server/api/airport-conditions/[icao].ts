@@ -1,7 +1,7 @@
 import { errorFields, logEvent } from '../../utils/logger'
 import { recordAirportLookup } from '../../utils/airportLookup'
 import { getAirportConditions } from '../../utils/aviationWeather'
-import type { AirportConditionsResponse } from '#shared/types/api'
+import type { AirportConditionsResponse } from '#shared/schemas/airportConditions'
 
 export default defineEventHandler(async (event): Promise<AirportConditionsResponse> => {
   const icao = getRouterParam(event, 'icao')?.toUpperCase()

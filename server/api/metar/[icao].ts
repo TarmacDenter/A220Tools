@@ -1,9 +1,9 @@
 import { errorFields, logEvent } from '../../utils/logger'
 import { getCachedMetarRecord } from '../../utils/aviationWeather'
 import { recordAirportLookup } from '../../utils/airportLookup'
-import type { MetarApiRecord } from '#shared/types/api'
+import type { MetarUpstream } from '#shared/schemas/airportConditions'
 
-export default defineEventHandler(async (event): Promise<MetarApiRecord> => {
+export default defineEventHandler(async (event): Promise<MetarUpstream> => {
   const icao = getRouterParam(event, 'icao')
   if (!icao) {
     throw createError({ statusCode: 400, statusMessage: 'Missing ICAO code' })

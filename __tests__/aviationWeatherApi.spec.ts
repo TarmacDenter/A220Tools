@@ -11,6 +11,7 @@ describe('aviationWeatherApi', () => {
     const response = {
       metar: { icaoId: 'KJFK' },
       airport: { icaoId: 'KJFK', magdec: '13W' },
+      runways: [],
     }
     const fetchMock = vi.fn().mockResolvedValueOnce(response)
     vi.stubGlobal('$fetch', fetchMock)

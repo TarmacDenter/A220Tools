@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import type { FetchStatus, MagneticCorrection, MetarData } from '@/types/wind'
 import { fetchAirportConditionsFromServer } from '@/composables/aviationWeatherApi'
+import type { RunwaySelection } from '#shared/types/api'
 
 function parseMetarIssuedAt(rawOb: string, nowMs: number): number | null {
   const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)
@@ -40,6 +41,7 @@ export function useAirportConditions() {
   const status = ref<FetchStatus>('idle')
   const metar = ref<MetarData | null>(null)
   const magneticCorrection = ref<MagneticCorrection | null>(null)
+  const runways = ref<RunwaySelection[]>([])
   const error = ref<string | null>(null)
   const lastFetchedAt = ref<number | null>(null)
 
@@ -47,12 +49,14 @@ export function useAirportConditions() {
     status.value = 'loading'
     metar.value = null
     magneticCorrection.value = null
+    runways.value = []
     error.value = null
 
     try {
       const response = await fetchAirportConditionsFromServer(icao)
       const rawMetar = response.metar
       const rawAirport = response.airport
+      runways.value = response.runways ?? []
       const normalizedIcao = icao.toUpperCase()
 
       let wgst: number | null = rawMetar.wgst ?? null
@@ -101,9 +105,10 @@ export function useAirportConditions() {
     status.value = 'idle'
     metar.value = null
     magneticCorrection.value = null
+    runways.value = []
     error.value = null
     lastFetchedAt.value = null
   }
 
-  return { status, metar, magneticCorrection, error, lastFetchedAt, fetchAirportConditions, clearConditions }
+  return { status, metar, magneticCorrection, runways, error, lastFetchedAt, fetchAirportConditions, clearConditions }
 }

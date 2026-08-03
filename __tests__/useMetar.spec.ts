@@ -24,6 +24,7 @@ const conditions = {
     lat: 47.45,
     lon: -122.31,
   },
+  runways: [],
 }
 
 describe('useAirportConditions', () => {

@@ -1,7 +1,7 @@
-import type { AirportApiRecord } from '#shared/types/api'
+import type { AirportUpstream } from '#shared/schemas/airportConditions'
 import { getCachedAirportRecord } from '../../utils/aviationWeather'
 
-export default defineCachedEventHandler(async (event): Promise<AirportApiRecord> => {
+export default defineCachedEventHandler(async (event): Promise<AirportUpstream> => {
   const icao = getRouterParam(event, 'icao')?.toUpperCase();
   if (!icao) {
     throw createError({ statusCode: 400, statusMessage: 'Missing ICAO code' });
