@@ -40,6 +40,7 @@ export const getCachedMetarRecord = defineCachedFunction(async (icao: string): P
 }, {
   name: 'aviation-weather-metar',
   maxAge: METAR_CACHE_SECONDS,
+  swr: false,
   getKey: (icao) => icao,
 })
 

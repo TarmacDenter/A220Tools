@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetch, mockCreateError } = vi.hoisted(() => {
+const { mockFetch, mockCreateError, cacheOptions } = vi.hoisted(() => {
   const mockFetch = vi.fn()
   const mockCreateError = vi.fn((options: { statusCode: number; statusMessage: string }) =>
     Object.assign(new Error(options.statusMessage), options),
   )
+  const cacheOptions: Array<Record<string, unknown>> = []
   const globals = globalThis as typeof globalThis & Record<string, unknown>
-  globals.defineCachedFunction = (fn: unknown) => fn
+  globals.defineCachedFunction = (fn: unknown, options: Record<string, unknown>) => {
+    cacheOptions.push(options)
+    return fn
+  }
   globals.$fetch = mockFetch
   globals.createError = mockCreateError
-  return { mockFetch, mockCreateError }
+  return { mockFetch, mockCreateError, cacheOptions }
 })
 
 import { getAirportConditions } from '../server/utils/aviationWeather'
@@ -18,6 +22,14 @@ describe('getAirportConditions', () => {
   beforeEach(() => {
     mockFetch.mockReset()
     mockCreateError.mockClear()
+  })
+
+  it('waits for a fresh METAR after the one-minute cache expires', () => {
+    expect(cacheOptions).toContainEqual(expect.objectContaining({
+      name: 'aviation-weather-metar',
+      maxAge: 60,
+      swr: false,
+    }))
   })
 
   it('returns a curated response with magnetic runway selections', async () => {
