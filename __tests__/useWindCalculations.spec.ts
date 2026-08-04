@@ -6,7 +6,7 @@ import {
   criticalHeadings,
   buildHeadingTable,
   computeWindResult,
-} from '@/composables/useWindCalculations'
+} from '@/domain/wind/calculations'
 import type { MagneticCorrection, ParsedWind } from '@/types/wind'
 import { TAILWIND_LIMIT_KT } from '@/constants/windLimits'
 

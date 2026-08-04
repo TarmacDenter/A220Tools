@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CurrentWindComponentReadout, TowerWindMatrix, TowerWindPhase } from '@/composables/useTowerWindMatrix'
+import type { CurrentWindComponentReadout, TowerWindMatrix, TowerWindPhase } from '@/domain/wind/towerWindMatrix'
 
 defineProps<{
   phase: TowerWindPhase

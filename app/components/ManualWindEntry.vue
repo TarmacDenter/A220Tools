@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
+import type { ManualWindInput, ManualWindSource } from '@/domain/wind/manualWind'
 
 withDefaults(defineProps<{ theme?: 'light' | 'dark' }>(), {
   theme: 'light',

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { parseMetarWind } from '@/composables/useMetar';
+import { parseMetarWind } from '@/domain/wind/metarWind';
 import { useAirportConditions } from '@/composables/useAirportConditions';
-import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
-import { buildTowerWindMatrix, getCurrentWindComponentReadout } from '@/composables/useTowerWindMatrix';
+import { computeWindResult, buildHeadingTable } from '@/domain/wind/calculations';
+import { buildTowerWindMatrix, getCurrentWindComponentReadout } from '@/domain/wind/towerWindMatrix';
 import { useInterval } from '@/composables/useInterval';
 import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLimits';
 import type { RCAM_KEYS } from '@/constants/windLimits';
@@ -13,8 +13,8 @@ import type { RunwaySelection } from '#shared/types/api';
 
 import AirportInput from './AirportInput.vue';
 import ManualWindEntry from './ManualWindEntry.vue';
-import { parseManualWind } from '@/composables/useManualWind';
-import type { ManualWindInput } from '@/composables/useManualWind';
+import { parseManualWind } from '@/domain/wind/manualWind';
+import type { ManualWindInput } from '@/domain/wind/manualWind';
 import AssumptionsDisplay from './AssumptionsDisplay.vue';
 import SafetyReadout from './SafetyReadout.vue';
 import CompassRose from './CompassRose.vue';
