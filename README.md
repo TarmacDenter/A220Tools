@@ -1,6 +1,6 @@
 # A220Tools
 
-A lightweight cockpit helper for checking A220 engine-start tailwind exposure across headings from live METAR or manual wind inputs.
+An envelope checker for calculating the safe wind angles for engine start, and a quick reference tower-wind checker for takeoff and landing. 
 
 ## Safety disclaimer
 
@@ -15,6 +15,16 @@ This is not an official Airbus or airline application. Always verify all wind/pe
 - Shows assumptions and source transparency so pilots can cross-check quickly.
 - Locates the nearest airport via browser geolocation and auto-populates the ICAO input.
 - Supports PWA install flow with an in-app install prompt and basic offline app-shell availability.
+- Enumerates available runways and their magnetic headings for takeoff/landing calculations.
+
+## Why?
+
+Wind information can change during descent and approach, while existing references often require repeated manual checks or mental conversions. A220Tools starts with the applicable wind limitations and works backward:
+
+- For engine start, it identifies headings that remain within the tailwind envelope.
+- For takeoff and landing, it combines the runway heading with crosswind and tailwind limits to show the maximum allowable wind speed at nearby directions.
+
+The result is a concise, single-glance reference for cross-checking changing wind conditions. It is intended to support—not replace—approved operational sources and procedures.
 
 ## Tech stack
 
@@ -58,20 +68,6 @@ npm run test:e2e -- e2e/vue.spec.ts
 npm run test:e2e -- --debug
 ```
 
-## Project structure
-
-- `app/components/`: UI components (main app, input panels, readouts, tables).
-- `app/composables/`: Data fetch and wind calculation logic.
-- `app/constants/`: Operational limits and constants.
-- `app/types/`: Shared TypeScript models.
-- `app/layouts/`: Shared page layouts.
-- `app/pages/`: File-based application routes.
-- `app/plugins/`: Nuxt client and application plugins.
-- `server/`: Nitro API routes, middleware, plugins, tasks, and utilities.
-- `public/`: Static PWA assets.
-- `__tests__/`: Unit tests.
-- `e2e/`: Playwright specs.
-
 ## Deployment (Railway)
 
 This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration, `.nvmrc` to declare the Node version, and `package.json`'s `packageManager` field to pin npm.
@@ -96,4 +92,4 @@ Nuxt/Nitro generates the production server bundle in `.output/` during `npm run 
 - `master`: main working branch; all day-to-day development lands here and merges trigger deployment.
 - Feature branches: branch from `master`, then merge back into `master` via PR.
 - Keep feature branches short-lived to minimize drift and merge conflicts.
-- No long-lived `dev` branch; `master` is always the single source of truth.
+- No long-lived `dev` branch; `master` is always the trunk.
