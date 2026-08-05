@@ -9,7 +9,7 @@
     "dev:host": "nuxt dev --host",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "test:unit": "vitest",
+    "test:unit": "nuxt prepare && vitest",
     "test:e2e": "playwright test",
     "type-check": "nuxt typecheck",
     "format": "prettier . --write",
@@ -20,7 +20,8 @@
     "start": "node .output/server/index.mjs",
     "lint:check": "run-s lint:oxlint:check lint:eslint:check",
     "lint:oxlint:check": "oxlint .",
-    "lint:eslint:check": "eslint . --cache"
+    "lint:eslint:check": "eslint . --cache",
+    "prepare": "nuxt prepare"
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",

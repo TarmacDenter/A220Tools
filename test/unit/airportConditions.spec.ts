@@ -20,15 +20,15 @@ const { mockGetRouterParam, mockGetAirportConditions, mockRecordAirportLookup, m
     }
   })
 
-vi.mock('../server/utils/aviationWeather', () => ({
+vi.mock('../../server/utils/aviationWeather', () => ({
   getAirportConditions: mockGetAirportConditions,
 }))
 
-vi.mock('../server/utils/airportLookup', () => ({
+vi.mock('../../server/utils/airportLookup', () => ({
   recordAirportLookup: mockRecordAirportLookup,
 }))
 
-import handler from '../server/api/airport-conditions/[icao]'
+import handler from '../../server/api/airport-conditions/[icao]'
 
 describe('GET /api/airport-conditions/:icao', () => {
   beforeEach(() => {

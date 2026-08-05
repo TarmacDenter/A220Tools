@@ -60,12 +60,12 @@ export default defineConfigWithVueTs(
 
   {
     ...pluginPlaywright.configs['flat/recommended'],
-    files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    files: ['test/e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['**/__tests__/*'],
+    files: ['test/unit/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
 
   {

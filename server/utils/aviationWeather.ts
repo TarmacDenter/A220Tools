@@ -12,6 +12,7 @@ import {
   type MetarUpstream,
   type RunwaySelection,
 } from '#shared/schemas/airportConditions'
+import { parseMagneticDeclination } from '#shared/utils/magneticDeclination'
 
 const AVIATION_WEATHER_BASE_URL = 'https://aviationweather.gov/api/data'
 const AIRPORT_CACHE_SECONDS = 60 * 60 * 24 * 7
@@ -72,14 +73,6 @@ export const getCachedMetarRecord = defineCachedFunction(
 
 function normalizeHeading(heading: number): number {
   return ((heading % 360) + 360) % 360
-}
-
-function parseMagneticDeclination(magdec: string | null | undefined): number | null {
-  if (!magdec) return null
-  const match = /^(\d+(?:\.\d+)?)(E|W)$/.exec(magdec.trim().toUpperCase())
-  if (!match) return null
-  const value = Number(match[1])
-  return match[2] === 'W' ? -value : value
 }
 
 async function resolveDeclination(airport: AirportUpstream): Promise<number | null> {

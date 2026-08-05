@@ -1,11 +1,8 @@
 import type { AirportConditionsResponse } from '#shared/types/api'
 import type { MetarData } from '@/types/wind'
+import { parseMagneticDeclination } from '#shared/utils/magneticDeclination'
 
-export function parseMagdecString(magdec: string): number | null {
-  const match = /^(\d+(?:\.\d+)?)(E|W)$/.exec(magdec.trim().toUpperCase())
-  if (!match) return null
-  return Number(match[1]) * (match[2] === 'E' ? 1 : -1)
-}
+export const parseMagdecString = parseMagneticDeclination
 
 export function parseMetarIssuedAt(rawOb: string, nowMs: number): number | null {
   const match = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(rawOb)

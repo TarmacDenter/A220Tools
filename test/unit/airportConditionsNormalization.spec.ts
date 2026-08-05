@@ -16,7 +16,7 @@ const { mockFetch, mockCreateError, cacheOptions } = vi.hoisted(() => {
   return { mockFetch, mockCreateError, cacheOptions }
 })
 
-import { getAirportConditions } from '../server/utils/aviationWeather'
+import { getAirportConditions } from '../../server/utils/aviationWeather'
 
 describe('getAirportConditions', () => {
   beforeEach(() => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import AssumptionsDisplay from '../app/components/AssumptionsDisplay.vue'
+import AssumptionsDisplay from '../../app/components/AssumptionsDisplay.vue'
 import type { WindResult } from '@/types/wind'
 
 const baseResult: WindResult = {

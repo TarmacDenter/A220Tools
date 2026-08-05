@@ -17,7 +17,7 @@ const { mockGetQuery, mockFetch } = vi.hoisted(() => {
   return { mockGetQuery, mockFetch }
 })
 
-import handler from '../server/api/nearest-airport'
+import handler from '../../server/api/nearest-airport'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MOCK_EVENT = {} as any
