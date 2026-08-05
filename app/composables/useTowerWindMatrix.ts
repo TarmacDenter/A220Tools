@@ -1,187 +1,75 @@
+import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from 'vue'
+import type { RCAM_KEYS } from '@/constants/windLimits'
 import {
-  LANDING_TAILWIND_LIMIT_KT,
-  RCAM_LDG,
-  RCAM_TO,
-  TAKEOFF_TAILWIND_LIMIT_KT,
-  type RCAM_KEYS,
-} from '@/constants/windLimits'
-import { normalizeDeg } from '@/composables/useWindCalculations'
+  buildTowerWindMatrix,
+  getCurrentWindComponentReadout,
+  type CurrentWindComponentReadout,
+  type TowerWindMatrix,
+  type TowerWindPhase,
+} from '@/utils/towerWindMatrix'
 
-export type TowerWindPhase = 'takeoff' | 'landing'
-export type LimitingComponent = 'XW' | 'TW'
-export type ComponentStatus = 'safe' | 'warning' | 'unsafe' | 'info'
-
-export interface TowerWindMatrixInput {
-  phase: TowerWindPhase
-  rcamCode: RCAM_KEYS
-  runwayHeading: number
-  referenceWindDirection: number
+export interface UseTowerWindMatrixOptions {
+  phase: MaybeRefOrGetter<TowerWindPhase | null>
+  rcamCode: MaybeRefOrGetter<RCAM_KEYS>
+  runwayHeading: MaybeRefOrGetter<number | null>
+  referenceWindDirection: MaybeRefOrGetter<number | null>
+  windSpeed: MaybeRefOrGetter<number | null>
+  isVariableWind?: MaybeRefOrGetter<boolean>
 }
 
-export interface TowerWindMatrixRow {
-  windDirection: number
-  maxWindKt: number | null
-  displayMaxWind: string
-  limitingComponent: LimitingComponent
-  isReference: boolean
+export interface UseTowerWindMatrixReturn {
+  matrix: ComputedRef<TowerWindMatrix | null>
+  currentReadout: ComputedRef<CurrentWindComponentReadout | null>
+  isAvailable: ComputedRef<boolean>
 }
 
-export interface TowerWindMatrix {
-  crosswindLimitKt: number
-  tailwindLimitKt: number
-  allRows: TowerWindMatrixRow[]
-  visibleRows: TowerWindMatrixRow[]
-}
+export function useTowerWindMatrix(options: UseTowerWindMatrixOptions): UseTowerWindMatrixReturn {
+  const matrix = computed<TowerWindMatrix | null>(() => {
+    const phase = toValue(options.phase)
+    const runwayHeading = toValue(options.runwayHeading)
+    const referenceWindDirection = toValue(options.referenceWindDirection)
 
-export interface RunwayWindComponentInput {
-  runwayHeading: number
-  windDirection: number
-  windSpeed: number
-}
+    if (phase === null || runwayHeading === null || referenceWindDirection === null) return null
 
-export interface RunwayWindComponents {
-  crosswindKt: number
-  longitudinalKt: number
-  longitudinalType: 'HW' | 'TW'
-}
-
-export interface CurrentWindComponentReadoutInput extends RunwayWindComponentInput {
-  phase: TowerWindPhase
-  rcamCode: RCAM_KEYS
-}
-
-export interface CurrentWindComponentReadout {
-  crosswind: {
-    valueKt: number
-    limitKt: number
-    status: ComponentStatus
-  }
-  longitudinal: {
-    type: 'HW' | 'TW'
-    valueKt: number
-    limitKt: number | null
-    status: ComponentStatus
-  }
-}
-
-const WIND_DIRECTION_STEP_DEG = 10
-const MATRIX_WINDOW_RADIUS_ROWS = 3
-const DISPLAY_WIND_CAP_KT = 99
-const PROXIMITY_THRESHOLD = 0.8
-
-function degToRad(deg: number): number {
-  return (deg * Math.PI) / 180
-}
-
-function roundWindSpeed(value: number): number {
-  return Math.round(value)
-}
-
-function getCrosswindLimit(phase: TowerWindPhase, rcamCode: RCAM_KEYS): number {
-  return phase === 'takeoff' ? RCAM_TO[rcamCode] : RCAM_LDG[rcamCode]
-}
-
-function getTailwindLimit(phase: TowerWindPhase): number {
-  return phase === 'takeoff' ? TAKEOFF_TAILWIND_LIMIT_KT : LANDING_TAILWIND_LIMIT_KT
-}
-
-function nearestWindDirection(direction: number): number {
-  return normalizeDeg(Math.round(normalizeDeg(direction) / WIND_DIRECTION_STEP_DEG) * WIND_DIRECTION_STEP_DEG)
-}
-
-function componentStatus(valueKt: number, limitKt: number): ComponentStatus {
-  if (valueKt > limitKt) return 'unsafe'
-  if (valueKt >= limitKt * PROXIMITY_THRESHOLD) return 'warning'
-  return 'safe'
-}
-
-export function calculateRunwayWindComponents(input: RunwayWindComponentInput): RunwayWindComponents {
-  const diffRad = degToRad(normalizeDeg(input.windDirection - input.runwayHeading))
-  const headwind = input.windSpeed * Math.cos(diffRad)
-  const crosswind = Math.abs(input.windSpeed * Math.sin(diffRad))
-
-  return {
-    crosswindKt: crosswind,
-    longitudinalKt: Math.abs(headwind),
-    longitudinalType: headwind >= 0 ? 'HW' : 'TW',
-  }
-}
-
-export function getCurrentWindComponentReadout(input: CurrentWindComponentReadoutInput): CurrentWindComponentReadout {
-  const crosswindLimitKt = getCrosswindLimit(input.phase, input.rcamCode)
-  const tailwindLimitKt = getTailwindLimit(input.phase)
-  const components = calculateRunwayWindComponents(input)
-  const crosswindValueKt = roundWindSpeed(components.crosswindKt)
-  const longitudinalValueKt = roundWindSpeed(components.longitudinalKt)
-
-  return {
-    crosswind: {
-      valueKt: crosswindValueKt,
-      limitKt: crosswindLimitKt,
-      status: componentStatus(components.crosswindKt, crosswindLimitKt),
-    },
-    longitudinal: {
-      type: components.longitudinalType,
-      valueKt: longitudinalValueKt,
-      limitKt: components.longitudinalType === 'TW' ? tailwindLimitKt : null,
-      status: components.longitudinalType === 'TW' ? componentStatus(components.longitudinalKt, tailwindLimitKt) : 'info',
-    },
-  }
-}
-
-function maxWindForDirection(
-  windDirection: number,
-  runwayHeading: number,
-  crosswindLimitKt: number,
-  tailwindLimitKt: number,
-): Pick<TowerWindMatrixRow, 'maxWindKt' | 'displayMaxWind' | 'limitingComponent'> {
-  const diffRad = degToRad(normalizeDeg(windDirection - runwayHeading))
-  const crosswindFactor = Math.abs(Math.sin(diffRad))
-  const tailwindFactor = Math.max(-Math.cos(diffRad), 0)
-  const crosswindMax = crosswindFactor > 0.0001 ? crosswindLimitKt / crosswindFactor : Number.POSITIVE_INFINITY
-  const tailwindMax = tailwindFactor > 0.0001 ? tailwindLimitKt / tailwindFactor : Number.POSITIVE_INFINITY
-  const limitingComponent: LimitingComponent = tailwindMax < crosswindMax ? 'TW' : 'XW'
-  const rawMaxWind = Math.min(crosswindMax, tailwindMax)
-
-  if (!Number.isFinite(rawMaxWind) || rawMaxWind > DISPLAY_WIND_CAP_KT) {
-    return {
-      maxWindKt: null,
-      displayMaxWind: `>${DISPLAY_WIND_CAP_KT} kt`,
-      limitingComponent,
-    }
-  }
-
-  const maxWindKt = roundWindSpeed(rawMaxWind)
-  return {
-    maxWindKt,
-    displayMaxWind: `${maxWindKt} kt`,
-    limitingComponent,
-  }
-}
-
-export function buildTowerWindMatrix(input: TowerWindMatrixInput): TowerWindMatrix {
-  const crosswindLimitKt = getCrosswindLimit(input.phase, input.rcamCode)
-  const tailwindLimitKt = getTailwindLimit(input.phase)
-  const referenceDirection = nearestWindDirection(input.referenceWindDirection)
-  const allRows = Array.from({ length: 36 }, (_, index) => {
-    const windDirection = index * WIND_DIRECTION_STEP_DEG
-    return {
-      windDirection,
-      isReference: windDirection === referenceDirection,
-      ...maxWindForDirection(windDirection, input.runwayHeading, crosswindLimitKt, tailwindLimitKt),
-    }
+    return buildTowerWindMatrix({
+      phase,
+      rcamCode: toValue(options.rcamCode),
+      runwayHeading,
+      referenceWindDirection,
+    })
   })
 
-  const visibleRows = Array.from({ length: MATRIX_WINDOW_RADIUS_ROWS * 2 + 1 }, (_, index) => {
-    const offset = index - MATRIX_WINDOW_RADIUS_ROWS
-    const windDirection = normalizeDeg(referenceDirection + offset * WIND_DIRECTION_STEP_DEG)
-    return allRows.find((row) => row.windDirection === windDirection)
-  }).filter((row): row is TowerWindMatrixRow => row !== undefined)
+  const currentReadout = computed<CurrentWindComponentReadout | null>(() => {
+    const phase = toValue(options.phase)
+    const runwayHeading = toValue(options.runwayHeading)
+    const referenceWindDirection = toValue(options.referenceWindDirection)
+    const windSpeed = toValue(options.windSpeed)
+    const isVariableWind = options.isVariableWind === undefined ? false : toValue(options.isVariableWind)
+
+    if (
+      phase === null
+      || runwayHeading === null
+      || referenceWindDirection === null
+      || windSpeed === null
+      || isVariableWind
+    ) {
+      return null
+    }
+
+    return getCurrentWindComponentReadout({
+      phase,
+      rcamCode: toValue(options.rcamCode),
+      runwayHeading,
+      windDirection: referenceWindDirection,
+      windSpeed,
+    })
+  })
+
+  const isAvailable = computed(() => matrix.value !== null)
 
   return {
-    crosswindLimitKt,
-    tailwindLimitKt,
-    allRows,
-    visibleRows,
+    matrix,
+    currentReadout,
+    isAvailable,
   }
 }

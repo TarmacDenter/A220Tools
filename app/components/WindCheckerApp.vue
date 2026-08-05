@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { parseMetarWind } from '@/composables/useMetar';
 import { useAirportConditions } from '@/composables/useAirportConditions';
 import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
-import { buildTowerWindMatrix, getCurrentWindComponentReadout } from '@/composables/useTowerWindMatrix';
+import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix';
 import { useInterval } from '@/composables/useInterval';
 import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLimits';
 import type { RCAM_KEYS } from '@/constants/windLimits';
@@ -219,29 +219,16 @@ const towerReferenceWindDirection = computed(() => {
   return result.windDirectionMagnetic;
 });
 
-const towerWindMatrix = computed(() => {
-  const phase = runwayPhase.value;
-  if (!phase || !windResult.value || runwayHeading.value === null || towerReferenceWindDirection.value === null) return null;
-  return buildTowerWindMatrix({
-    phase,
-    rcamCode: selectedRcamCode.value,
-    runwayHeading: runwayHeading.value,
-    referenceWindDirection: towerReferenceWindDirection.value,
-  });
-});
-
-const currentTowerWindReadout = computed(() => {
-  const phase = runwayPhase.value;
-  const result = windResult.value;
-  if (!phase || !result || runwayHeading.value === null || towerReferenceWindDirection.value === null) return null;
-  if (result.parsedWind.isVariable) return null;
-  return getCurrentWindComponentReadout({
-    phase,
-    rcamCode: selectedRcamCode.value,
-    runwayHeading: runwayHeading.value,
-    windDirection: towerReferenceWindDirection.value,
-    windSpeed: result.parsedWind.effectiveSpeed,
-  });
+const {
+  matrix: towerWindMatrix,
+  currentReadout: currentTowerWindReadout,
+} = useTowerWindMatrix({
+  phase: runwayPhase,
+  rcamCode: selectedRcamCode,
+  runwayHeading,
+  referenceWindDirection: towerReferenceWindDirection,
+  windSpeed: () => windResult.value?.parsedWind.effectiveSpeed ?? null,
+  isVariableWind: () => windResult.value?.parsedWind.isVariable ?? false,
 });
 
 const rawMetar = computed(() => metar.value?.rawOb ?? null);

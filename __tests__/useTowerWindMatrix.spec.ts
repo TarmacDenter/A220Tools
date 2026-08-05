@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
+import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix'
 import {
   buildTowerWindMatrix,
   calculateRunwayWindComponents,
   getCurrentWindComponentReadout,
-} from '@/composables/useTowerWindMatrix'
+} from '@/utils/towerWindMatrix'
 
 describe('buildTowerWindMatrix', () => {
   it('generates all absolute wind directions and centers the visible window on the reference wind', () => {
@@ -129,5 +131,35 @@ describe('getCurrentWindComponentReadout', () => {
       limitKt: 10,
       status: 'unsafe',
     })
+  })
+})
+
+describe('useTowerWindMatrix', () => {
+  it('updates the matrix when a reactive runway heading becomes available', () => {
+    const runwayHeading = ref<number | null>(null)
+    const { matrix } = useTowerWindMatrix({
+      phase: 'takeoff',
+      rcamCode: 6,
+      runwayHeading,
+      referenceWindDirection: 270,
+      windSpeed: 20,
+    })
+
+    expect(matrix.value).toBeNull()
+    runwayHeading.value = 220
+    expect(matrix.value).not.toBeNull()
+  })
+
+  it('does not return a current component readout for variable wind', () => {
+    const { currentReadout } = useTowerWindMatrix({
+      phase: 'landing',
+      rcamCode: 6,
+      runwayHeading: 220,
+      referenceWindDirection: 270,
+      windSpeed: 20,
+      isVariableWind: true,
+    })
+
+    expect(currentReadout.value).toBeNull()
   })
 })
