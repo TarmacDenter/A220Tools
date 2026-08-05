@@ -5,7 +5,7 @@ import {
   buildTowerWindMatrix,
   calculateRunwayWindComponents,
   getCurrentWindComponentReadout,
-} from '@/utils/towerWindMatrix'
+} from '@/domain/runwayMatrix'
 
 describe('buildTowerWindMatrix', () => {
   it('generates all absolute wind directions and centers the visible window on the reference wind', () => {

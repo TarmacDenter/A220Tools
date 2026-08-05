@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchAirportConditionsFromServer } from '@/composables/aviationWeatherApi'
+import { fetchAirportConditionsFromServer } from '@/services/aviationWeatherApi'
 
 describe('aviationWeatherApi', () => {
   afterEach(() => {

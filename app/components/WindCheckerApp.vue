@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { parseMetarWind } from '@/composables/useMetar';
+import { parseMetarWind, parseManualWind, type ManualWindInput } from '@/domain/windParsing';
 import { useAirportConditions } from '@/composables/useAirportConditions';
-import { computeWindResult, buildHeadingTable } from '@/composables/useWindCalculations';
+import { computeWindResult, buildHeadingTable } from '@/domain/windEnvelope';
 import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix';
 import { useInterval } from '@/composables/useInterval';
-import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT } from '@/constants/windLimits';
-import type { RCAM_KEYS } from '@/constants/windLimits';
-import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '@/constants/metarTiming';
+import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT, METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN, FRESHNESS_REFRESH_INTERVAL_MS, CONDITIONS_REFRESH_INTERVAL_MS } from '@/constants';
+import type { RCAM_KEYS } from '@/constants';
 import type { MagneticCorrection, ParsedWind } from '@/types/wind';
 import type { RunwaySelection } from '#shared/types/api';
 
 import AirportInput from './AirportInput.vue';
 import ManualWindEntry from './ManualWindEntry.vue';
-import { parseManualWind } from '@/composables/useManualWind';
-import type { ManualWindInput } from '@/composables/useManualWind';
+import { formatUtcTime, formatElapsedMinutes, normalizeRunwayHeading } from '@/utils/formatting';
 import AssumptionsDisplay from './AssumptionsDisplay.vue';
 import SafetyReadout from './SafetyReadout.vue';
 import CompassRose from './CompassRose.vue';
@@ -89,7 +87,7 @@ const readoutRef = ref<HTMLElement | null>(null);
 // --- Intervals ---
 useInterval(() => {
   freshnessNowMs.value = Date.now();
-}, 60_000);
+}, FRESHNESS_REFRESH_INTERVAL_MS);
 
 useInterval(() => {
   if (!isOnline.value) return;
@@ -97,7 +95,7 @@ useInterval(() => {
   if (conditionsStatus.value !== 'success') return;
   if (activeIcao.value.length < 3) return;
   void fetchAirportConditions(activeIcao.value);
-}, 300_000);
+}, CONDITIONS_REFRESH_INTERVAL_MS);
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
@@ -151,11 +149,7 @@ watch(runways, (updatedRunways) => {
 const runwayHeading = computed<number | null>(() => {
   if (selectedRunway.value) return selectedRunway.value.heading;
   if (runwaySelectionValue.value !== 'manual') return null;
-  const raw = String(runwayHeadingInput.value ?? '').trim();
-  if (!/^\d+$/.test(raw)) return null;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 360) return null;
-  return parsed === 360 ? 0 : parsed;
+  return normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''));
 });
 
 // --- Computed wind result ---
@@ -258,18 +252,6 @@ const metarFreshnessRaw = computed(() => {
   if (!trimmed) return null;
   return `METAR: ${trimmed}`;
 });
-
-function formatUtcTime(ms: number): string {
-  const date = new Date(ms);
-  const hours = String(date.getUTCHours()).padStart(2, '0');
-  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-  return `${hours}:${minutes}Z`;
-}
-
-function formatElapsedMinutes(minutes: number): string {
-  if (minutes <= 0) return 'just now';
-  return `${minutes} min ago`;
-}
 
 const metarIssuedAgeMin = computed(() => {
   if (!isMetarActive.value) return null;

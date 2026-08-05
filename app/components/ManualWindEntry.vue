@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { ManualWindInput, ManualWindSource } from '@/composables/useManualWind'
+import type { ManualWindInput, ManualWindSource } from '@/domain/windParsing'
+import { WIND_SPEED_INPUT_MAX_KT } from '@/constants'
 
 withDefaults(defineProps<{ theme?: 'light' | 'dark' }>(), {
   theme: 'light',
@@ -88,7 +89,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
           @input="updateField('speed', ($event.target as HTMLInputElement).value)"
           placeholder="0"
           min="0"
-          max="999"
+          :max="WIND_SPEED_INPUT_MAX_KT"
           class="wind-input narrow"
         />
         <span class="field-hint">Use gust speed if gusts reported</span>
@@ -102,7 +103,7 @@ function setDeclinationDir(dir: 'E' | 'W') {
           @input="updateField('gust', ($event.target as HTMLInputElement).value)"
           placeholder="—"
           min="0"
-          max="999"
+          :max="WIND_SPEED_INPUT_MAX_KT"
           class="wind-input narrow"
         />
         <span class="field-hint">Leave blank if max = sustained</span>

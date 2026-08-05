@@ -1,2 +1,0 @@
-export const METAR_ISSUED_WARNING_MIN = 30
-export const METAR_ISSUED_STALE_MIN = 60

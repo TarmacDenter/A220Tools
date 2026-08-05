@@ -1,14 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import {
-  normalizeDeg,
-  trueToMagnetic,
-  headwindComponent,
   criticalHeadings,
   buildHeadingTable,
   computeWindResult,
-} from '@/composables/useWindCalculations'
+} from '@/domain/windEnvelope'
+import { normalizeDeg, trueToMagnetic, headwindComponent } from '@/domain/windAngles'
 import type { MagneticCorrection, ParsedWind } from '@/types/wind'
-import { TAILWIND_LIMIT_KT } from '@/constants/windLimits'
+import { TAILWIND_LIMIT_KT } from '@/constants'
 
 describe('normalizeDeg', () => {
   it('keeps 0 as 0', () => expect(normalizeDeg(0)).toBe(0))
