@@ -44,14 +44,15 @@ export function useTowerWindMatrix(options: UseTowerWindMatrixOptions): UseTower
     const runwayHeading = toValue(options.runwayHeading)
     const referenceWindDirection = toValue(options.referenceWindDirection)
     const windSpeed = toValue(options.windSpeed)
-    const isVariableWind = options.isVariableWind === undefined ? false : toValue(options.isVariableWind)
+    const isVariableWind =
+      options.isVariableWind === undefined ? false : toValue(options.isVariableWind)
 
     if (
-      phase === null
-      || runwayHeading === null
-      || referenceWindDirection === null
-      || windSpeed === null
-      || isVariableWind
+      phase === null ||
+      runwayHeading === null ||
+      referenceWindDirection === null ||
+      windSpeed === null ||
+      isVariableWind
     ) {
       return null
     }

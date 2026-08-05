@@ -58,12 +58,11 @@ function setDeclinationDir(dir: 'E' | 'W') {
     <!-- Source reminder -->
     <div class="source-reminder">
       <span v-if="manualInput.source !== 'atis_mag'">
-        Use <strong>TRUE</strong> for: METAR / AeroData
-        — find declination on the 10-9 page
+        Use <strong>TRUE</strong> for: METAR / AeroData — find declination on the 10-9 page
       </span>
       <span v-else>
-        Use <strong>MAGNETIC</strong> for: ATIS
-        — winds entered directly as magnetic, no correction applied
+        Use <strong>MAGNETIC</strong> for: ATIS — winds entered directly as magnetic, no correction
+        applied
       </span>
     </div>
 
@@ -213,7 +212,9 @@ function setDeclinationDir(dir: 'E' | 'W') {
   margin: 1rem 0;
   border: 1px solid var(--mode-border);
   background: var(--mode-bg);
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
 /* ─── Mode toggle ────────────────────────────────────────────── */
@@ -235,7 +236,9 @@ function setDeclinationDir(dir: 'E' | 'W') {
   cursor: pointer;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .mode-btn:first-child {
@@ -345,7 +348,9 @@ function setDeclinationDir(dir: 'E' | 'W') {
   cursor: pointer;
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .decl-btn + .decl-btn {

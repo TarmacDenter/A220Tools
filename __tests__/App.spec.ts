@@ -21,7 +21,10 @@ function mockNavigator({
 }) {
   Object.defineProperty(window.navigator, 'userAgent', { configurable: true, value: userAgent })
   Object.defineProperty(window.navigator, 'platform', { configurable: true, value: platform })
-  Object.defineProperty(window.navigator, 'maxTouchPoints', { configurable: true, value: maxTouchPoints })
+  Object.defineProperty(window.navigator, 'maxTouchPoints', {
+    configurable: true,
+    value: maxTouchPoints,
+  })
 }
 
 function mockStandalone({
@@ -98,7 +101,7 @@ describe('App', () => {
     expect(wrapper.text()).toContain('A220 Wind Limits')
     expect(wrapper.find('#phase-start').attributes('aria-pressed')).toBe('true')
     expect(wrapper.text()).toContain(
-      'Pilot advisory: This is not an official Airbus or airline app. Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures).'
+      'Pilot advisory: This is not an official Airbus or airline app. Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures).',
     )
   })
 
@@ -136,7 +139,8 @@ describe('App', () => {
 
   it('shows iOS install instructions when native install prompt is unavailable', async () => {
     mockNavigator({
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
       platform: 'iPhone',
       maxTouchPoints: 5,
     })
@@ -152,7 +156,8 @@ describe('App', () => {
 
   it('hides install guidance when running in standalone mode on iOS', async () => {
     mockNavigator({
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
+      userAgent:
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/130.0.0.0 Mobile/15E148 Safari/604.1',
       platform: 'iPhone',
       maxTouchPoints: 5,
     })

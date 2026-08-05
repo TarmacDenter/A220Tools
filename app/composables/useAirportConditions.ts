@@ -57,5 +57,14 @@ export function useAirportConditions() {
     lastFetchedAt.value = null
   }
 
-  return { status, metar, magneticCorrection, runways, error, lastFetchedAt, fetchAirportConditions, clearConditions }
+  return {
+    status,
+    metar,
+    magneticCorrection,
+    runways,
+    error,
+    lastFetchedAt,
+    fetchAirportConditions,
+    clearConditions,
+  }
 }

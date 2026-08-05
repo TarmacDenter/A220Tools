@@ -4,14 +4,13 @@ test('shows app title and pilot disclaimer', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('h1')).toHaveText('A220 Wind Limits')
   await expect(page.locator('#phase-start')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('link', { name: 'Open www.220stuff.app in a new tab' })).toHaveAttribute(
-    'href',
-    'https://www.220stuff.app'
-  )
+  await expect(
+    page.getByRole('link', { name: 'Open www.220stuff.app in a new tab' }),
+  ).toHaveAttribute('href', 'https://www.220stuff.app')
   await expect(
     page.getByText(
-      'Pilot advisory: This is not an official Airbus or airline app. Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures).'
-    )
+      'Pilot advisory: This is not an official Airbus or airline app. Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures).',
+    ),
   ).toBeVisible()
 })
 

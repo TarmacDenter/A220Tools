@@ -1,44 +1,54 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { parseMetarWind, parseManualWind, type ManualWindInput } from '@/domain/windParsing';
-import { useAirportConditions } from '@/composables/useAirportConditions';
-import { computeWindResult, buildHeadingTable } from '@/domain/windEnvelope';
-import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix';
-import { useInterval } from '@/composables/useInterval';
-import { TAILWIND_LIMIT_KT, DEFAULT_MAX_TAXI_SPEED_KT, METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN, FRESHNESS_REFRESH_INTERVAL_MS, CONDITIONS_REFRESH_INTERVAL_MS } from '@/constants';
-import type { RCAM_KEYS } from '@/constants';
-import type { MagneticCorrection, ParsedWind } from '@/types/wind';
-import type { RunwaySelection } from '#shared/types/api';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { parseMetarWind, parseManualWind, type ManualWindInput } from '@/domain/windParsing'
+import { useAirportConditions } from '@/composables/useAirportConditions'
+import { computeWindResult, buildHeadingTable } from '@/domain/windEnvelope'
+import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix'
+import { useInterval } from '@/composables/useInterval'
+import {
+  TAILWIND_LIMIT_KT,
+  DEFAULT_MAX_TAXI_SPEED_KT,
+  METAR_ISSUED_STALE_MIN,
+  METAR_ISSUED_WARNING_MIN,
+  FRESHNESS_REFRESH_INTERVAL_MS,
+  CONDITIONS_REFRESH_INTERVAL_MS,
+} from '@/constants'
+import type { RCAM_KEYS } from '@/constants'
+import type { MagneticCorrection, ParsedWind } from '@/types/wind'
+import type { RunwaySelection } from '#shared/types/api'
 
-import AirportInput from './AirportInput.vue';
-import ManualWindEntry from './ManualWindEntry.vue';
-import { formatUtcTime, formatElapsedMinutes, normalizeRunwayHeading } from '@/utils/formatting';
-import AssumptionsDisplay from './AssumptionsDisplay.vue';
-import SafetyReadout from './SafetyReadout.vue';
-import CompassRose from './CompassRose.vue';
-import HeadingTable from './HeadingTable.vue';
-import TowerWindMatrix from './TowerWindMatrix.vue';
-import StatusMessage from './ui/StatusMessage.vue';
-import ErrorPanel from './ui/ErrorPanel.vue';
-import BaseToggle from './ui/BaseToggle.vue';
+import AirportInput from './AirportInput.vue'
+import ManualWindEntry from './ManualWindEntry.vue'
+import { formatUtcTime, formatElapsedMinutes, normalizeRunwayHeading } from '@/utils/formatting'
+import AssumptionsDisplay from './AssumptionsDisplay.vue'
+import SafetyReadout from './SafetyReadout.vue'
+import CompassRose from './CompassRose.vue'
+import HeadingTable from './HeadingTable.vue'
+import TowerWindMatrix from './TowerWindMatrix.vue'
+import StatusMessage from './ui/StatusMessage.vue'
+import ErrorPanel from './ui/ErrorPanel.vue'
+import BaseToggle from './ui/BaseToggle.vue'
 
-withDefaults(defineProps<{
-  theme?: 'light' | 'dark';
-  themeToggleLabel?: string;
-}>(), {
-  theme: 'light',
-  themeToggleLabel: 'Toggle theme',
-});
+withDefaults(
+  defineProps<{
+    theme?: 'light' | 'dark'
+    themeToggleLabel?: string
+  }>(),
+  {
+    theme: 'light',
+    themeToggleLabel: 'Toggle theme',
+  },
+)
 
 const emit = defineEmits<{
-  toggleTheme: [];
-}>();
+  toggleTheme: []
+}>()
 
-type Phase = 'start' | 'takeoff' | 'landing';
+type Phase = 'start' | 'takeoff' | 'landing'
 
 // --- State ---
-const activePhase = ref<Phase>('start');
-const manualMode = ref(false);
+const activePhase = ref<Phase>('start')
+const manualMode = ref(false)
 const manualInputs = ref<ManualWindInput>({
   direction: '',
   speed: '',
@@ -46,27 +56,27 @@ const manualInputs = ref<ManualWindInput>({
   source: 'metar_true',
   declinationMagnitude: '',
   declinationDir: 'W',
-});
+})
 
 // Taxi speed display
-const showTaxiSpeed = ref(false);
-const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT));
-const runwayHeadingInput = ref('');
-const runwaySelectionValue = ref('manual');
-const selectedRunway = ref<RunwaySelection | null>(null);
-const rcamCodeInput = ref('6');
+const showTaxiSpeed = ref(false)
+const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT))
+const runwayHeadingInput = ref('')
+const runwaySelectionValue = ref('manual')
+const selectedRunway = ref<RunwaySelection | null>(null)
+const rcamCodeInput = ref('6')
 const maxTaxiSpeed = computed(() => {
-  if (!showTaxiSpeed.value) return 0;
-  const parsed = parseInt(maxTaxiSpeedInput.value, 10);
-  if (isNaN(parsed) || parsed < 1) return 0;
-  return parsed;
-});
+  if (!showTaxiSpeed.value) return 0
+  const parsed = parseInt(maxTaxiSpeedInput.value, 10)
+  if (isNaN(parsed) || parsed < 1) return 0
+  return parsed
+})
 
 const selectedRcamCode = computed<RCAM_KEYS>(() => {
-  const parsed = Number(rcamCodeInput.value);
-  if (parsed >= 1 && parsed <= 6) return parsed as RCAM_KEYS;
-  return 6;
-});
+  const parsed = Number(rcamCodeInput.value)
+  if (parsed >= 1 && parsed <= 6) return parsed as RCAM_KEYS
+  return 6
+})
 
 const {
   status: conditionsStatus,
@@ -77,267 +87,278 @@ const {
   lastFetchedAt,
   fetchAirportConditions,
   clearConditions,
-} = useAirportConditions();
-const icaoInput = ref('');
-const activeIcao = ref('');
-const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine);
-const freshnessNowMs = ref(Date.now());
-const readoutRef = ref<HTMLElement | null>(null);
+} = useAirportConditions()
+const icaoInput = ref('')
+const activeIcao = ref('')
+const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+const freshnessNowMs = ref(Date.now())
+const readoutRef = ref<HTMLElement | null>(null)
 
 // --- Intervals ---
 useInterval(() => {
-  freshnessNowMs.value = Date.now();
-}, FRESHNESS_REFRESH_INTERVAL_MS);
+  freshnessNowMs.value = Date.now()
+}, FRESHNESS_REFRESH_INTERVAL_MS)
 
 useInterval(() => {
-  if (!isOnline.value) return;
-  if (manualMode.value) return;
-  if (conditionsStatus.value !== 'success') return;
-  if (activeIcao.value.length < 3) return;
-  void fetchAirportConditions(activeIcao.value);
-}, CONDITIONS_REFRESH_INTERVAL_MS);
+  if (!isOnline.value) return
+  if (manualMode.value) return
+  if (conditionsStatus.value !== 'success') return
+  if (activeIcao.value.length < 3) return
+  void fetchAirportConditions(activeIcao.value)
+}, CONDITIONS_REFRESH_INTERVAL_MS)
 
 // --- Fetch orchestration ---
 async function onFetch(icao: string) {
-  if (!isOnline.value) return;
-  const normalizedIcao = icao.toUpperCase();
-  const isNewAirport = activeIcao.value !== normalizedIcao;
+  if (!isOnline.value) return
+  const normalizedIcao = icao.toUpperCase()
+  const isNewAirport = activeIcao.value !== normalizedIcao
   if (isNewAirport) {
-    selectedRunway.value = null;
-    runwaySelectionValue.value = 'manual';
-    runwayHeadingInput.value = '';
-    runways.value = [];
+    selectedRunway.value = null
+    runwaySelectionValue.value = 'manual'
+    runwayHeadingInput.value = ''
+    runways.value = []
   }
-  activeIcao.value = normalizedIcao;
-  await fetchAirportConditions(icao);
+  activeIcao.value = normalizedIcao
+  await fetchAirportConditions(icao)
   if (isNewAirport) {
-    runwaySelectionValue.value = runways.value.length > 0 ? '' : 'manual';
+    runwaySelectionValue.value = runways.value.length > 0 ? '' : 'manual'
   }
 }
 
 function enableManualMode() {
-  manualMode.value = true;
+  manualMode.value = true
 }
 
 // --- Error state helpers ---
-const conditionsFailed = computed(() => conditionsStatus.value === 'error');
+const conditionsFailed = computed(() => conditionsStatus.value === 'error')
 
 const runwayOptions = computed(() => {
-  const options = [...runways.value];
-  if (selectedRunway.value && !options.some((runway) => runway.name === selectedRunway.value?.name)) {
-    options.push(selectedRunway.value);
+  const options = [...runways.value]
+  if (
+    selectedRunway.value &&
+    !options.some((runway) => runway.name === selectedRunway.value?.name)
+  ) {
+    options.push(selectedRunway.value)
   }
-  return options.sort((a, b) => a.heading - b.heading || a.name.localeCompare(b.name));
-});
+  return options.sort((a, b) => a.heading - b.heading || a.name.localeCompare(b.name))
+})
 
 function onRunwaySelectionChange() {
   if (runwaySelectionValue.value === 'manual' || runwaySelectionValue.value === '') {
-    selectedRunway.value = null;
-    return;
+    selectedRunway.value = null
+    return
   }
-  selectedRunway.value = runwayOptions.value.find((runway) => runway.name === runwaySelectionValue.value) ?? null;
+  selectedRunway.value =
+    runwayOptions.value.find((runway) => runway.name === runwaySelectionValue.value) ?? null
 }
 
-watch(runwaySelectionValue, onRunwaySelectionChange);
+watch(runwaySelectionValue, onRunwaySelectionChange)
 
-watch(runways, (updatedRunways) => {
-  if (!selectedRunway.value) return;
-  const refreshed = updatedRunways.find((runway) => runway.name === selectedRunway.value?.name);
-  if (refreshed) selectedRunway.value = refreshed;
-}, { deep: true });
+watch(
+  runways,
+  (updatedRunways) => {
+    if (!selectedRunway.value) return
+    const refreshed = updatedRunways.find((runway) => runway.name === selectedRunway.value?.name)
+    if (refreshed) selectedRunway.value = refreshed
+  },
+  { deep: true },
+)
 
 const runwayHeading = computed<number | null>(() => {
-  if (selectedRunway.value) return selectedRunway.value.heading;
-  if (runwaySelectionValue.value !== 'manual') return null;
-  return normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''));
-});
+  if (selectedRunway.value) return selectedRunway.value.heading
+  if (runwaySelectionValue.value !== 'manual') return null
+  return normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''))
+})
 
 // --- Computed wind result ---
 const parsedWind = computed<ParsedWind | null>(() => {
   if (!manualMode.value && metar.value) {
-    return parseMetarWind(metar.value);
+    return parseMetarWind(metar.value)
   }
   if (manualMode.value) {
-    return parseManualWind(manualInputs.value);
+    return parseManualWind(manualInputs.value)
   }
-  return null;
-});
+  return null
+})
 
 const effectiveMagCorr = computed<MagneticCorrection | null>(() => {
   if (manualMode.value && manualInputs.value.source === 'atis_mag') {
-    return { declination: 0, source: 'manual_magnetic', rawMagdecString: null };
+    return { declination: 0, source: 'manual_magnetic', rawMagdecString: null }
   }
   // TRUE mode: prefer manually entered declination if provided
   if (manualMode.value) {
-    const raw = manualInputs.value.declinationMagnitude.trim();
+    const raw = manualInputs.value.declinationMagnitude.trim()
     if (raw !== '') {
-      const parsed = parseFloat(raw);
+      const parsed = parseFloat(raw)
       if (!isNaN(parsed)) {
-        const sign = manualInputs.value.declinationDir === 'W' ? -1 : 1;
-        const signed = parsed * sign;
-        console.log(`[WindCheckerApp] Using manually entered declination: ${signed}°`);
-        return { declination: signed, source: 'manual_entered', rawMagdecString: null };
+        const sign = manualInputs.value.declinationDir === 'W' ? -1 : 1
+        const signed = parsed * sign
+        console.log(`[WindCheckerApp] Using manually entered declination: ${signed}°`)
+        return { declination: signed, source: 'manual_entered', rawMagdecString: null }
       }
     }
     // Fall back to fetched airport declination, then 0
-    return magneticCorrection.value ?? { declination: 0, source: 'airport_api', rawMagdecString: null };
+    return (
+      magneticCorrection.value ?? { declination: 0, source: 'airport_api', rawMagdecString: null }
+    )
   }
-  return magneticCorrection.value;
-});
+  return magneticCorrection.value
+})
 
 const windResult = computed(() => {
-  const pw = parsedWind.value;
-  const mc = effectiveMagCorr.value;
-  if (!pw || !mc) return null;
+  const pw = parsedWind.value
+  const mc = effectiveMagCorr.value
+  if (!pw || !mc) return null
   // Don't compute if we're blocked waiting for user to choose a fallback
-  return computeWindResult(pw, mc, maxTaxiSpeed.value);
-});
+  return computeWindResult(pw, mc, maxTaxiSpeed.value)
+})
 
 const headingRows = computed(() => {
-  const result = windResult.value;
-  if (!result) return [];
-  const { parsedWind: pw, windDirectionMagnetic } = result;
-  if (pw.isCalm || pw.isVariable) return [];
-  return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT);
-});
+  const result = windResult.value
+  if (!result) return []
+  const { parsedWind: pw, windDirectionMagnetic } = result
+  if (pw.isCalm || pw.isVariable) return []
+  return buildHeadingTable(windDirectionMagnetic, pw.effectiveSpeed, TAILWIND_LIMIT_KT)
+})
 
 const runwayPhase = computed(() => {
-  if (activePhase.value === 'takeoff' || activePhase.value === 'landing') return activePhase.value;
-  return null;
-});
+  if (activePhase.value === 'takeoff' || activePhase.value === 'landing') return activePhase.value
+  return null
+})
 
 const towerReferenceWindDirection = computed(() => {
-  if (runwayHeading.value === null) return null;
-  const result = windResult.value;
-  if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable) return runwayHeading.value;
-  return result.windDirectionMagnetic;
-});
+  if (runwayHeading.value === null) return null
+  const result = windResult.value
+  if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable)
+    return runwayHeading.value
+  return result.windDirectionMagnetic
+})
 
-const {
-  matrix: towerWindMatrix,
-  currentReadout: currentTowerWindReadout,
-} = useTowerWindMatrix({
+const { matrix: towerWindMatrix, currentReadout: currentTowerWindReadout } = useTowerWindMatrix({
   phase: runwayPhase,
   rcamCode: selectedRcamCode,
   runwayHeading,
   referenceWindDirection: towerReferenceWindDirection,
   windSpeed: () => windResult.value?.parsedWind.effectiveSpeed ?? null,
   isVariableWind: () => windResult.value?.parsedWind.isVariable ?? false,
-});
+})
 
-const rawMetar = computed(() => metar.value?.rawOb ?? null);
-const isLoading = computed(() => conditionsStatus.value === 'loading');
+const rawMetar = computed(() => metar.value?.rawOb ?? null)
+const isLoading = computed(() => conditionsStatus.value === 'loading')
 
 watch(windResult, (result) => {
-  if (result) nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }));
-});
+  if (result)
+    nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }))
+})
 
 const metarFreshnessText = computed(() => {
-  if (!isOnline.value || lastFetchedAt.value === null) return null;
-  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
-  const elapsedMin = Math.floor(elapsedMs / 60_000);
-  const relative = elapsedMin === 0 ? 'Updated just now' : `Updated ${elapsedMin} min ago`;
+  if (!isOnline.value || lastFetchedAt.value === null) return null
+  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value)
+  const elapsedMin = Math.floor(elapsedMs / 60_000)
+  const relative = elapsedMin === 0 ? 'Updated just now' : `Updated ${elapsedMin} min ago`
   const absolute = new Date(lastFetchedAt.value).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
-  });
-  return `${relative} (${absolute} local)`;
-});
+  })
+  return `${relative} (${absolute} local)`
+})
 
-const isMetarActive = computed(() => !manualMode.value && conditionsStatus.value === 'success' && metar.value !== null);
+const isMetarActive = computed(
+  () => !manualMode.value && conditionsStatus.value === 'success' && metar.value !== null,
+)
 
 const metarFreshnessRaw = computed(() => {
-  if (!isMetarActive.value || !rawMetar.value) return null;
-  const trimmed = rawMetar.value.trim();
-  if (!trimmed) return null;
-  return `METAR: ${trimmed}`;
-});
+  if (!isMetarActive.value || !rawMetar.value) return null
+  const trimmed = rawMetar.value.trim()
+  if (!trimmed) return null
+  return `METAR: ${trimmed}`
+})
 
 const metarIssuedAgeMin = computed(() => {
-  if (!isMetarActive.value) return null;
-  const metarValue = metar.value;
-  if (!metarValue || metarValue.issuedAt === null) return null;
-  const elapsedMs = Math.max(0, freshnessNowMs.value - metarValue.issuedAt);
-  return Math.floor(elapsedMs / 60_000);
-});
+  if (!isMetarActive.value) return null
+  const metarValue = metar.value
+  if (!metarValue || metarValue.issuedAt === null) return null
+  const elapsedMs = Math.max(0, freshnessNowMs.value - metarValue.issuedAt)
+  return Math.floor(elapsedMs / 60_000)
+})
 
 const metarIssuedStatus = computed(() => {
-  const age = metarIssuedAgeMin.value;
-  if (age === null) return 'unknown';
-  if (age >= METAR_ISSUED_STALE_MIN) return 'stale';
-  if (age >= METAR_ISSUED_WARNING_MIN) return 'warn';
-  return 'ok';
-});
+  const age = metarIssuedAgeMin.value
+  if (age === null) return 'unknown'
+  if (age >= METAR_ISSUED_STALE_MIN) return 'stale'
+  if (age >= METAR_ISSUED_WARNING_MIN) return 'warn'
+  return 'ok'
+})
 
 const metarIssuedAtUtc = computed(() => {
-  if (!isMetarActive.value) return null;
-  const metarValue = metar.value;
-  if (!metarValue || metarValue.issuedAt === null) return null;
-  return formatUtcTime(metarValue.issuedAt);
-});
+  if (!isMetarActive.value) return null
+  const metarValue = metar.value
+  if (!metarValue || metarValue.issuedAt === null) return null
+  return formatUtcTime(metarValue.issuedAt)
+})
 
-const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value));
+const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value))
 
 const metarFetchedAgeMin = computed(() => {
-  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
-  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value);
-  return Math.floor(elapsedMs / 60_000);
-});
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null
+  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value)
+  return Math.floor(elapsedMs / 60_000)
+})
 
 const metarFetchedAtUtc = computed(() => {
-  if (!isMetarActive.value || lastFetchedAt.value === null) return null;
-  return formatUtcTime(lastFetchedAt.value);
-});
+  if (!isMetarActive.value || lastFetchedAt.value === null) return null
+  return formatUtcTime(lastFetchedAt.value)
+})
 
 const metarConversionSummary = computed(() => {
-  if (!isMetarActive.value || !windResult.value) return null;
-  const result = windResult.value;
+  if (!isMetarActive.value || !windResult.value) return null
+  const result = windResult.value
   if (result.parsedWind.isCalm) {
-    return 'Calm wind — no directional conversion is needed.';
+    return 'Calm wind — no directional conversion is needed.'
   }
   if (result.parsedWind.isVariable) {
-    return 'Variable direction — no fixed magnetic direction is available.';
+    return 'Variable direction — no fixed magnetic direction is available.'
   }
-  const declination = result.magneticCorrection.declination;
-  const absDeclination = Math.abs(declination).toFixed(1);
-  const direction = result.parsedWind.directionTrue;
-  return `${direction}°T → ${result.windDirectionMagnetic.toFixed(0).padStart(3, '0')}°M (${absDeclination}°${declination >= 0 ? 'E' : 'W'} declination)`;
-});
+  const declination = result.magneticCorrection.declination
+  const absDeclination = Math.abs(declination).toFixed(1)
+  const direction = result.parsedWind.directionTrue
+  return `${direction}°T → ${result.windDirectionMagnetic.toFixed(0).padStart(3, '0')}°M (${absDeclination}°${declination >= 0 ? 'E' : 'W'} declination)`
+})
 
 function handleOffline() {
-  isOnline.value = false;
-  manualMode.value = true;
+  isOnline.value = false
+  manualMode.value = true
 }
 
 function handleOnline() {
-  isOnline.value = true;
+  isOnline.value = true
 }
 
 onMounted(() => {
-  window.addEventListener('offline', handleOffline);
-  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline)
+  window.addEventListener('online', handleOnline)
 
   if (!isOnline.value) {
-    manualMode.value = true;
+    manualMode.value = true
   }
-});
+})
 
 onUnmounted(() => {
-  window.removeEventListener('offline', handleOffline);
-  window.removeEventListener('online', handleOnline);
-});
+  window.removeEventListener('offline', handleOffline)
+  window.removeEventListener('online', handleOnline)
+})
 
 watch(manualMode, async (enabled) => {
   if (enabled) {
-    clearConditions();
-    icaoInput.value = '';
+    clearConditions()
+    icaoInput.value = ''
   } else {
     if (activeIcao.value.length >= 3) {
-      icaoInput.value = activeIcao.value;
-      await onFetch(activeIcao.value);
+      icaoInput.value = activeIcao.value
+      await onFetch(activeIcao.value)
     }
   }
-});
+})
 </script>
 
 <template>
@@ -359,7 +380,12 @@ watch(manualMode, async (enabled) => {
             </svg>
             <span>www.220stuff.app</span>
           </a>
-          <button class="theme-toggle" type="button" :aria-label="themeToggleLabel" @click="emit('toggleTheme')">
+          <button
+            class="theme-toggle"
+            type="button"
+            :aria-label="themeToggleLabel"
+            @click="emit('toggleTheme')"
+          >
             <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
               <line x1="12" y1="1.5" x2="12" y2="5.2" />
@@ -382,9 +408,9 @@ watch(manualMode, async (enabled) => {
     </header>
 
     <div class="pilot-disclaimer" role="note">
-      <strong>Pilot advisory:</strong> This is not an official Airbus or airline app.
-      Always verify wind and performance data against approved sources (ATIS/AWOS, METAR, and company procedures)...
-      seriously... I made this at the hotel.
+      <strong>Pilot advisory:</strong> This is not an official Airbus or airline app. Always verify
+      wind and performance data against approved sources (ATIS/AWOS, METAR, and company
+      procedures)... seriously... I made this at the hotel.
     </div>
 
     <div class="phase-selector" role="group" aria-label="Phase of flight">
@@ -422,10 +448,24 @@ watch(manualMode, async (enabled) => {
 
     <!-- Controls row -->
     <div class="grid controls-row">
-      <BaseToggle id="manual-mode-toggle" v-model="manualMode" class="col-4" :disabled="!isOnline"
-        active-label="Switch to Live Data" inactive-label="Switch to Manual Input" variant="info" />
-      <BaseToggle v-if="activePhase === 'start'" id="taxi-speed-toggle" v-model="showTaxiSpeed" class="col-4" active-label="Hide taxi speed"
-        inactive-label="Show minimum taxi speed" variant="primary" />
+      <BaseToggle
+        id="manual-mode-toggle"
+        v-model="manualMode"
+        class="col-4"
+        :disabled="!isOnline"
+        active-label="Switch to Live Data"
+        inactive-label="Switch to Manual Input"
+        variant="info"
+      />
+      <BaseToggle
+        v-if="activePhase === 'start'"
+        id="taxi-speed-toggle"
+        v-model="showTaxiSpeed"
+        class="col-4"
+        active-label="Hide taxi speed"
+        inactive-label="Show minimum taxi speed"
+        variant="primary"
+      />
       <div v-if="activePhase === 'start' && showTaxiSpeed" class="col-4 taxi-speed-input">
         <label class="taxi-input-label">
           Max taxi speed warning (kt):
@@ -438,7 +478,12 @@ watch(manualMode, async (enabled) => {
     <ManualWindEntry v-if="manualMode" v-model="manualInputs" :theme="theme" />
 
     <div v-if="!manualMode">
-      <AirportInput v-model="icaoInput" :status="conditionsStatus" :disabled="!isOnline || manualMode" @fetch="onFetch" />
+      <AirportInput
+        v-model="icaoInput"
+        :status="conditionsStatus"
+        :disabled="!isOnline || manualMode"
+        @fetch="onFetch"
+      />
     </div>
 
     <p v-if="metarFreshnessText" class="metar-freshness">
@@ -454,11 +499,7 @@ watch(manualMode, async (enabled) => {
       <div class="runway-setup">
         <label v-if="runwayOptions.length > 0" class="runway-field">
           Runway
-          <select
-            id="runway-selector"
-            v-model="runwaySelectionValue"
-            :disabled="isLoading"
-          >
+          <select id="runway-selector" v-model="runwaySelectionValue" :disabled="isLoading">
             <option value="" disabled>Select runway…</option>
             <option v-for="runway in runwayOptions" :key="runway.name" :value="runway.name">
               {{ runway.name }} — {{ String(runway.heading).padStart(3, '0') }}°M
@@ -466,7 +507,10 @@ watch(manualMode, async (enabled) => {
             <option value="manual">Manual heading</option>
           </select>
         </label>
-        <label v-if="runwayOptions.length === 0 || runwaySelectionValue === 'manual'" class="runway-field">
+        <label
+          v-if="runwayOptions.length === 0 || runwaySelectionValue === 'manual'"
+          class="runway-field"
+        >
           {{ runwayOptions.length === 0 ? 'Runway heading (°M)' : 'Manual heading (°M)' }}
           <input
             id="runway-heading-input"
@@ -496,28 +540,33 @@ watch(manualMode, async (enabled) => {
     </section>
 
     <!-- Loading indicator -->
-    <StatusMessage v-if="isLoading" variant="loading">
-      Fetching data…
-    </StatusMessage>
+    <StatusMessage v-if="isLoading" variant="loading"> Fetching data… </StatusMessage>
 
     <!-- Conditions fetch failed -->
-    <ErrorPanel v-else-if="conditionsFailed && !manualMode" title="Could not retrieve airport conditions">
+    <ErrorPanel
+      v-else-if="conditionsFailed && !manualMode"
+      title="Could not retrieve airport conditions"
+    >
       <p class="error-detail">{{ conditionsError }}</p>
       <div class="error-actions">
-        <button class="action-btn primary" @click="enableManualMode">
-          Enter winds manually
-        </button>
+        <button class="action-btn primary" @click="enableManualMode">Enter winds manually</button>
       </div>
     </ErrorPanel>
 
     <!-- Results -->
     <div ref="readoutRef" />
     <template v-if="windResult">
-      <div v-if="isMetarActive" class="metar-issued-panel" :class="`metar-issued-${metarIssuedStatus}`">
+      <div
+        v-if="isMetarActive"
+        class="metar-issued-panel"
+        :class="`metar-issued-${metarIssuedStatus}`"
+      >
         <div class="metar-issued-row">
           <strong v-if="metarIssuedAtUtc">
             Issued at {{ metarIssuedAtUtc }}
-            <span v-if="metarIssuedAgeMin !== null">({{ formatElapsedMinutes(metarIssuedAgeMin) }})</span>
+            <span v-if="metarIssuedAgeMin !== null"
+              >({{ formatElapsedMinutes(metarIssuedAgeMin) }})</span
+            >
           </strong>
           <span v-else>Issued time unavailable from METAR.</span>
         </div>
@@ -536,12 +585,19 @@ watch(manualMode, async (enabled) => {
       <template v-if="activePhase === 'start'">
         <SafetyReadout :result="windResult" />
         <CompassRose :result="windResult" :show-taxi="showTaxiSpeed" />
-        <HeadingTable v-if="headingRows.length > 0" :rows="headingRows" :show-taxi="showTaxiSpeed"
-          :max-taxi-speed="maxTaxiSpeed" />
+        <HeadingTable
+          v-if="headingRows.length > 0"
+          :rows="headingRows"
+          :show-taxi="showTaxiSpeed"
+          :max-taxi-speed="maxTaxiSpeed"
+        />
         <StatusMessage v-else-if="windResult.parsedWind.isCalm" variant="calm">
           No table shown for calm winds.
         </StatusMessage>
-        <StatusMessage v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe" variant="calm">
+        <StatusMessage
+          v-else-if="windResult.parsedWind.isVariable && windResult.allHeadingsSafe"
+          variant="calm"
+        >
           Table not available for variable winds — speed is within the tailwind limit.
         </StatusMessage>
         <StatusMessage v-else-if="windResult.parsedWind.isVariable" variant="warning">
@@ -567,13 +623,24 @@ watch(manualMode, async (enabled) => {
     <footer class="app-footer">
       <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
       <a href="https://www.buymeacoffee.com/tarmacdenter" target="_blank" rel="noopener noreferrer">
-        <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" class="bmc-button">
+        <img
+          src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+          alt="Buy Me A Coffee"
+          class="bmc-button"
+        />
       </a>
-      <a href="https://github.com/TarmacDenter/A220Tools" target="_blank" rel="noopener noreferrer" class="github-link"
-        aria-label="View source on GitHub">
+      <a
+        href="https://github.com/TarmacDenter/A220Tools"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="github-link"
+        aria-label="View source on GitHub"
+      >
         <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
-          <path fill-rule="evenodd"
-            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          <path
+            fill-rule="evenodd"
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+          />
         </svg>
         Contribute on GitHub
       </a>
@@ -732,7 +799,9 @@ watch(manualMode, async (enabled) => {
 .metar-freshness-raw {
   display: block;
   margin-top: 0.15rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
   font-size: 0.8rem;
   color: var(--color-text-muted);
 }
@@ -759,7 +828,7 @@ watch(manualMode, async (enabled) => {
   color: var(--color-unsafe-text);
 }
 
-.metar-issued-row+.metar-issued-row {
+.metar-issued-row + .metar-issued-row {
   margin-top: 0.25rem;
 }
 

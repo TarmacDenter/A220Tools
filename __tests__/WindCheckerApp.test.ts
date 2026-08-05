@@ -20,34 +20,34 @@ async function selectManualInputBtn(wrapper: ReturnType<typeof mount>, manualMod
 
 function buildMetarResponse() {
   return {
-      icaoId: 'KJFK',
-      rawOb: 'KJFK 151000Z 27012KT 10SM CLR 05/M01 A2992',
-      wdir: 270,
-      wspd: 12,
-      wgst: null,
-      lat: 40.64,
-      lon: -73.78,
-      name: 'John F Kennedy Intl',
-    }
+    icaoId: 'KJFK',
+    rawOb: 'KJFK 151000Z 27012KT 10SM CLR 05/M01 A2992',
+    wdir: 270,
+    wspd: 12,
+    wgst: null,
+    lat: 40.64,
+    lon: -73.78,
+    name: 'John F Kennedy Intl',
+  }
 }
 
 function buildVariableMetarResponse() {
   return {
-      ...buildMetarResponse(),
-      rawOb: 'KJFK 151000Z VRB05KT 10SM CLR 05/M01 A2992',
-      wdir: 'VRB' as const,
-      wspd: 5,
-    }
+    ...buildMetarResponse(),
+    rawOb: 'KJFK 151000Z VRB05KT 10SM CLR 05/M01 A2992',
+    wdir: 'VRB' as const,
+    wspd: 5,
+  }
 }
 
 function buildAirportResponse() {
   return {
-      icaoId: 'KJFK',
-      name: 'John F Kennedy Intl',
-      magdec: '13W',
-      lat: 40.64,
-      lon: -73.78,
-    }
+    icaoId: 'KJFK',
+    name: 'John F Kennedy Intl',
+    magdec: '13W',
+    lat: 40.64,
+    lon: -73.78,
+  }
 }
 
 function mockSuccessfulFetches() {
@@ -109,7 +109,9 @@ describe('WindCheckerApp', () => {
     const icaoInput = wrapper.find('#icao-input')
     const fetchButton = wrapper.find('.fetch-btn')
 
-    expect(wrapper.text()).toContain('Offline: METAR retrieval is unavailable. Manual wind entry is required.')
+    expect(wrapper.text()).toContain(
+      'Offline: METAR retrieval is unavailable. Manual wind entry is required.',
+    )
     expect(manualToggle.attributes('aria-pressed')).toBe('true')
     expect(manualToggle.attributes('disabled')).toBeDefined()
     expect(icaoInput.exists()).toBe(false)
@@ -200,7 +202,9 @@ describe('WindCheckerApp', () => {
     await fetchButton.trigger('click')
     await flushAsyncUpdates()
 
-    const conditionsCallCount = () => fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/airport-conditions/')).length
+    const conditionsCallCount = () =>
+      fetchMock.mock.calls.filter(([url]) => String(url).includes('/api/airport-conditions/'))
+        .length
     expect(conditionsCallCount()).toBe(1)
 
     await vi.advanceTimersByTimeAsync(300_000)
@@ -313,7 +317,7 @@ describe('WindCheckerApp', () => {
       },
     })
 
-     await selectManualInputBtn(wrapper, true)
+    await selectManualInputBtn(wrapper, true)
     await nextTick()
 
     const manualEntry = wrapper.find('.manual-entry')

@@ -46,7 +46,9 @@ describe('AssumptionsDisplay', () => {
     // FIXME: Fails intermittently in vitest; investigate panel visibility after toggle.
     const toggle = wrapper.get('[data-testid="assumptions-toggle"]')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('[data-testid="assumptions-panel"]').attributes('style') ?? '').not.toContain('display: none')
+    expect(
+      wrapper.get('[data-testid="assumptions-panel"]').attributes('style') ?? '',
+    ).not.toContain('display: none')
   })
 
   it('does not render ATIS advisory copy for METAR results', () => {

@@ -17,7 +17,9 @@ describe('buildTowerWindMatrix', () => {
     })
 
     expect(matrix.allRows).toHaveLength(36)
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([40, 50, 60, 70, 80, 90, 100])
+    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+      40, 50, 60, 70, 80, 90, 100,
+    ])
     expect(matrix.visibleRows.find((row) => row.windDirection === 70)?.isReference).toBe(true)
     expect(matrix.visibleRows.find((row) => row.windDirection === 90)).toMatchObject({
       maxWindKt: 29,
@@ -34,7 +36,9 @@ describe('buildTowerWindMatrix', () => {
       referenceWindDirection: 350,
     })
 
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([320, 330, 340, 350, 0, 10, 20])
+    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+      320, 330, 340, 350, 0, 10, 20,
+    ])
   })
 
   it('uses tailwind as the limiting component on tailwind rows', () => {

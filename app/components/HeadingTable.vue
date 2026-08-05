@@ -39,12 +39,21 @@ function formatTaxiSpeed(speed: number): string {
           <td class="col-component" :class="row.headwindComponent < 0 ? 'tailwind' : 'headwind'">
             {{ formatComponent(row.headwindComponent) }}
           </td>
-          <td v-if="showTaxi" class="col-taxi" :class="{ 'taxi-needed': row.minTaxiSpeed > 0, 'taxi-exceeded': row.minTaxiSpeed > maxTaxiSpeed }">
+          <td
+            v-if="showTaxi"
+            class="col-taxi"
+            :class="{
+              'taxi-needed': row.minTaxiSpeed > 0,
+              'taxi-exceeded': row.minTaxiSpeed > maxTaxiSpeed,
+            }"
+          >
             {{ formatTaxiSpeed(row.minTaxiSpeed) }}
           </td>
           <td class="col-status">
             <span v-if="row.isSafe" class="badge safe">Safe</span>
-            <span v-else-if="showTaxi && row.minTaxiSpeed <= maxTaxiSpeed" class="badge taxi">Taxi {{ row.minTaxiSpeed }} kt</span>
+            <span v-else-if="showTaxi && row.minTaxiSpeed <= maxTaxiSpeed" class="badge taxi"
+              >Taxi {{ row.minTaxiSpeed }} kt</span
+            >
             <span v-else class="badge unsafe">Unsafe</span>
           </td>
         </tr>

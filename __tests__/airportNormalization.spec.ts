@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeAirportConditions, parseMagdecString, parseMetarIssuedAt } from '@/domain/airportNormalization'
+import {
+  normalizeAirportConditions,
+  parseMagdecString,
+  parseMetarIssuedAt,
+} from '@/domain/airportNormalization'
 
 describe('airport normalization', () => {
   it('parses east and west declination and rejects malformed values', () => {
@@ -16,7 +20,20 @@ describe('airport normalization', () => {
     expect(parseMetarIssuedAt('KAAA 012460Z', Date.now())).toBeNull()
   })
   it('normalizes gusts from the raw observation when the API omits them', () => {
-    const result = normalizeAirportConditions({ metar: { icaoId: 'KAAA', rawOb: 'KAAA 010000Z 18010G20KT', wdir: 180, wspd: 10, wgst: null }, airport: { icaoId: 'KAAA', name: 'A', lat: 1, lon: 2, magdec: null }, runways: [] }, Date.UTC(2026, 0, 1))
+    const result = normalizeAirportConditions(
+      {
+        metar: {
+          icaoId: 'KAAA',
+          rawOb: 'KAAA 010000Z 18010G20KT',
+          wdir: 180,
+          wspd: 10,
+          wgst: null,
+        },
+        airport: { icaoId: 'KAAA', name: 'A', lat: 1, lon: 2, magdec: null },
+        runways: [],
+      },
+      Date.UTC(2026, 0, 1),
+    )
     expect(result.metar.wgst).toBe(20)
   })
 })

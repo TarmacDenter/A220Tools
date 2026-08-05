@@ -18,10 +18,22 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
         { name: 'theme-color', content: '#1e40af' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        { name: 'description', content: 'Real-time tailwind limit calculations for Airbus A220 pilots. Enter an airport ICAO code to check runway wind conditions from live METAR data.' },
-        { name: 'keywords', content: 'A220, tailwind, wind limits, METAR, runway, pilot tool, Airbus A220, start calculator' },
+        {
+          name: 'description',
+          content:
+            'Real-time tailwind limit calculations for Airbus A220 pilots. Enter an airport ICAO code to check runway wind conditions from live METAR data.',
+        },
+        {
+          name: 'keywords',
+          content:
+            'A220, tailwind, wind limits, METAR, runway, pilot tool, Airbus A220, start calculator',
+        },
         { property: 'og:title', content: 'A220 Start Calc — Tailwind Limit Calculator for Pilots' },
-        { property: 'og:description', content: 'Real-time METAR-based tailwind limit checks for A220 pilots. Enter any ICAO airport code for instant runway wind analysis.' },
+        {
+          property: 'og:description',
+          content:
+            'Real-time METAR-based tailwind limit checks for A220 pilots. Enter any ICAO airport code for instant runway wind analysis.',
+        },
         { property: 'og:type', content: 'website' },
       ],
       link: [
@@ -50,4 +62,4 @@ export default defineNuxtConfig({
       '0-59/30 * * * *': ['cache:prune-hits'],
     },
   },
-});
+})

@@ -1,8 +1,8 @@
-const AIRPORT_STORAGE_KEY = 'hits';
+const AIRPORT_STORAGE_KEY = 'hits'
 
-export type AirportHits = { icao: string; timestamps: number[]; origins: string[] };
+export type AirportHits = { icao: string; timestamps: number[]; origins: string[] }
 
-type HitsStore = ReturnType<typeof useStorage<AirportHits>>;
+type HitsStore = ReturnType<typeof useStorage<AirportHits>>
 
 export enum RangeWindow {
   HOUR = 1000 * 60 * 60,
@@ -10,63 +10,69 @@ export enum RangeWindow {
   WEEK = 1000 * 60 * 60 * 24 * 7,
 }
 
-const storeFactory = () => useStorage<AirportHits>(AIRPORT_STORAGE_KEY);
+const storeFactory = () => useStorage<AirportHits>(AIRPORT_STORAGE_KEY)
 
 const pruneTimestamps = (rangeMs: number, stamps: number[]): number[] => {
-  const windowStart = Date.now() - rangeMs;
-  return stamps.filter(ts => ts >= windowStart);
-};
+  const windowStart = Date.now() - rangeMs
+  return stamps.filter((ts) => ts >= windowStart)
+}
 
 const getAirportHits = async (store: HitsStore, icao: string): Promise<AirportHits> => {
-  const raw = await store.getItem(icao);
-  if (!raw) return { icao, timestamps: [], origins: [] };
-  return { icao: raw.icao, timestamps: raw.timestamps ?? [], origins: raw.origins ?? [] };
-};
+  const raw = await store.getItem(icao)
+  if (!raw) return { icao, timestamps: [], origins: [] }
+  return { icao: raw.icao, timestamps: raw.timestamps ?? [], origins: raw.origins ?? [] }
+}
 
-const addAirportHit = async (store: HitsStore, icao: string, origin: string): Promise<{ isNew: boolean }> => {
-  const existing = await getAirportHits(store, icao);
-  const isNew = !existing.origins.includes(origin);
-  existing.timestamps.push(Date.now());
-  if (isNew) existing.origins.push(origin);
-  await store.setItem(icao, existing);
-  return { isNew };
-};
+const addAirportHit = async (
+  store: HitsStore,
+  icao: string,
+  origin: string,
+): Promise<{ isNew: boolean }> => {
+  const existing = await getAirportHits(store, icao)
+  const isNew = !existing.origins.includes(origin)
+  existing.timestamps.push(Date.now())
+  if (isNew) existing.origins.push(origin)
+  await store.setItem(icao, existing)
+  return { isNew }
+}
 
-export const getAllAirportKeys = async () => storeFactory().getKeys();
+export const getAllAirportKeys = async () => storeFactory().getKeys()
 
 export const pruneOlderThan = async (rangeMs: number, icao: string): Promise<void> => {
-  const store = storeFactory();
-  const hits = await getAirportHits(store, icao);
-  const pruned = pruneTimestamps(rangeMs, hits.timestamps);
-  await store.setItem(icao, { icao, timestamps: pruned, origins: hits.origins });
-};
+  const store = storeFactory()
+  const hits = await getAirportHits(store, icao)
+  const pruned = pruneTimestamps(rangeMs, hits.timestamps)
+  await store.setItem(icao, { icao, timestamps: pruned, origins: hits.origins })
+}
 
 export const pruneAllOlderThan = async (rangeMs: number): Promise<number> => {
-  const keys = await getAllAirportKeys();
-  const jobs = keys.map(k => pruneOlderThan(rangeMs, k));
-  await Promise.all(jobs);
-  return keys.length;
-};
+  const keys = await getAllAirportKeys()
+  const jobs = keys.map((k) => pruneOlderThan(rangeMs, k))
+  await Promise.all(jobs)
+  return keys.length
+}
 
 export const useAirportStorage = () => {
-  const storage = storeFactory();
+  const storage = storeFactory()
 
-  const _getAirportHits = async (icao: string): Promise<AirportHits> => getAirportHits(storage, icao);
+  const _getAirportHits = async (icao: string): Promise<AirportHits> =>
+    getAirportHits(storage, icao)
 
-  const _addAirportHit = async (icao: string, origin: string): Promise<{ isNew: boolean }> => addAirportHit(storage, icao, origin);
+  const _addAirportHit = async (icao: string, origin: string): Promise<{ isNew: boolean }> =>
+    addAirportHit(storage, icao, origin)
 
   const getHitsInRange = async (rangeMs: number, icao: string): Promise<AirportHits> => {
-    const hits = await getAirportHits(storage, icao);
+    const hits = await getAirportHits(storage, icao)
     return {
       icao,
       timestamps: pruneTimestamps(rangeMs, hits.timestamps),
       origins: hits.origins,
-    };
-  };
+    }
+  }
 
   return {
     getAirportHits: _getAirportHits,
     addAirportHit: _addAirportHit,
     getHitsInRange,
-  };
-}; 
+  }
+}

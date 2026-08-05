@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  criticalHeadings,
-  buildHeadingTable,
-  computeWindResult,
-} from '@/domain/windEnvelope'
+import { criticalHeadings, buildHeadingTable, computeWindResult } from '@/domain/windEnvelope'
 import { normalizeDeg, trueToMagnetic, headwindComponent } from '@/domain/windAngles'
 import type { MagneticCorrection, ParsedWind } from '@/types/wind'
 import { TAILWIND_LIMIT_KT } from '@/constants'
@@ -168,7 +164,10 @@ describe('computeWindResult', () => {
   it('uses declination to convert true to magnetic', () => {
     const corrWithDecl: MagneticCorrection = { ...magCorr, declination: 10 }
     // Wind from 280°T, 10° east decl → 270°M
-    const result = computeWindResult(makeWind({ directionTrue: 280, speed: 10, effectiveSpeed: 10 }), corrWithDecl)
+    const result = computeWindResult(
+      makeWind({ directionTrue: 280, speed: 10, effectiveSpeed: 10 }),
+      corrWithDecl,
+    )
     expect(result.windDirectionMagnetic).toBeCloseTo(270)
   })
 

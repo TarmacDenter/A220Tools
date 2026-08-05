@@ -35,7 +35,7 @@ function arcPath(r: number, startBearing: number, endBearing: number): string {
   const end = polarPoint(r, endBearing)
 
   // Span clockwise from startBearing to endBearing
-  const span = ((endBearing - startBearing) + 360) % 360
+  const span = (endBearing - startBearing + 360) % 360
   const largeArc = span > 180 ? 1 : 0
 
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`
@@ -130,9 +130,20 @@ const arcDisplay = computed(() => {
 
 <template>
   <div class="compass-container">
-    <svg viewBox="0 0 400 400" class="compass-rose" aria-label="Compass rose showing safe and unsafe headings">
+    <svg
+      viewBox="0 0 400 400"
+      class="compass-rose"
+      aria-label="Compass rose showing safe and unsafe headings"
+    >
       <!-- Background circle -->
-      <circle :cx="CX" :cy="CY" :r="R" fill="var(--color-compass-bg)" stroke="var(--color-compass-stroke)" stroke-width="1.5" />
+      <circle
+        :cx="CX"
+        :cy="CY"
+        :r="R"
+        fill="var(--color-compass-bg)"
+        stroke="var(--color-compass-stroke)"
+        stroke-width="1.5"
+      />
 
       <!-- Safe arcs -->
       <template v-if="arcDisplay.type === 'all-safe'">
@@ -155,7 +166,14 @@ const arcDisplay = computed(() => {
           stroke-linecap="butt"
           opacity="0.8"
         />
-        <text :x="CX" :y="CY + 5" text-anchor="middle" fill="var(--color-warning)" font-weight="700" font-size="14">
+        <text
+          :x="CX"
+          :y="CY + 5"
+          text-anchor="middle"
+          fill="var(--color-warning)"
+          font-weight="700"
+          font-size="14"
+        >
           VARIABLE
         </text>
       </template>
@@ -244,8 +262,10 @@ const arcDisplay = computed(() => {
       <!-- Tick marks -->
       <g v-for="tick in ticks" :key="tick.deg">
         <line
-          :x1="tick.inner.x" :y1="tick.inner.y"
-          :x2="tick.outer.x" :y2="tick.outer.y"
+          :x1="tick.inner.x"
+          :y1="tick.inner.y"
+          :x2="tick.outer.x"
+          :y2="tick.outer.y"
           stroke="var(--color-compass-ticks)"
           :stroke-width="tick.isLong ? 2 : 1"
         />
@@ -262,14 +282,18 @@ const arcDisplay = computed(() => {
         :font-size="lbl.isCardinal ? 14 : 11"
         :font-weight="lbl.isCardinal ? '700' : '400'"
         fill="var(--color-compass-label)"
-      >{{ lbl.text }}</text>
+      >
+        {{ lbl.text }}
+      </text>
 
       <!-- Wind arrow -->
       <g v-if="windArrow">
         <!-- Line from center to outer rim in wind FROM direction -->
         <line
-          :x1="windArrow.x1" :y1="windArrow.y1"
-          :x2="windArrow.x2" :y2="windArrow.y2"
+          :x1="windArrow.x1"
+          :y1="windArrow.y1"
+          :x2="windArrow.x2"
+          :y2="windArrow.y2"
           stroke="var(--color-compass-wind)"
           stroke-width="3"
           stroke-linecap="round"
@@ -279,13 +303,28 @@ const arcDisplay = computed(() => {
         <!-- Center dot -->
         <circle :cx="CX" :cy="CY" r="4" fill="var(--color-compass-wind)" />
         <!-- Wind direction label -->
-        <text :x="CX" :y="CY + 18" text-anchor="middle" font-size="11" fill="var(--color-compass-wind-label)" font-weight="600">
+        <text
+          :x="CX"
+          :y="CY + 18"
+          text-anchor="middle"
+          font-size="11"
+          fill="var(--color-compass-wind-label)"
+          font-weight="600"
+        >
           FROM {{ result.windDirectionMagnetic.toFixed(0) }}°M
         </text>
       </g>
 
       <!-- Calm label -->
-      <text v-if="result.parsedWind.isCalm" :x="CX" :y="CY + 5" text-anchor="middle" fill="var(--color-safe)" font-weight="700" font-size="14">
+      <text
+        v-if="result.parsedWind.isCalm"
+        :x="CX"
+        :y="CY + 5"
+        text-anchor="middle"
+        fill="var(--color-safe)"
+        font-weight="700"
+        font-size="14"
+      >
         CALM
       </text>
     </svg>

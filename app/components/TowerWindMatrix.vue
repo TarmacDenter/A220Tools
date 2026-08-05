@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { CurrentWindComponentReadout, TowerWindMatrix, TowerWindPhase } from '@/domain/runwayMatrix'
+import type {
+  CurrentWindComponentReadout,
+  TowerWindMatrix,
+  TowerWindPhase,
+} from '@/domain/runwayMatrix'
 
 defineProps<{
   phase: TowerWindPhase
@@ -43,7 +47,9 @@ function formatPhase(phase: TowerWindPhase): string {
 
     <div class="matrix-table-wrapper">
       <table class="matrix-table">
-        <caption>Tower Wind Matrix (Magnetic)</caption>
+        <caption>
+          Tower Wind Matrix (Magnetic)
+        </caption>
         <thead>
           <tr>
             <th>Wind Dir (°M)</th>

@@ -116,6 +116,7 @@ npm run test:e2e -- e2e/vue.spec.ts
 ### Playwright fails with "Executable doesn't exist"
 
 Symptom:
+
 - Errors referencing missing browser binaries under `~/.cache/ms-playwright/...`
 
 Fix:
@@ -129,9 +130,11 @@ Then re-run `npm run test:e2e`.
 ### Playwright cannot start web server
 
 Symptom:
+
 - `Process from config.webServer was not able to start`
 
 Checks:
+
 1. Confirm no conflicting process on expected port (`3000` locally and on CI).
 2. Confirm `npm run dev` (or `npm run preview` on CI) starts cleanly.
 3. In sandboxed environments, port binding may be restricted; run with appropriate permissions.
@@ -139,9 +142,11 @@ Checks:
 ### API/data fetch errors in app UI
 
 Symptom:
+
 - METAR/airport panels show fetch failures.
 
 Checks:
+
 1. Verify network availability in runtime environment.
 2. Validate ICAO input format.
 3. Use manual mode to continue verification flow when remote data is unavailable.
