@@ -5,8 +5,8 @@ import {
   extractRequestOrigin,
   incrementRepeatedRequestCount,
   resetRepeatedRequestCounts,
-} from '../server/utils/requestTelemetry'
-import { logLevelForStatus } from '../server/utils/logger'
+} from '../../server/utils/requestTelemetry'
+import { logLevelForStatus } from '../../server/utils/logger'
 
 describe('requestTelemetry helpers', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import BaseToggle from '../app/components/ui/BaseToggle.vue'
+import BaseToggle from '../../app/components/ui/BaseToggle.vue'
 
 describe('BaseToggle', () => {
   it('renders with default inactive state', () => {
