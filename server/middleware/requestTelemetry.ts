@@ -1,4 +1,9 @@
-import { buildRequestFingerprint, createRequestId, extractRequestOrigin, incrementRepeatedRequestCount } from '../utils/requestTelemetry'
+import {
+  buildRequestFingerprint,
+  createRequestId,
+  extractRequestOrigin,
+  incrementRepeatedRequestCount,
+} from '../utils/requestTelemetry'
 import { errorFields, logEvent, logLevelForStatus } from '../utils/logger'
 
 const HEALTHCHECK_PATH = '/'
@@ -30,7 +35,12 @@ export default defineEventHandler((event) => {
     }
 
     event.node.res.setHeader('X-Request-ID', requestId)
-    logEvent('info', 'request.started', { requestId, method: event.method, path: requestUrl.pathname, repeatedRequestCount })
+    logEvent('info', 'request.started', {
+      requestId,
+      method: event.method,
+      path: requestUrl.pathname,
+      repeatedRequestCount,
+    })
 
     event.node.res.once('finish', () => {
       const durationMs = Number(process.hrtime.bigint() - startTimeNs) / 1_000_000
@@ -48,6 +58,10 @@ export default defineEventHandler((event) => {
       logEvent(logLevelForStatus(statusCode), 'request.finished', logPayload)
     })
   } catch (error) {
-    logEvent('error', 'telemetry.failed', { method: event.method, path: requestUrl.pathname, ...errorFields(error) })
+    logEvent('error', 'telemetry.failed', {
+      method: event.method,
+      path: requestUrl.pathname,
+      ...errorFields(error),
+    })
   }
 })

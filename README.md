@@ -1,6 +1,6 @@
 # A220Tools
 
-An envelope checker for calculating the safe wind angles for engine start, and a quick reference tower-wind checker for takeoff and landing. 
+An envelope checker for calculating the safe wind angles for engine start, and a quick reference tower-wind checker for takeoff and landing.
 
 ## Safety disclaimer
 

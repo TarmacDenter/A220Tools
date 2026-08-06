@@ -22,9 +22,7 @@ export default defineNuxtPlugin(() => {
   window.addEventListener('load', async () => {
     try {
       const configuredBaseUrl = config.public.appBaseUrl || '/'
-      const baseUrl = configuredBaseUrl.endsWith('/')
-        ? configuredBaseUrl
-        : `${configuredBaseUrl}/`
+      const baseUrl = configuredBaseUrl.endsWith('/') ? configuredBaseUrl : `${configuredBaseUrl}/`
       await navigator.serviceWorker.register(`${baseUrl}sw.js`, {
         scope: baseUrl,
       })

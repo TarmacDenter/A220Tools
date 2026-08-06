@@ -22,12 +22,10 @@ const speedUsed = computed(() => {
   return `${w.speed} kt (sustained, no gusts reported)`
 })
 
-const isMagneticManual = computed(
-  () => result.magneticCorrection.source === 'manual_magnetic'
-)
+const isMagneticManual = computed(() => result.magneticCorrection.source === 'manual_magnetic')
 const isMetarSource = computed(() => result.parsedWind.source === 'metar')
 const isManualTrue = computed(
-  () => result.parsedWind.source === 'manual' && !isMagneticManual.value
+  () => result.parsedWind.source === 'manual' && !isMagneticManual.value,
 )
 </script>
 
@@ -45,7 +43,13 @@ const isManualTrue = computed(
       >
         <span class="chevron" :class="{ open: !isCollapsed }" aria-hidden="true">
           <svg viewBox="0 0 16 16" focusable="false">
-            <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path
+              d="M4 6l4 4 4-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
           </svg>
         </span>
       </button>
@@ -53,9 +57,7 @@ const isManualTrue = computed(
 
     <div :id="panelId" v-show="!isCollapsed" data-testid="assumptions-panel">
       <ul>
-        <li>
-          <strong>Speed used:</strong> {{ speedUsed }}
-        </li>
+        <li><strong>Speed used:</strong> {{ speedUsed }}</li>
         <li>
           <strong>Wind direction:</strong>
           <span v-if="result.parsedWind.isCalm">Calm (no correction needed)</span>
@@ -64,14 +66,17 @@ const isManualTrue = computed(
             {{ result.parsedWind.directionTrue }}°M — entered as magnetic, no correction applied
           </span>
           <span v-else>
-            {{ result.parsedWind.directionTrue }}°T → {{ result.windDirectionMagnetic.toFixed(0) }}°M
-            ({{ decl }} declination)
+            {{ result.parsedWind.directionTrue }}°T →
+            {{ result.windDirectionMagnetic.toFixed(0) }}°M ({{ decl }} declination)
           </span>
         </li>
         <li v-if="!isMagneticManual">
           <strong>Declination source:</strong>
           <span v-if="result.magneticCorrection.source === 'airport_api'">
-            Airport API (<code>magdec: {{ result.magneticCorrection.rawMagdecString ?? '(none — 0° applied)' }}</code>)
+            Airport API (<code
+              >magdec:
+              {{ result.magneticCorrection.rawMagdecString ?? '(none — 0° applied)' }}</code
+            >)
           </span>
           <span v-else-if="result.magneticCorrection.source === 'manual_entered'">
             Manually entered ({{ decl }})
@@ -99,34 +104,42 @@ const isManualTrue = computed(
         <span class="advisory-icon">ℹ</span>
         <div>
           <strong>METAR winds are in TRUE degrees.</strong>
-          Corrected to magnetic using {{ decl }} declination from the airport database.
-          Cross-check against ATIS/AWOS if available.
+          Corrected to magnetic using {{ decl }} declination from the airport database. Cross-check
+          against ATIS/AWOS if available.
         </div>
       </div>
 
       <!-- Manual TRUE: same note -->
-      <div v-if="isManualTrue && !result.parsedWind.isCalm && !result.parsedWind.isVariable" class="advisory metar-advisory">
+      <div
+        v-if="isManualTrue && !result.parsedWind.isCalm && !result.parsedWind.isVariable"
+        class="advisory metar-advisory"
+      >
         <span class="advisory-icon">ℹ</span>
         <div>
           <strong>TRUE input mode.</strong>
           {{ decl }} declination applied
-          <span v-if="result.magneticCorrection.source === 'manual_entered'">(manually entered)</span>
-          <span v-else-if="result.magneticCorrection.source === 'geomagnetism_package'">(WMM model)</span>
-          <span v-else>(airport API)</span>.
-          Use this mode for METAR and AeroData sources.
+          <span v-if="result.magneticCorrection.source === 'manual_entered'"
+            >(manually entered)</span
+          >
+          <span v-else-if="result.magneticCorrection.source === 'geomagnetism_package'"
+            >(WMM model)</span
+          >
+          <span v-else>(airport API)</span>. Use this mode for METAR and AeroData sources.
         </div>
       </div>
 
       <!-- Manual MAGNETIC: confirmation note -->
-      <div v-if="isMagneticManual && !result.parsedWind.isCalm && !result.parsedWind.isVariable" class="advisory magnetic-advisory">
+      <div
+        v-if="isMagneticManual && !result.parsedWind.isCalm && !result.parsedWind.isVariable"
+        class="advisory magnetic-advisory"
+      >
         <span class="advisory-icon">✓</span>
         <div>
           <strong>MAGNETIC input mode.</strong>
-          No declination correction applied — winds treated as already magnetic.
-          Use this mode for ATIS winds.
+          No declination correction applied — winds treated as already magnetic. Use this mode for
+          ATIS winds.
         </div>
       </div>
-
     </div>
   </div>
 </template>
@@ -232,5 +245,4 @@ const isManualTrue = computed(
   border: 1px solid var(--color-safe-border);
   color: var(--color-safe-text);
 }
-
 </style>

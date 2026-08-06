@@ -14,10 +14,8 @@ export default defineEventHandler(async (): Promise<ActivityRow[]> => {
       }, {})
 
       return { icao, hits: result.timestamps.length, uniqueCallers: result.origins.length, hourly }
-    })
+    }),
   )
 
-  return rows
-    .filter(r => r.hits > 0)
-    .sort((a, b) => b.hits - a.hits)
+  return rows.filter((r) => r.hits > 0).sort((a, b) => b.hits - a.hits)
 })

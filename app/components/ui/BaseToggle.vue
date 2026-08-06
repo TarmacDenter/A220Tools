@@ -13,15 +13,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
 
-type Variant = 'primary' | 'safe' | 'unsafe' | 'warning' | 'info';
+type Variant = 'primary' | 'safe' | 'unsafe' | 'warning' | 'info'
 
 interface Props {
-  activeLabel?: string;
-  inactiveLabel?: string;
-  variant?: Variant;
-  disabled?: boolean;
+  activeLabel?: string
+  inactiveLabel?: string
+  variant?: Variant
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,17 +29,17 @@ const props = withDefaults(defineProps<Props>(), {
   inactiveLabel: 'Off',
   variant: 'primary',
   disabled: false,
-});
+})
 
-const modelValue = defineModel<boolean>({ default: false });
+const modelValue = defineModel<boolean>({ default: false })
 
-const isActive = computed(() => modelValue.value);
+const isActive = computed(() => modelValue.value)
 
 const toggle = () => {
   if (!props.disabled) {
-    modelValue.value = !modelValue.value;
+    modelValue.value = !modelValue.value
   }
-};
+}
 </script>
 
 <style scoped>

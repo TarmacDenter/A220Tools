@@ -61,13 +61,17 @@ export function incrementRepeatedRequestCount(fingerprint: string): number {
   return nextCount
 }
 
-function readHeaderValue(headers: Headers | Record<string, string | string[] | undefined>, name: string): string | undefined {
+function readHeaderValue(
+  headers: Headers | Record<string, string | string[] | undefined>,
+  name: string,
+): string | undefined {
   if (typeof (headers as Headers).get === 'function') {
     return (headers as Headers).get(name) ?? undefined
   }
 
   const recordHeaders = headers as Record<string, string | string[] | undefined>
-  const value = recordHeaders[name] ?? recordHeaders[name.toLowerCase()] ?? recordHeaders[name.toUpperCase()]
+  const value =
+    recordHeaders[name] ?? recordHeaders[name.toLowerCase()] ?? recordHeaders[name.toUpperCase()]
 
   if (Array.isArray(value)) {
     return value[0]
@@ -80,12 +84,14 @@ export function extractRequestOrigin(
   headers: Headers | Record<string, string | string[] | undefined>,
   remoteAddress?: string | null,
 ): string {
-  return readHeaderValue(headers, 'x-forwarded-for')
-    ?? readHeaderValue(headers, 'x-real-ip')
-    ?? readHeaderValue(headers, 'cf-connecting-ip')
-    ?? readHeaderValue(headers, 'fly-client-ip')
-    ?? remoteAddress
-    ?? 'unknown'
+  return (
+    readHeaderValue(headers, 'x-forwarded-for') ??
+    readHeaderValue(headers, 'x-real-ip') ??
+    readHeaderValue(headers, 'cf-connecting-ip') ??
+    readHeaderValue(headers, 'fly-client-ip') ??
+    remoteAddress ??
+    'unknown'
+  )
 }
 
 export function coarseRequestOrigin(origin: string): string {

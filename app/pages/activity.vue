@@ -18,9 +18,7 @@ const { data, status } = await useFetch('/api/activity')
         <p class="activity-subtitle">Airport lookups in the past 24 hours</p>
       </header>
 
-      <div v-if="status === 'pending'" class="activity-state">
-        Loading…
-      </div>
+      <div v-if="status === 'pending'" class="activity-state">Loading…</div>
 
       <div v-else-if="!data || data.length === 0" class="activity-state">
         No activity in the past 24 hours.

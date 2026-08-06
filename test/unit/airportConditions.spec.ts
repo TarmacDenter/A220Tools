@@ -1,28 +1,34 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockGetRouterParam, mockGetAirportConditions, mockRecordAirportLookup, mockCreateError } = vi.hoisted(() => {
-  const mockGetRouterParam = vi.fn()
-  const mockGetAirportConditions = vi.fn()
-  const mockRecordAirportLookup = vi.fn()
-  const mockCreateError = vi.fn((options: { statusCode: number; statusMessage: string }) =>
-    Object.assign(new Error(options.statusMessage), options),
-  )
-  const globals = globalThis as typeof globalThis & Record<string, unknown>
-  globals.defineEventHandler = (handler: unknown) => handler
-  globals.getRouterParam = mockGetRouterParam
-  globals.createError = mockCreateError
-  return { mockGetRouterParam, mockGetAirportConditions, mockRecordAirportLookup, mockCreateError }
-})
+const { mockGetRouterParam, mockGetAirportConditions, mockRecordAirportLookup, mockCreateError } =
+  vi.hoisted(() => {
+    const mockGetRouterParam = vi.fn()
+    const mockGetAirportConditions = vi.fn()
+    const mockRecordAirportLookup = vi.fn()
+    const mockCreateError = vi.fn((options: { statusCode: number; statusMessage: string }) =>
+      Object.assign(new Error(options.statusMessage), options),
+    )
+    const globals = globalThis as typeof globalThis & Record<string, unknown>
+    globals.defineEventHandler = (handler: unknown) => handler
+    globals.getRouterParam = mockGetRouterParam
+    globals.createError = mockCreateError
+    return {
+      mockGetRouterParam,
+      mockGetAirportConditions,
+      mockRecordAirportLookup,
+      mockCreateError,
+    }
+  })
 
-vi.mock('../server/utils/aviationWeather', () => ({
+vi.mock('../../server/utils/aviationWeather', () => ({
   getAirportConditions: mockGetAirportConditions,
 }))
 
-vi.mock('../server/utils/airportLookup', () => ({
+vi.mock('../../server/utils/airportLookup', () => ({
   recordAirportLookup: mockRecordAirportLookup,
 }))
 
-import handler from '../server/api/airport-conditions/[icao]'
+import handler from '../../server/api/airport-conditions/[icao]'
 
 describe('GET /api/airport-conditions/:icao', () => {
   beforeEach(() => {

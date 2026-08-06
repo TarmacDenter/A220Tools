@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
+import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix'
 import {
   buildTowerWindMatrix,
   calculateRunwayWindComponents,
   getCurrentWindComponentReadout,
-} from '@/composables/useTowerWindMatrix'
+} from '@/domain/runwayMatrix'
 
 describe('buildTowerWindMatrix', () => {
   it('generates all absolute wind directions and centers the visible window on the reference wind', () => {
@@ -15,7 +17,9 @@ describe('buildTowerWindMatrix', () => {
     })
 
     expect(matrix.allRows).toHaveLength(36)
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([40, 50, 60, 70, 80, 90, 100])
+    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+      40, 50, 60, 70, 80, 90, 100,
+    ])
     expect(matrix.visibleRows.find((row) => row.windDirection === 70)?.isReference).toBe(true)
     expect(matrix.visibleRows.find((row) => row.windDirection === 90)).toMatchObject({
       maxWindKt: 29,
@@ -32,7 +36,9 @@ describe('buildTowerWindMatrix', () => {
       referenceWindDirection: 350,
     })
 
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([320, 330, 340, 350, 0, 10, 20])
+    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+      320, 330, 340, 350, 0, 10, 20,
+    ])
   })
 
   it('uses tailwind as the limiting component on tailwind rows', () => {
@@ -129,5 +135,35 @@ describe('getCurrentWindComponentReadout', () => {
       limitKt: 10,
       status: 'unsafe',
     })
+  })
+})
+
+describe('useTowerWindMatrix', () => {
+  it('updates the matrix when a reactive runway heading becomes available', () => {
+    const runwayHeading = ref<number | null>(null)
+    const { matrix } = useTowerWindMatrix({
+      phase: 'takeoff',
+      rcamCode: 6,
+      runwayHeading,
+      referenceWindDirection: 270,
+      windSpeed: 20,
+    })
+
+    expect(matrix.value).toBeNull()
+    runwayHeading.value = 220
+    expect(matrix.value).not.toBeNull()
+  })
+
+  it('does not return a current component readout for variable wind', () => {
+    const { currentReadout } = useTowerWindMatrix({
+      phase: 'landing',
+      rcamCode: 6,
+      runwayHeading: 220,
+      referenceWindDirection: 270,
+      windSpeed: 20,
+      isVariableWind: true,
+    })
+
+    expect(currentReadout.value).toBeNull()
   })
 })

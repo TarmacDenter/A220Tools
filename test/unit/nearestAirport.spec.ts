@@ -17,7 +17,7 @@ const { mockGetQuery, mockFetch } = vi.hoisted(() => {
   return { mockGetQuery, mockFetch }
 })
 
-import handler from '../server/api/nearest-airport'
+import handler from '../../server/api/nearest-airport'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MOCK_EVENT = {} as any
@@ -77,7 +77,7 @@ describe('GET /api/nearest-airport', () => {
     mockGetQuery.mockReturnValue({ lat: '51.477', lon: '-0.461' })
     mockFetch.mockResolvedValue([
       { icaoId: 'EGLL', lat: 51.4775, lon: -0.4614 }, // ~0.1 km away
-      { icaoId: 'EGKB', lat: 51.3318, lon: 0.0324 },  // ~42 km away
+      { icaoId: 'EGKB', lat: 51.3318, lon: 0.0324 }, // ~42 km away
     ])
 
     const result = await handler(MOCK_EVENT)
@@ -87,9 +87,9 @@ describe('GET /api/nearest-airport', () => {
   it('skips entries missing icaoId, lat, or lon', async () => {
     mockGetQuery.mockReturnValue({ lat: '51.477', lon: '-0.461' })
     mockFetch.mockResolvedValue([
-      { icaoId: 'EGKB', lat: 51.3318, lon: 0.0324 },  // valid
-      { icaoId: null, lat: 51.47, lon: -0.46 },         // invalid: no icaoId
-      { icaoId: 'XXXX' },                               // invalid: no lat/lon
+      { icaoId: 'EGKB', lat: 51.3318, lon: 0.0324 }, // valid
+      { icaoId: null, lat: 51.47, lon: -0.46 }, // invalid: no icaoId
+      { icaoId: 'XXXX' }, // invalid: no lat/lon
     ])
 
     const result = await handler(MOCK_EVENT)
@@ -99,7 +99,7 @@ describe('GET /api/nearest-airport', () => {
   it('throws 404 when all entries are malformed', async () => {
     mockGetQuery.mockReturnValue({ lat: '51.477', lon: '-0.461' })
     mockFetch.mockResolvedValue([
-      { lat: 51.47, lon: -0.46 },  // missing icaoId
+      { lat: 51.47, lon: -0.46 }, // missing icaoId
     ])
     await expect(handler(MOCK_EVENT)).rejects.toMatchObject({ statusCode: 404 })
   })

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import AssumptionsDisplay from '../app/components/AssumptionsDisplay.vue'
+import AssumptionsDisplay from '../../app/components/AssumptionsDisplay.vue'
 import type { WindResult } from '@/types/wind'
 
 const baseResult: WindResult = {
@@ -46,7 +46,9 @@ describe('AssumptionsDisplay', () => {
     // FIXME: Fails intermittently in vitest; investigate panel visibility after toggle.
     const toggle = wrapper.get('[data-testid="assumptions-toggle"]')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('[data-testid="assumptions-panel"]').attributes('style') ?? '').not.toContain('display: none')
+    expect(
+      wrapper.get('[data-testid="assumptions-panel"]').attributes('style') ?? '',
+    ).not.toContain('display: none')
   })
 
   it('does not render ATIS advisory copy for METAR results', () => {

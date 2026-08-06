@@ -1,57 +1,74 @@
 <script setup lang="ts">
-import { watch } from 'vue';
-import type { FetchStatus } from '@/types/wind';
-import { useLocation } from '@/composables/useLocation';
+import { watch } from 'vue'
+import type { FetchStatus } from '@/types/wind'
+import { useLocation } from '@/composables/useLocation'
 
 const { status, disabled = false } = defineProps<{
-  status: FetchStatus;
-  disabled?: boolean;
-}>();
+  status: FetchStatus
+  disabled?: boolean
+}>()
 
-const icaoInput = defineModel<string>({ required: true });
+const icaoInput = defineModel<string>({ required: true })
 
 const emit = defineEmits<{
-  fetch: [icao: string];
-}>();
+  fetch: [icao: string]
+}>()
 
 function onFetch() {
-  const val = icaoInput.value.trim().toUpperCase();
-  if (val.length < 3) return;
-  emit('fetch', val);
+  const val = icaoInput.value.trim().toUpperCase()
+  if (val.length < 3) return
+  emit('fetch', val)
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') onFetch();
+  if (e.key === 'Enter') onFetch()
 }
 
-const { locBtnState, locBtnText, fetchedIcao, onLocClick } = useLocation();
+const { locBtnState, locBtnText, fetchedIcao, onLocClick } = useLocation()
 
 watch(fetchedIcao, (icao) => {
   if (icao) {
-    icaoInput.value = icao;
-    emit('fetch', icao);
+    icaoInput.value = icao
+    emit('fetch', icao)
   }
-});
+})
 
 function onLocButtonClick() {
-  onLocClick();
+  onLocClick()
 }
 </script>
 
 <template>
   <div class="airport-input grid">
     <label for="icao-input" class="label col-12">Airport ICAO</label>
-    <input id="icao-input" v-model="icaoInput" type="text" placeholder="e.g. KLAX" maxlength="4"
-      class="icao-field col-4" :disabled="status === 'loading' || disabled" @keydown="onKeydown" autocomplete="off"
-      autocapitalize="characters" spellcheck="false" />
+    <input
+      id="icao-input"
+      v-model="icaoInput"
+      type="text"
+      placeholder="e.g. KLAX"
+      maxlength="4"
+      class="icao-field col-4"
+      :disabled="status === 'loading' || disabled"
+      @keydown="onKeydown"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+    />
     <ClientOnly>
-      <button v-if="locBtnState !== 'unsupported'" class="fetch-btn col-4"
-        :disabled="locBtnState === 'loading'" @click="onLocButtonClick">
+      <button
+        v-if="locBtnState !== 'unsupported'"
+        class="fetch-btn col-4"
+        :disabled="locBtnState === 'loading'"
+        @click="onLocButtonClick"
+      >
         {{ locBtnText }}
       </button>
     </ClientOnly>
-    <button class="fetch-btn col-4" :disabled="status === 'loading' || disabled || icaoInput.trim().length < 3"
-      @click="onFetch">
+    <button
+      class="fetch-btn col-4"
+      :disabled="status === 'loading' || disabled || icaoInput.trim().length < 3"
+      @click="onFetch"
+    >
       <span v-if="status === 'loading'">Loading…</span>
       <span v-else>Check METAR</span>
     </button>

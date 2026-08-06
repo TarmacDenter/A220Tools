@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useAirportConditions } from '@/composables/useAirportConditions'
-import { fetchAirportConditionsFromServer } from '@/composables/aviationWeatherApi'
+import { fetchAirportConditionsFromServer } from '@/services/aviationWeatherApi'
 
-vi.mock('@/composables/aviationWeatherApi', () => ({
+vi.mock('@/services/aviationWeatherApi', () => ({
   fetchAirportConditionsFromServer: vi.fn(),
 }))
 

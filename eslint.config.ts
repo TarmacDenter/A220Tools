@@ -6,6 +6,7 @@ import pluginVue from 'eslint-plugin-vue'
 import pluginPlaywright from 'eslint-plugin-playwright'
 import pluginVitest from '@vitest/eslint-plugin'
 import pluginOxlint from 'eslint-plugin-oxlint'
+import prettierRecommended from 'eslint-plugin-prettier/recommended'
 
 const preferDefineModelRule: Rule.RuleModule = {
   meta: {
@@ -52,25 +53,19 @@ export default defineConfigWithVueTs(
     files: ['**/*.{vue,ts,mts,tsx}'],
   },
 
-  globalIgnores([
-    '**/dist/**',
-    '**/dist-ssr/**',
-    '**/coverage/**',
-    '**/.nuxt/**',
-    '**/.output/**',
-  ]),
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/.nuxt/**', '**/.output/**']),
 
   ...pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
 
   {
     ...pluginPlaywright.configs['flat/recommended'],
-    files: ['e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    files: ['test/e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
 
   {
     ...pluginVitest.configs.recommended,
-    files: ['**/__tests__/*'],
+    files: ['test/unit/**/*.{test,spec}.{js,ts,jsx,tsx}'],
   },
 
   {
@@ -97,4 +92,7 @@ export default defineConfigWithVueTs(
   },
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
+
+  // Keep formatting errors in the same ESLint workflow as code-quality errors.
+  prettierRecommended,
 )

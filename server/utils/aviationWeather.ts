@@ -1,14 +1,35 @@
-import { AirportUpstreamSchema, AirportResponseSchema, AirportConditionsResponseSchema, MetarResponseSchema, MetarUpstreamSchema, RunwayUpstreamSchema, type AirportApiRecord, type AirportConditionsResponse, type AirportUpstream, type MetarApiRecord, type MetarUpstream, type RunwaySelection } from '#shared/schemas/airportConditions'
+import {
+  AirportUpstreamSchema,
+  AirportResponseSchema,
+  AirportConditionsResponseSchema,
+  MetarResponseSchema,
+  MetarUpstreamSchema,
+  RunwayUpstreamSchema,
+  type AirportApiRecord,
+  type AirportConditionsResponse,
+  type AirportUpstream,
+  type MetarApiRecord,
+  type MetarUpstream,
+  type RunwaySelection,
+} from '#shared/schemas/airportConditions'
+import { parseMagneticDeclination } from '#shared/utils/magneticDeclination'
 
 const AVIATION_WEATHER_BASE_URL = 'https://aviationweather.gov/api/data'
 const AIRPORT_CACHE_SECONDS = 60 * 60 * 24 * 7
 const METAR_CACHE_SECONDS = 1 * 60
 
 function invalidUpstreamResponse(): never {
-  throw createError({ statusCode: 502, statusMessage: 'AviationWeather conditions response was invalid' })
+  throw createError({
+    statusCode: 502,
+    statusMessage: 'AviationWeather conditions response was invalid',
+  })
 }
 
-function parseUpstream<T>(schema: { safeParse: (value: unknown) => { success: boolean; data?: T; error?: unknown } }, value: unknown, source: string): T {
+function parseUpstream<T>(
+  schema: { safeParse: (value: unknown) => { success: boolean; data?: T; error?: unknown } },
+  value: unknown,
+  source: string,
+): T {
   const parsed = schema.safeParse(value)
   if (!parsed.success || parsed.data === undefined) {
     console.error('[aviation-weather] invalid upstream response', { source, issues: parsed.error })
@@ -17,43 +38,41 @@ function parseUpstream<T>(schema: { safeParse: (value: unknown) => { success: bo
   return parsed.data
 }
 
-export const getCachedAirportRecord = defineCachedFunction(async (icao: string): Promise<AirportUpstream> => {
-  const upstreamUrl = `${AVIATION_WEATHER_BASE_URL}/airport?ids=${encodeURIComponent(icao)}&format=json`
-  const data = await $fetch<unknown>(upstreamUrl)
-  if (!Array.isArray(data) || data.length === 0 || !data[0]) {
-    throw createError({ statusCode: 404, statusMessage: `No airport data found for ${icao}` })
-  }
-  return parseUpstream(AirportUpstreamSchema, data[0], 'airport')
-}, {
-  name: 'aviation-weather-airport',
-  maxAge: AIRPORT_CACHE_SECONDS,
-  getKey: (icao) => icao,
-})
+export const getCachedAirportRecord = defineCachedFunction(
+  async (icao: string): Promise<AirportUpstream> => {
+    const upstreamUrl = `${AVIATION_WEATHER_BASE_URL}/airport?ids=${encodeURIComponent(icao)}&format=json`
+    const data = await $fetch<unknown>(upstreamUrl)
+    if (!Array.isArray(data) || data.length === 0 || !data[0]) {
+      throw createError({ statusCode: 404, statusMessage: `No airport data found for ${icao}` })
+    }
+    return parseUpstream(AirportUpstreamSchema, data[0], 'airport')
+  },
+  {
+    name: 'aviation-weather-airport',
+    maxAge: AIRPORT_CACHE_SECONDS,
+    getKey: (icao) => icao,
+  },
+)
 
-export const getCachedMetarRecord = defineCachedFunction(async (icao: string): Promise<MetarUpstream> => {
-  const upstreamUrl = `${AVIATION_WEATHER_BASE_URL}/metar?ids=${encodeURIComponent(icao)}&format=json`
-  const data = await $fetch<unknown>(upstreamUrl)
-  if (!Array.isArray(data) || data.length === 0 || !data[0]) {
-    throw createError({ statusCode: 404, statusMessage: `No METAR data found for ${icao}` })
-  }
-  return parseUpstream(MetarUpstreamSchema, data[0], 'metar')
-}, {
-  name: 'aviation-weather-metar',
-  maxAge: METAR_CACHE_SECONDS,
-  swr: false,
-  getKey: (icao) => icao,
-})
+export const getCachedMetarRecord = defineCachedFunction(
+  async (icao: string): Promise<MetarUpstream> => {
+    const upstreamUrl = `${AVIATION_WEATHER_BASE_URL}/metar?ids=${encodeURIComponent(icao)}&format=json`
+    const data = await $fetch<unknown>(upstreamUrl)
+    if (!Array.isArray(data) || data.length === 0 || !data[0]) {
+      throw createError({ statusCode: 404, statusMessage: `No METAR data found for ${icao}` })
+    }
+    return parseUpstream(MetarUpstreamSchema, data[0], 'metar')
+  },
+  {
+    name: 'aviation-weather-metar',
+    maxAge: METAR_CACHE_SECONDS,
+    swr: false,
+    getKey: (icao) => icao,
+  },
+)
 
 function normalizeHeading(heading: number): number {
   return ((heading % 360) + 360) % 360
-}
-
-function parseMagneticDeclination(magdec: string | null | undefined): number | null {
-  if (!magdec) return null
-  const match = /^(\d+(?:\.\d+)?)(E|W)$/.exec(magdec.trim().toUpperCase())
-  if (!match) return null
-  const value = Number(match[1])
-  return match[2] === 'W' ? -value : value
 }
 
 async function resolveDeclination(airport: AirportUpstream): Promise<number | null> {

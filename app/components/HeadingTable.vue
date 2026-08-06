@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HeadingRow } from '@/types/wind'
+import { formatMagneticHeading } from '@/utils/formatting'
 
 defineProps<{
   rows: HeadingRow[]
@@ -35,16 +36,25 @@ function formatTaxiSpeed(speed: number): string {
           :key="row.heading"
           :class="{ 'row-unsafe': !row.isSafe && (!showTaxi || row.minTaxiSpeed > maxTaxiSpeed) }"
         >
-          <td class="col-heading">{{ String(row.heading).padStart(3, '0') }}°</td>
+          <td class="col-heading">{{ formatMagneticHeading(row.heading) }}</td>
           <td class="col-component" :class="row.headwindComponent < 0 ? 'tailwind' : 'headwind'">
             {{ formatComponent(row.headwindComponent) }}
           </td>
-          <td v-if="showTaxi" class="col-taxi" :class="{ 'taxi-needed': row.minTaxiSpeed > 0, 'taxi-exceeded': row.minTaxiSpeed > maxTaxiSpeed }">
+          <td
+            v-if="showTaxi"
+            class="col-taxi"
+            :class="{
+              'taxi-needed': row.minTaxiSpeed > 0,
+              'taxi-exceeded': row.minTaxiSpeed > maxTaxiSpeed,
+            }"
+          >
             {{ formatTaxiSpeed(row.minTaxiSpeed) }}
           </td>
           <td class="col-status">
             <span v-if="row.isSafe" class="badge safe">Safe</span>
-            <span v-else-if="showTaxi && row.minTaxiSpeed <= maxTaxiSpeed" class="badge taxi">Taxi {{ row.minTaxiSpeed }} kt</span>
+            <span v-else-if="showTaxi && row.minTaxiSpeed <= maxTaxiSpeed" class="badge taxi"
+              >Taxi {{ row.minTaxiSpeed }} kt</span
+            >
             <span v-else class="badge unsafe">Unsafe</span>
           </td>
         </tr>

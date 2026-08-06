@@ -24,7 +24,9 @@ function detectStandalone() {
   }
 
   const mediaStandalone = window.matchMedia?.('(display-mode: standalone)').matches ?? false
-  const navigatorStandalone = 'standalone' in window.navigator && (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  const navigatorStandalone =
+    'standalone' in window.navigator &&
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   isInStandalone.value = mediaStandalone || navigatorStandalone
 }
 
@@ -39,17 +41,22 @@ const isIos = computed(() => {
   return iosUa || ipadOsUa
 })
 
-const showNativeInstallCta = computed(() =>
-  !dismissedNative.value && !installed.value && !isInStandalone.value && deferredPrompt.value !== null
+const showNativeInstallCta = computed(
+  () =>
+    !dismissedNative.value &&
+    !installed.value &&
+    !isInStandalone.value &&
+    deferredPrompt.value !== null,
 )
 
-const showIosInstructions = computed(() =>
-  hasMounted.value &&
-  isIos.value &&
-  !supportsBeforeInstallPrompt.value &&
-  !dismissedIos.value &&
-  !installed.value &&
-  !isInStandalone.value
+const showIosInstructions = computed(
+  () =>
+    hasMounted.value &&
+    isIos.value &&
+    !supportsBeforeInstallPrompt.value &&
+    !dismissedIos.value &&
+    !installed.value &&
+    !isInStandalone.value,
 )
 
 function handleBeforeInstallPrompt(event: Event) {
@@ -116,7 +123,8 @@ onUnmounted(() => {
   <div v-else-if="showIosInstructions" class="install-banner" role="status" aria-live="polite">
     <div class="install-copy">
       <strong>Install on iPhone:</strong>
-      Open the browser Share menu, then tap Add to Home Screen. In Chrome this may appear as Share <em>then</em> Add to Home Screen; in Safari it is in the Share sheet.
+      Open the browser Share menu, then tap Add to Home Screen. In Chrome this may appear as Share
+      <em>then</em> Add to Home Screen; in Safari it is in the Share sheet.
     </div>
     <div class="install-actions">
       <button class="install-btn secondary" @click="dismissIosPrompt">Dismiss</button>

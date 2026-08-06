@@ -16,7 +16,7 @@ const { mockFetch, mockCreateError, cacheOptions } = vi.hoisted(() => {
   return { mockFetch, mockCreateError, cacheOptions }
 })
 
-import { getAirportConditions } from '../server/utils/aviationWeather'
+import { getAirportConditions } from '../../server/utils/aviationWeather'
 
 describe('getAirportConditions', () => {
   beforeEach(() => {
@@ -25,40 +25,46 @@ describe('getAirportConditions', () => {
   })
 
   it('waits for a fresh METAR after the one-minute cache expires', () => {
-    expect(cacheOptions).toContainEqual(expect.objectContaining({
-      name: 'aviation-weather-metar',
-      maxAge: 60,
-      swr: false,
-    }))
+    expect(cacheOptions).toContainEqual(
+      expect.objectContaining({
+        name: 'aviation-weather-metar',
+        maxAge: 60,
+        swr: false,
+      }),
+    )
   })
 
   it('returns a curated response with magnetic runway selections', async () => {
     mockFetch
-      .mockResolvedValueOnce([{
-        icaoId: 'KJFK',
-        receiptTime: '2026-08-03T19:58:26.991Z',
-        obsTime: 1785786660,
-        rawOb: 'METAR KJFK 031951Z 20009KT 10SM SCT016',
-        lat: 40.6392,
-        lon: -73.7639,
-        name: 'New York/JF Kennedy Intl, NY, US',
-        wdir: 200,
-        wspd: 9,
-        wgst: null,
-      }])
-      .mockResolvedValueOnce([{
-        icaoId: 'KJFK',
-        name: 'NEW YORK/JOHN F KENNEDY INTL',
-        lat: 40.6399,
-        lon: -73.7787,
-        magdec: '13W',
-        runways: [
-          { id: '04L/22R', alignment: 31 },
-          { id: '04R/22L', alignment: 31 },
-          { id: '13L/31R', alignment: 121 },
-          { id: 'malformed', alignment: 'unknown' },
-        ],
-      }])
+      .mockResolvedValueOnce([
+        {
+          icaoId: 'KJFK',
+          receiptTime: '2026-08-03T19:58:26.991Z',
+          obsTime: 1785786660,
+          rawOb: 'METAR KJFK 031951Z 20009KT 10SM SCT016',
+          lat: 40.6392,
+          lon: -73.7639,
+          name: 'New York/JF Kennedy Intl, NY, US',
+          wdir: 200,
+          wspd: 9,
+          wgst: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          icaoId: 'KJFK',
+          name: 'NEW YORK/JOHN F KENNEDY INTL',
+          lat: 40.6399,
+          lon: -73.7787,
+          magdec: '13W',
+          runways: [
+            { id: '04L/22R', alignment: 31 },
+            { id: '04R/22L', alignment: 31 },
+            { id: '13L/31R', alignment: 121 },
+            { id: 'malformed', alignment: 'unknown' },
+          ],
+        },
+      ])
 
     const result = await getAirportConditions('kjfk')
 
@@ -93,32 +99,38 @@ describe('getAirportConditions', () => {
   })
 
   it('rejects an invalid METAR boundary response', async () => {
-    mockFetch.mockResolvedValueOnce([{
-      icaoId: 'KJFK',
-      rawOb: 'invalid',
-      wdir: 'bad',
-      wspd: '9',
-      wgst: null,
-    }])
+    mockFetch.mockResolvedValueOnce([
+      {
+        icaoId: 'KJFK',
+        rawOb: 'invalid',
+        wdir: 'bad',
+        wspd: '9',
+        wgst: null,
+      },
+    ])
 
     await expect(getAirportConditions('KJFK')).rejects.toMatchObject({ statusCode: 502 })
   })
 
   it('normalizes an omitted gust value from AviationWeather', async () => {
     mockFetch
-      .mockResolvedValueOnce([{
-        icaoId: 'KJFK',
-        rawOb: 'METAR KJFK 032151Z 18008KT 10SM CLR',
-        wdir: 180,
-        wspd: 8,
-      }])
-      .mockResolvedValueOnce([{
-        icaoId: 'KJFK',
-        name: 'NEW YORK/JOHN F KENNEDY INTL',
-        lat: 40.6399,
-        lon: -73.7787,
-        magdec: '13W',
-      }])
+      .mockResolvedValueOnce([
+        {
+          icaoId: 'KJFK',
+          rawOb: 'METAR KJFK 032151Z 18008KT 10SM CLR',
+          wdir: 180,
+          wspd: 8,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          icaoId: 'KJFK',
+          name: 'NEW YORK/JOHN F KENNEDY INTL',
+          lat: 40.6399,
+          lon: -73.7787,
+          magdec: '13W',
+        },
+      ])
 
     const result = await getAirportConditions('KJFK')
 

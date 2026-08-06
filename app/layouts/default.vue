@@ -10,7 +10,7 @@ const THEME_STORAGE_KEY = 'a220-theme'
 const theme = ref<Theme>('dark')
 
 const themeToggleLabel = computed(() =>
-  theme.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+  theme.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
 )
 
 function applyTheme(nextTheme: Theme) {
