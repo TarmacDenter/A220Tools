@@ -13,6 +13,7 @@ import {
   type RunwaySelection,
 } from '#shared/schemas/airportConditions'
 import { parseMagneticDeclination } from '#shared/utils/magneticDeclination'
+import { normalizeDeg } from '#shared/domain/windAngles'
 
 const AVIATION_WEATHER_BASE_URL = 'https://aviationweather.gov/api/data'
 const AIRPORT_CACHE_SECONDS = 60 * 60 * 24 * 7
@@ -71,10 +72,6 @@ export const getCachedMetarRecord = defineCachedFunction(
   },
 )
 
-function normalizeHeading(heading: number): number {
-  return ((heading % 360) + 360) % 360
-}
-
 async function resolveDeclination(airport: AirportUpstream): Promise<number | null> {
   const parsed = parseMagneticDeclination(airport.magdec)
   if (parsed !== null) return parsed
@@ -114,8 +111,8 @@ async function extractRunwaySelections(airport: AirportUpstream): Promise<Runway
     const names = extractRunwayNames(parsed.data.id)
     if (!names) return []
 
-    const heading = Math.round(normalizeHeading(parsed.data.alignment - declination))
-    const reciprocalHeading = normalizeHeading(heading + 180)
+    const heading = Math.round(normalizeDeg(parsed.data.alignment - declination))
+    const reciprocalHeading = normalizeDeg(heading + 180)
     return [
       { name: names[0], heading },
       { name: names[1], heading: reciprocalHeading },

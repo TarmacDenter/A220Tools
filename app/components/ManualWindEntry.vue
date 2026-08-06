@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualWindInput, ManualWindSource } from '@/domain/windParsing'
+import type { ManualWindInput, ManualWindSource } from '#shared/domain/windParsing'
 import { WIND_SPEED_INPUT_MAX_KT } from '@/constants'
 
 withDefaults(defineProps<{ theme?: 'light' | 'dark' }>(), {

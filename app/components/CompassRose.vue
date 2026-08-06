@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WindResult } from '@/types/wind'
+import type { WindResult } from '#shared/domain/wind'
 
 const props = defineProps<{
   result: WindResult

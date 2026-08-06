@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseManualWind, parseMetarWind } from '@/domain/windParsing'
+import { parseManualWind, parseMetarWind } from '#shared/domain/windParsing'
 
 const input = (overrides: Record<string, string> = {}) => ({
   direction: '270',

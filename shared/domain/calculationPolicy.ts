@@ -1,0 +1,7 @@
+export const METAR_ISSUED_WARNING_MIN = 30
+export const METAR_ISSUED_STALE_MIN = 60
+export const WIND_DIRECTION_STEP_DEG = 10
+export const HEADING_TABLE_STEP_DEG = 5
+export const MATRIX_WINDOW_RADIUS_ROWS = 3
+export const DISPLAY_WIND_CAP_KT = 99
+export const PROXIMITY_THRESHOLD = 0.8

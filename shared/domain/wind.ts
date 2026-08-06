@@ -44,5 +44,3 @@ export interface HeadingRow {
   isSafe: boolean
   minTaxiSpeed: number // minimum taxi speed (kt) to reduce tailwind to within limit; 0 if already safe
 }
-
-export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'

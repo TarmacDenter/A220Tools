@@ -1,22 +1,21 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { parseMetarWind, parseManualWind, type ManualWindInput } from '@/domain/windParsing'
+import { parseMetarWind, parseManualWind, type ManualWindInput } from '#shared/domain/windParsing'
 import { useAirportConditions } from '@/composables/useAirportConditions'
 import { useRunwaySelection } from '@/composables/useRunwaySelection'
-import { computeWindResult, buildHeadingTable } from '@/domain/windEnvelope'
-import { elapsedMinutesSince, getFreshnessStatus } from '@/domain/freshness'
+import { computeWindResult, buildHeadingTable } from '#shared/domain/windEnvelope'
+import { elapsedMinutesSince, getFreshnessStatus } from '#shared/domain/freshness'
 import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix'
 import { useInterval } from '@/composables/useInterval'
 import {
-  TAILWIND_LIMIT_KT,
   DEFAULT_MAX_TAXI_SPEED_KT,
-  METAR_ISSUED_STALE_MIN,
-  METAR_ISSUED_WARNING_MIN,
   FRESHNESS_REFRESH_INTERVAL_MS,
   CONDITIONS_REFRESH_INTERVAL_MS,
 } from '@/constants'
-import type { RCAM_KEYS } from '@/constants'
-import type { MagneticCorrection, ParsedWind } from '@/types/wind'
+import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '#shared/domain/calculationPolicy'
+import type { RCAM_KEYS } from '#shared/domain/runwayLimits'
+import { TAILWIND_LIMIT_KT } from '#shared/domain/windLimits'
+import type { MagneticCorrection, ParsedWind } from '#shared/domain/wind'
 
 import AirportInput from './AirportInput.vue'
 import ManualWindEntry from './ManualWindEntry.vue'

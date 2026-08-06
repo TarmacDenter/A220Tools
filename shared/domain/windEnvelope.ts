@@ -1,5 +1,6 @@
-import { HEADING_TABLE_STEP_DEG, TAILWIND_LIMIT_KT } from '@/constants'
-import type { HeadingRow, MagneticCorrection, ParsedWind, WindResult } from '@/types/wind'
+import { HEADING_TABLE_STEP_DEG } from './calculationPolicy'
+import { TAILWIND_LIMIT_KT } from './windLimits'
+import type { HeadingRow, MagneticCorrection, ParsedWind, WindResult } from './wind'
 import { headwindComponent, normalizeDeg, radToDeg, trueToMagnetic } from './windAngles'
 
 export function criticalHeadings(

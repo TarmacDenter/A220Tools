@@ -1,6 +1,6 @@
 import { ref, nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { elapsedMinutesSince, getFreshnessStatus } from '@/domain/freshness'
+import { elapsedMinutesSince, getFreshnessStatus } from '#shared/domain/freshness'
 import { useRunwaySelection } from '@/composables/useRunwaySelection'
 import { formatMagneticHeading } from '@/utils/formatting'
 

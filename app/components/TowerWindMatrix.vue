@@ -3,7 +3,7 @@ import type {
   CurrentWindComponentReadout,
   TowerWindMatrix,
   TowerWindPhase,
-} from '@/domain/runwayMatrix'
+} from '#shared/domain/runwayMatrix'
 import { formatMagneticHeading } from '@/utils/formatting'
 
 defineProps<{
