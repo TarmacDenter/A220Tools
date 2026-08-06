@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import type { FetchStatus } from '@/types/wind'
+import type { FetchStatus } from '@/types/request'
 import { useLocation } from '@/composables/useLocation'
 
 const { status, disabled = false } = defineProps<{

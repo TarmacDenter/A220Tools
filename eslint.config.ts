@@ -69,6 +69,40 @@ export default defineConfigWithVueTs(
   },
 
   {
+    files: ['server/**/*.{ts,mts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/**', '~/**', '**/app/**'],
+              message: 'Server code must not import application code. Move shared code to shared/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
+    files: ['shared/**/*.{ts,mts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/**', '~/**', '#server/**', '**/app/**', '**/server/**'],
+              message: 'Shared code must not depend on application or server code.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
     files: [
       'app/components/**/*.{vue,ts,mts,tsx}',
       'app/composables/**/*.{vue,ts,mts,tsx}',

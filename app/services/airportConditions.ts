@@ -1,7 +1,7 @@
-import type { MagneticCorrection, MetarData } from '@/types/wind'
+import type { MagneticCorrection, MetarData } from '#shared/domain/wind'
 import type { RunwaySelection } from '#shared/types/api'
 import { fetchAirportConditionsFromServer } from '@/services/aviationWeatherApi'
-import { normalizeAirportConditions, parseMagdecString } from '@/domain/airportNormalization'
+import { normalizeAirportConditions, parseMagdecString } from '#shared/domain/airportNormalization'
 
 export interface LoadedAirportConditions {
   metar: MetarData

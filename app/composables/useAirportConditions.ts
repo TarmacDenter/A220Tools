@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import type { FetchStatus, MagneticCorrection, MetarData } from '@/types/wind'
+import type { FetchStatus } from '@/types/request'
+import type { MagneticCorrection, MetarData } from '#shared/domain/wind'
 import { loadAirportConditions } from '@/services/airportConditions'
 import type { RunwaySelection } from '#shared/types/api'
 

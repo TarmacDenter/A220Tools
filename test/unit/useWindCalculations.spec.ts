@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { criticalHeadings, buildHeadingTable, computeWindResult } from '@/domain/windEnvelope'
-import { normalizeDeg, trueToMagnetic, headwindComponent } from '@/domain/windAngles'
-import type { MagneticCorrection, ParsedWind } from '@/types/wind'
-import { TAILWIND_LIMIT_KT } from '@/constants'
+import { criticalHeadings, buildHeadingTable, computeWindResult } from '#shared/domain/windEnvelope'
+import { normalizeDeg, trueToMagnetic, headwindComponent } from '#shared/domain/windAngles'
+import type { MagneticCorrection, ParsedWind } from '#shared/domain/wind'
+import { TAILWIND_LIMIT_KT } from '#shared/domain/windLimits'
 
 describe('normalizeDeg', () => {
   it('keeps 0 as 0', () => expect(normalizeDeg(0)).toBe(0))

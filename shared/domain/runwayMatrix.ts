@@ -1,14 +1,11 @@
 import {
   DISPLAY_WIND_CAP_KT,
-  LANDING_TAILWIND_LIMIT_KT,
   MATRIX_WINDOW_RADIUS_ROWS,
   PROXIMITY_THRESHOLD,
-  RCAM_LDG,
-  RCAM_TO,
-  TAKEOFF_TAILWIND_LIMIT_KT,
-  type RCAM_KEYS,
   WIND_DIRECTION_STEP_DEG,
-} from '@/constants'
+} from './calculationPolicy'
+import { RCAM_LDG, RCAM_TO, type RCAM_KEYS } from './runwayLimits'
+import { LANDING_TAILWIND_LIMIT_KT, TAKEOFF_TAILWIND_LIMIT_KT } from './windLimits'
 import { calculateRunwayWindComponents, degToRad, normalizeDeg } from './windAngles'
 
 export type { RunwayWindComponents } from './windAngles'

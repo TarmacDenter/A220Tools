@@ -3,7 +3,7 @@ import {
   normalizeAirportConditions,
   parseMagdecString,
   parseMetarIssuedAt,
-} from '@/domain/airportNormalization'
+} from '#shared/domain/airportNormalization'
 
 describe('airport normalization', () => {
   it('parses east and west declination and rejects malformed values', () => {

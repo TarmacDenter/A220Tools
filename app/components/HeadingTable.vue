@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HeadingRow } from '@/types/wind'
+import type { HeadingRow } from '#shared/domain/wind'
 import { formatMagneticHeading } from '@/utils/formatting'
 
 defineProps<{

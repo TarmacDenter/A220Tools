@@ -1,4 +1,4 @@
-import type { MetarData, ParsedWind } from '@/types/wind'
+import type { MetarData, ParsedWind } from './wind'
 
 export type ManualWindSource = 'atis_mag' | 'metar_true' | 'aerodata_true'
 

@@ -1,12 +1,12 @@
 import { computed, toValue, type ComputedRef, type MaybeRefOrGetter } from 'vue'
-import type { RCAM_KEYS } from '@/constants'
+import type { RCAM_KEYS } from '#shared/domain/runwayLimits'
 import {
   buildTowerWindMatrix,
   getCurrentWindComponentReadout,
   type CurrentWindComponentReadout,
   type TowerWindMatrix,
   type TowerWindPhase,
-} from '@/domain/runwayMatrix'
+} from '#shared/domain/runwayMatrix'
 
 export interface UseTowerWindMatrixOptions {
   phase: MaybeRefOrGetter<TowerWindPhase | null>

@@ -1,5 +1,5 @@
 import type { AirportConditionsResponse } from '#shared/types/api'
-import type { MetarData } from '@/types/wind'
+import type { MetarData } from './wind'
 import { parseMagneticDeclination } from '#shared/utils/magneticDeclination'
 
 export const parseMagdecString = parseMagneticDeclination
