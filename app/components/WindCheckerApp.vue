@@ -2,7 +2,9 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { parseMetarWind, parseManualWind, type ManualWindInput } from '@/domain/windParsing'
 import { useAirportConditions } from '@/composables/useAirportConditions'
+import { useRunwaySelection } from '@/composables/useRunwaySelection'
 import { computeWindResult, buildHeadingTable } from '@/domain/windEnvelope'
+import { elapsedMinutesSince, getFreshnessStatus } from '@/domain/freshness'
 import { useTowerWindMatrix } from '@/composables/useTowerWindMatrix'
 import { useInterval } from '@/composables/useInterval'
 import {
@@ -15,11 +17,10 @@ import {
 } from '@/constants'
 import type { RCAM_KEYS } from '@/constants'
 import type { MagneticCorrection, ParsedWind } from '@/types/wind'
-import type { RunwaySelection } from '#shared/types/api'
 
 import AirportInput from './AirportInput.vue'
 import ManualWindEntry from './ManualWindEntry.vue'
-import { formatUtcTime, formatElapsedMinutes, normalizeRunwayHeading } from '@/utils/formatting'
+import { formatUtcTime, formatElapsedMinutes } from '@/utils/formatting'
 import AssumptionsDisplay from './AssumptionsDisplay.vue'
 import SafetyReadout from './SafetyReadout.vue'
 import CompassRose from './CompassRose.vue'
@@ -61,9 +62,6 @@ const manualInputs = ref<ManualWindInput>({
 // Taxi speed display
 const showTaxiSpeed = ref(false)
 const maxTaxiSpeedInput = ref(String(DEFAULT_MAX_TAXI_SPEED_KT))
-const runwayHeadingInput = ref('')
-const runwaySelectionValue = ref('manual')
-const selectedRunway = ref<RunwaySelection | null>(null)
 const rcamCodeInput = ref('6')
 const maxTaxiSpeed = computed(() => {
   if (!showTaxiSpeed.value) return 0
@@ -88,6 +86,14 @@ const {
   fetchAirportConditions,
   clearConditions,
 } = useAirportConditions()
+const {
+  runwayHeadingInput,
+  runwaySelectionValue,
+  runwayOptions,
+  runwayHeading,
+  resetForAirport,
+  completeAirportLoad,
+} = useRunwaySelection(runways)
 const icaoInput = ref('')
 const activeIcao = ref('')
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
@@ -113,15 +119,12 @@ async function onFetch(icao: string) {
   const normalizedIcao = icao.toUpperCase()
   const isNewAirport = activeIcao.value !== normalizedIcao
   if (isNewAirport) {
-    selectedRunway.value = null
-    runwaySelectionValue.value = 'manual'
-    runwayHeadingInput.value = ''
-    runways.value = []
+    resetForAirport()
   }
   activeIcao.value = normalizedIcao
   await fetchAirportConditions(icao)
   if (isNewAirport) {
-    runwaySelectionValue.value = runways.value.length > 0 ? '' : 'manual'
+    completeAirportLoad()
   }
 }
 
@@ -131,44 +134,6 @@ function enableManualMode() {
 
 // --- Error state helpers ---
 const conditionsFailed = computed(() => conditionsStatus.value === 'error')
-
-const runwayOptions = computed(() => {
-  const options = [...runways.value]
-  if (
-    selectedRunway.value &&
-    !options.some((runway) => runway.name === selectedRunway.value?.name)
-  ) {
-    options.push(selectedRunway.value)
-  }
-  return options.sort((a, b) => a.heading - b.heading || a.name.localeCompare(b.name))
-})
-
-function onRunwaySelectionChange() {
-  if (runwaySelectionValue.value === 'manual' || runwaySelectionValue.value === '') {
-    selectedRunway.value = null
-    return
-  }
-  selectedRunway.value =
-    runwayOptions.value.find((runway) => runway.name === runwaySelectionValue.value) ?? null
-}
-
-watch(runwaySelectionValue, onRunwaySelectionChange)
-
-watch(
-  runways,
-  (updatedRunways) => {
-    if (!selectedRunway.value) return
-    const refreshed = updatedRunways.find((runway) => runway.name === selectedRunway.value?.name)
-    if (refreshed) selectedRunway.value = refreshed
-  },
-  { deep: true },
-)
-
-const runwayHeading = computed<number | null>(() => {
-  if (selectedRunway.value) return selectedRunway.value.heading
-  if (runwaySelectionValue.value !== 'manual') return null
-  return normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''))
-})
 
 // --- Computed wind result ---
 const parsedWind = computed<ParsedWind | null>(() => {
@@ -253,8 +218,7 @@ watch(windResult, (result) => {
 
 const metarFreshnessText = computed(() => {
   if (!isOnline.value || lastFetchedAt.value === null) return null
-  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value)
-  const elapsedMin = Math.floor(elapsedMs / 60_000)
+  const elapsedMin = elapsedMinutesSince(freshnessNowMs.value, lastFetchedAt.value)
   const relative = elapsedMin === 0 ? 'Updated just now' : `Updated ${elapsedMin} min ago`
   const absolute = new Date(lastFetchedAt.value).toLocaleTimeString([], {
     hour: '2-digit',
@@ -278,16 +242,12 @@ const metarIssuedAgeMin = computed(() => {
   if (!isMetarActive.value) return null
   const metarValue = metar.value
   if (!metarValue || metarValue.issuedAt === null) return null
-  const elapsedMs = Math.max(0, freshnessNowMs.value - metarValue.issuedAt)
-  return Math.floor(elapsedMs / 60_000)
+  return elapsedMinutesSince(freshnessNowMs.value, metarValue.issuedAt)
 })
 
 const metarIssuedStatus = computed(() => {
   const age = metarIssuedAgeMin.value
-  if (age === null) return 'unknown'
-  if (age >= METAR_ISSUED_STALE_MIN) return 'stale'
-  if (age >= METAR_ISSUED_WARNING_MIN) return 'warn'
-  return 'ok'
+  return getFreshnessStatus(age, METAR_ISSUED_WARNING_MIN, METAR_ISSUED_STALE_MIN)
 })
 
 const metarIssuedAtUtc = computed(() => {
@@ -301,8 +261,7 @@ const nowUtc = computed(() => formatUtcTime(freshnessNowMs.value))
 
 const metarFetchedAgeMin = computed(() => {
   if (!isMetarActive.value || lastFetchedAt.value === null) return null
-  const elapsedMs = Math.max(0, freshnessNowMs.value - lastFetchedAt.value)
-  return Math.floor(elapsedMs / 60_000)
+  return elapsedMinutesSince(freshnessNowMs.value, lastFetchedAt.value)
 })
 
 const metarFetchedAtUtc = computed(() => {

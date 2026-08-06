@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import type { FetchStatus, MagneticCorrection, MetarData } from '@/types/wind'
-import { fetchAirportConditionsFromServer } from '@/services/aviationWeatherApi'
-import { normalizeAirportConditions, parseMagdecString } from '@/domain/airportNormalization'
+import { loadAirportConditions } from '@/services/airportConditions'
 import type { RunwaySelection } from '#shared/types/api'
 
 export function useAirportConditions() {
@@ -20,28 +19,12 @@ export function useAirportConditions() {
     error.value = null
 
     try {
-      const response = await fetchAirportConditionsFromServer(icao)
-      runways.value = response.runways ?? []
-      const normalized = normalizeAirportConditions(response, Date.now(), lat, lon)
-      metar.value = normalized.metar
-      const rawMagdec = normalized.rawMagdec
-      let declination = rawMagdec ? parseMagdecString(rawMagdec) : null
-      let source: MagneticCorrection['source'] = 'airport_api'
-      let rawMagdecString: string | null = rawMagdec
-
-      if (declination === null) {
-        const useLat = normalized.latitude
-        const useLon = normalized.longitude
-        const geomagnetism = await import('geomagnetism')
-        const model = geomagnetism.default.model(new Date())
-        declination = model.point([useLat, useLon]).decl
-        source = 'geomagnetism_package'
-        rawMagdecString = null
-      }
-
-      magneticCorrection.value = { declination, source, rawMagdecString }
+      const conditions = await loadAirportConditions(icao, lat, lon)
+      runways.value = conditions.runways
+      metar.value = conditions.metar
+      magneticCorrection.value = conditions.magneticCorrection
       status.value = 'success'
-      lastFetchedAt.value = Date.now()
+      lastFetchedAt.value = conditions.fetchedAt
     } catch (err) {
       error.value = err instanceof Error ? err.message : String(err)
       status.value = 'error'

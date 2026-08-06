@@ -11,6 +11,25 @@ export interface ManualWindInput {
   declinationDir: 'E' | 'W'
 }
 
+function createParsedWind(
+  directionTrue: ParsedWind['directionTrue'],
+  speed: number,
+  gust: number | null,
+  isVariable: boolean,
+  isCalm: boolean,
+  source: ParsedWind['source'],
+): ParsedWind {
+  return {
+    directionTrue,
+    speed,
+    gust,
+    effectiveSpeed: gust ?? speed,
+    isVariable,
+    isCalm,
+    source,
+  }
+}
+
 export function parseManualWind(input: ManualWindInput): ParsedWind | null {
   const dirStr = input.direction.trim().toUpperCase()
   const speedStr = input.speed.trim()
@@ -38,28 +57,19 @@ export function parseManualWind(input: ManualWindInput): ParsedWind | null {
   const gust = gustStr ? parseFloat(gustStr) : null
   const validGust = gust !== null && !isNaN(gust) ? gust : null
 
-  return {
-    directionTrue,
-    speed,
-    gust: validGust,
-    effectiveSpeed: validGust ?? speed,
-    isVariable,
-    isCalm,
-    source: 'manual',
-  }
+  return createParsedWind(directionTrue, speed, validGust, isVariable, isCalm, 'manual')
 }
 
 export function parseMetarWind(metar: MetarData): ParsedWind {
   const isCalm = metar.wdir === 0 && metar.wspd === 0
   const isVariable = metar.wdir === 'VRB'
 
-  return {
-    directionTrue: isCalm ? 'CALM' : isVariable ? 'VRB' : (metar.wdir as number),
-    speed: metar.wspd,
-    gust: metar.wgst,
-    effectiveSpeed: metar.wgst ?? metar.wspd,
+  return createParsedWind(
+    isCalm ? 'CALM' : isVariable ? 'VRB' : (metar.wdir as number),
+    metar.wspd,
+    metar.wgst,
     isVariable,
     isCalm,
-    source: 'metar',
-  }
+    'metar',
+  )
 }

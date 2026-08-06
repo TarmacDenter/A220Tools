@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HeadingRow } from '@/types/wind'
+import { formatMagneticHeading } from '@/utils/formatting'
 
 defineProps<{
   rows: HeadingRow[]
@@ -35,7 +36,7 @@ function formatTaxiSpeed(speed: number): string {
           :key="row.heading"
           :class="{ 'row-unsafe': !row.isSafe && (!showTaxi || row.minTaxiSpeed > maxTaxiSpeed) }"
         >
-          <td class="col-heading">{{ String(row.heading).padStart(3, '0') }}°</td>
+          <td class="col-heading">{{ formatMagneticHeading(row.heading) }}</td>
           <td class="col-component" :class="row.headwindComponent < 0 ? 'tailwind' : 'headwind'">
             {{ formatComponent(row.headwindComponent) }}
           </td>

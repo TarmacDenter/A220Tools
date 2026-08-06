@@ -4,16 +4,13 @@ import type {
   TowerWindMatrix,
   TowerWindPhase,
 } from '@/domain/runwayMatrix'
+import { formatMagneticHeading } from '@/utils/formatting'
 
 defineProps<{
   phase: TowerWindPhase
   matrix: TowerWindMatrix
   currentReadout: CurrentWindComponentReadout | null
 }>()
-
-function formatHeading(heading: number): string {
-  return `${String(heading).padStart(3, '0')}°`
-}
 
 function formatPhase(phase: TowerWindPhase): string {
   return phase === 'takeoff' ? 'Takeoff' : 'Landing'
@@ -63,7 +60,7 @@ function formatPhase(phase: TowerWindPhase): string {
             :key="row.windDirection"
             :class="{ 'reference-row': row.isReference }"
           >
-            <td class="col-direction">{{ formatHeading(row.windDirection) }}</td>
+            <td class="col-direction">{{ formatMagneticHeading(row.windDirection) }}</td>
             <td class="col-max">{{ row.displayMaxWind }}</td>
             <td>
               <span class="limit-badge">{{ row.limitingComponent }}</span>

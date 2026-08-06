@@ -9,6 +9,10 @@ export function formatElapsedMinutes(minutes: number): string {
   return minutes <= 0 ? 'just now' : `${minutes} min ago`
 }
 
+export function formatMagneticHeading(heading: number): string {
+  return `${String(heading).padStart(3, '0')}°`
+}
+
 export function normalizeRunwayHeading(raw: string): number | null {
   const value = raw.trim()
   if (!/^\d+$/.test(value)) return null
