@@ -91,6 +91,12 @@
       "skillPath": "skills/engineering/to-tickets/SKILL.md",
       "computedHash": "bf5e6ebcb4f1272de0c188d5b3901f265a03d1fa9935a21a7a56938e21e2e761"
     },
+    "use-railway": {
+      "source": "railwayapp/railway-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/railway/skills/use-railway/SKILL.md",
+      "computedHash": "930d404fe5a98525bd2167e2c915cc68c39d6554c0e6a51f1dda701e63f31c39"
+    },
     "writing-for-agents": {
       "source": "mattpocock/skills",
       "sourceType": "github",
