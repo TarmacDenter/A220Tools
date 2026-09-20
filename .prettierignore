@@ -7,3 +7,6 @@ dist-ssr
 playwright-report
 test-results
 public/sw.js
+.agents/
+.github/
+.vscode/
