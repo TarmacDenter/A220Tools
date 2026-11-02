@@ -338,30 +338,30 @@ watch(manualMode, async (enabled) => {
             </svg>
             <span>www.220stuff.app</span>
           </a>
-          <button
-            class="theme-toggle"
-            type="button"
-            :aria-label="themeToggleLabel"
-            @click="emit('toggleTheme')"
-          >
-            <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="4" />
-              <line x1="12" y1="1.5" x2="12" y2="5.2" />
-              <line x1="12" y1="18.8" x2="12" y2="22.5" />
-              <line x1="1.5" y1="12" x2="5.2" y2="12" />
-              <line x1="18.8" y1="12" x2="22.5" y2="12" />
-              <line x1="4.3" y1="4.3" x2="6.9" y2="6.9" />
-              <line x1="17.1" y1="17.1" x2="19.7" y2="19.7" />
-              <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
-              <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
-            </svg>
-            <svg v-else class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
-            </svg>
-            <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
-          </button>
         </div>
       </div>
+      <button
+        class="theme-toggle"
+        type="button"
+        :aria-label="themeToggleLabel"
+        @click="emit('toggleTheme')"
+      >
+        <svg v-if="theme === 'dark'" class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <line x1="12" y1="1.5" x2="12" y2="5.2" />
+          <line x1="12" y1="18.8" x2="12" y2="22.5" />
+          <line x1="1.5" y1="12" x2="5.2" y2="12" />
+          <line x1="18.8" y1="12" x2="22.5" y2="12" />
+          <line x1="4.3" y1="4.3" x2="6.9" y2="6.9" />
+          <line x1="17.1" y1="17.1" x2="19.7" y2="19.7" />
+          <line x1="4.3" y1="19.7" x2="6.9" y2="17.1" />
+          <line x1="17.1" y1="6.9" x2="19.7" y2="4.3" />
+        </svg>
+        <svg v-else class="theme-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8z" />
+        </svg>
+        <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
+      </button>
       <p class="app-subtitle">Quick-reference wind limits for start, takeoff, and landing</p>
     </header>
 
@@ -580,6 +580,15 @@ watch(manualMode, async (enabled) => {
 
     <footer class="app-footer">
       <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
+      <a
+        class="sg-button"
+        href="https://www.seniorityguru.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open Seniority Guru in a new tab"
+      >
+        Check out Seniority Guru
+      </a>
       <a href="https://www.buymeacoffee.com/tarmacdenter" target="_blank" rel="noopener noreferrer">
         <img
           src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
@@ -614,10 +623,12 @@ watch(manualMode, async (enabled) => {
 }
 
 .app-header {
+  position: relative;
   margin-bottom: 1.5rem;
 }
 
 .title-row {
+  padding-right: 7.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -667,6 +678,9 @@ watch(manualMode, async (enabled) => {
 }
 
 .theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -907,6 +921,29 @@ watch(manualMode, async (enabled) => {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+}
+
+.sg-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 217px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.sg-button:hover {
+  background: var(--color-surface-muted);
+  color: var(--color-text);
 }
 
 .bmc-button {
