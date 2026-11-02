@@ -182,4 +182,21 @@ describe('App', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe('light')
     expect(window.localStorage.getItem('a220-theme')).toBe('light')
   })
+
+  it('shows the Seniority Guru link above the Buy Me a Coffee link', async () => {
+    const wrapper = mountApp()
+    await nextTick()
+
+    const footerLinks = wrapper.findAll('footer a')
+    const sgIndex = footerLinks.findIndex(
+      (link) => link.attributes('href') === 'https://www.seniorityguru.com',
+    )
+    const bmcIndex = footerLinks.findIndex(
+      (link) => link.attributes('href') === 'https://www.buymeacoffee.com/tarmacdenter',
+    )
+
+    expect(sgIndex).toBeGreaterThan(-1)
+    expect(footerLinks[sgIndex]!.text()).toBe('Check out Seniority Guru')
+    expect(sgIndex).toBe(bmcIndex - 1)
+  })
 })
