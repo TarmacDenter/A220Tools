@@ -1,4 +1,4 @@
-import { errorFields, logEvent } from '../../utils/logger'
+import { describeError, errorFields, logEvent } from '../../utils/logger'
 import { getCachedMetarRecord } from '../../utils/aviationWeather'
 import { recordAirportLookup } from '../../utils/airportLookup'
 import type { MetarUpstream } from '#shared/schemas/airportConditions'
@@ -17,16 +17,21 @@ export default defineEventHandler(async (event): Promise<MetarUpstream> => {
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
-    logEvent('warn', 'metar.lookup', {
-      requestId: event.context.requestTelemetry?.requestId ?? null,
-      icao: icao.toUpperCase(),
-      outcome: 'upstream_failure',
-      ...errorFields(error),
-    })
+    logEvent(
+      'warn',
+      'metar.lookup',
+      {
+        requestId: event.context.requestTelemetry?.requestId ?? null,
+        icao: icao.toUpperCase(),
+        outcome: 'upstream_failure',
+        ...errorFields(error),
+      },
+      `METAR lookup upstream failure for ${icao.toUpperCase()}: ${describeError(error)}`,
+    )
     throw createError({
       statusCode: 502,
       statusMessage: 'AviationWeather METAR upstream request failed',
-      data: error,
+      cause: error,
     })
   }
 })

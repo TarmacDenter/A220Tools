@@ -31,7 +31,7 @@ export default defineEventHandler(async (event): Promise<NearestAirportResponse>
     throw createError({
       statusCode: 502,
       statusMessage: 'AviationWeather upstream request failed',
-      data: err,
+      cause: err,
     })
   }
 
