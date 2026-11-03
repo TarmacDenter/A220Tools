@@ -4,7 +4,7 @@ import {
   extractRequestOrigin,
   incrementRepeatedRequestCount,
 } from '../utils/requestTelemetry'
-import { errorFields, logEvent, logLevelForStatus } from '../utils/logger'
+import { describeError, errorFields, logEvent, logLevelForStatus } from '../utils/logger'
 
 const HEALTHCHECK_PATH = '/'
 
@@ -35,12 +35,17 @@ export default defineEventHandler((event) => {
     }
 
     event.node.res.setHeader('X-Request-ID', requestId)
-    logEvent('info', 'request.started', {
-      requestId,
-      method: event.method,
-      path: requestUrl.pathname,
-      repeatedRequestCount,
-    })
+    logEvent(
+      'info',
+      'request.started',
+      {
+        requestId,
+        method: event.method,
+        path: requestUrl.pathname,
+        repeatedRequestCount,
+      },
+      `--> ${event.method} ${requestUrl.pathname}`,
+    )
 
     event.node.res.once('finish', () => {
       const durationMs = Number(process.hrtime.bigint() - startTimeNs) / 1_000_000
@@ -55,13 +60,23 @@ export default defineEventHandler((event) => {
         repeatedRequestCount,
       }
 
-      logEvent(logLevelForStatus(statusCode), 'request.finished', logPayload)
+      logEvent(
+        logLevelForStatus(statusCode),
+        'request.finished',
+        logPayload,
+        `<-- ${event.method} ${requestUrl.pathname} ${statusCode} ${logPayload.durationMs}ms`,
+      )
     })
   } catch (error) {
-    logEvent('error', 'telemetry.failed', {
-      method: event.method,
-      path: requestUrl.pathname,
-      ...errorFields(error),
-    })
+    logEvent(
+      'error',
+      'telemetry.failed',
+      {
+        method: event.method,
+        path: requestUrl.pathname,
+        ...errorFields(error),
+      },
+      `Request telemetry failed: ${describeError(error)}`,
+    )
   }
 })

@@ -1,4 +1,4 @@
-import { errorFields, logEvent, logLevelForStatus } from '../utils/logger'
+import { describeError, errorFields, logEvent, logLevelForStatus } from '../utils/logger'
 
 export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('error', (error: Error & { statusCode?: number }, { event }) => {
@@ -6,13 +6,21 @@ export default defineNitroPlugin((nitroApp) => {
 
     const statusCode = error?.statusCode ?? 500
 
-    logEvent(logLevelForStatus(statusCode), 'request.error', {
-      requestId: telemetry?.requestId ?? null,
-      method: event?.method ?? 'unknown',
-      path: event ? getRequestURL(event).pathname : 'unknown',
-      repeatedRequestCount: telemetry?.repeatedRequestCount ?? null,
-      statusCode,
-      ...errorFields(error),
-    })
+    const method = event?.method ?? 'unknown'
+    const path = event ? getRequestURL(event).pathname : 'unknown'
+
+    logEvent(
+      logLevelForStatus(statusCode),
+      'request.error',
+      {
+        requestId: telemetry?.requestId ?? null,
+        method,
+        path,
+        repeatedRequestCount: telemetry?.repeatedRequestCount ?? null,
+        statusCode,
+        ...errorFields(error),
+      },
+      `${method} ${path} ${statusCode}: ${describeError(error)}`,
+    )
   })
 })

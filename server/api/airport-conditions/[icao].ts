@@ -1,4 +1,4 @@
-import { errorFields, logEvent } from '../../utils/logger'
+import { describeError, errorFields, logEvent } from '../../utils/logger'
 import { recordAirportLookup } from '../../utils/airportLookup'
 import { getAirportConditions } from '../../utils/aviationWeather'
 import type { AirportConditionsResponse } from '#shared/schemas/airportConditions'
@@ -16,16 +16,21 @@ export default defineEventHandler(async (event): Promise<AirportConditionsRespon
   } catch (error) {
     if (error && typeof error === 'object' && 'statusCode' in error) throw error
 
-    logEvent('warn', 'airport.conditions', {
-      requestId: event.context.requestTelemetry?.requestId ?? null,
-      icao,
-      outcome: 'upstream_failure',
-      ...errorFields(error),
-    })
+    logEvent(
+      'warn',
+      'airport.conditions',
+      {
+        requestId: event.context.requestTelemetry?.requestId ?? null,
+        icao,
+        outcome: 'upstream_failure',
+        ...errorFields(error),
+      },
+      `Airport conditions upstream failure for ${icao}: ${describeError(error)}`,
+    )
     throw createError({
       statusCode: 502,
       statusMessage: 'AviationWeather conditions upstream request failed',
-      data: error,
+      cause: error,
     })
   }
 })
