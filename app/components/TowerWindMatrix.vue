@@ -156,7 +156,7 @@ function formatPhase(phase: TowerWindPhase): string {
 .matrix-table caption {
   padding: 0.65rem 0.75rem;
   text-align: left;
-  font-family: sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--color-text-subtle);
@@ -167,7 +167,7 @@ function formatPhase(phase: TowerWindPhase): string {
 .matrix-table th {
   padding: 0.55rem 0.75rem;
   text-align: left;
-  font-family: sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.75rem;
   text-transform: uppercase;
   color: var(--color-text-muted);

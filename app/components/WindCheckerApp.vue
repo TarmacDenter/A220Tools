@@ -771,9 +771,7 @@ watch(manualMode, async (enabled) => {
 .metar-freshness-raw {
   display: block;
   margin-top: 0.15rem;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--color-text-muted);
 }
