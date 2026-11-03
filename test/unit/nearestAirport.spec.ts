@@ -71,6 +71,16 @@ describe('GET /api/nearest-airport', () => {
     expect(calledUrl).toContain('bbox=50.7,-0.8,51.3,-0.2')
   })
 
+  it('rounds bbox values to 4 decimals because AviationWeather rejects >6', async () => {
+    mockGetQuery.mockReturnValue({ lat: '51.4712345678', lon: '-0.4612345678' })
+    mockFetch.mockResolvedValue([{ icaoId: 'EGLL', lat: 51.4775, lon: -0.4614 }])
+
+    await handler(MOCK_EVENT)
+
+    const calledUrl: string = mockFetch.mock.calls[0][0]
+    expect(calledUrl).toContain('bbox=51.1712,-0.7612,51.7712,-0.1612')
+  })
+
   // --- Nearest airport selection ---
 
   it('returns the closest airport when multiple are in the bounding box', async () => {

@@ -17,8 +17,11 @@ export default defineEventHandler(async (event): Promise<NearestAirportResponse>
     throw createError({ statusCode: 400, statusMessage: 'Missing or invalid lat/lon query params' })
   }
 
+  // AviationWeather rejects bbox values with more than 6 decimal places (HTTP 400).
+  // Browser geolocation and float arithmetic routinely exceed that, so round.
   const DELTA = 0.3
-  const bbox = `${lat - DELTA},${lon - DELTA},${lat + DELTA},${lon + DELTA}`
+  const coord = (value: number) => String(Number(value.toFixed(4)))
+  const bbox = [lat - DELTA, lon - DELTA, lat + DELTA, lon + DELTA].map(coord).join(',')
   const upstreamUrl = `https://aviationweather.gov/api/data/metar?bbox=${bbox}&format=json`
 
   let data: unknown[]
