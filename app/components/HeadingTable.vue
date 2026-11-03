@@ -91,7 +91,7 @@ function formatTaxiSpeed(speed: number): string {
   padding: 0.6rem 0.75rem;
   text-align: left;
   border-bottom: 2px solid var(--color-border);
-  font-family: sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -125,7 +125,7 @@ function formatTaxiSpeed(speed: number): string {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
-  font-family: sans-serif;
+  font-family: var(--font-sans);
 }
 
 .badge.safe {

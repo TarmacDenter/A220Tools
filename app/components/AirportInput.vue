@@ -127,6 +127,7 @@ function onLocButtonClick() {
 
 .fetch-btn:disabled {
   background: var(--color-primary-disabled);
+  color: var(--color-primary-disabled-text);
   cursor: not-allowed;
 }
 </style>

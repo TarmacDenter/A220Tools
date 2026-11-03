@@ -1,63 +1,79 @@
+/* Fonts are bundled with @fontsource, never fetched from a CDN, so the app works offline.
+   Shared with SeniorityGuru; see docs/adr/0002-share-seniorityguru-core-visual-scheme.md. */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+/* Light: neutral paper with dark ink. Every text/background pair is at least 6:1. */
 :root {
   --color-safe: #22c55e;
   --color-unsafe: #ef4444;
   --color-warning: #f59e0b;
   --color-assumption-bg: #f0f9ff;
-  --color-bg: #f1f5f9;
+  --color-bg: #f2f4f0;
   --color-surface: #ffffff;
-  --color-surface-muted: #f8fafc;
-  --color-surface-soft: #e2e8f0;
-  --color-border: #cbd5e1;
-  --color-border-strong: #94a3b8;
-  --color-text: #1e293b;
-  --color-text-muted: #64748b;
-  --color-text-subtle: #475569;
-  --color-primary: #1d4ed8;
-  --color-primary-hover: #1e40af;
-  --color-primary-disabled: #93c5fd;
+  --color-surface-muted: #f7f8f5;
+  --color-surface-soft: #e4e8e2;
+  --color-border: #c4cbc5;
+  --color-border-strong: #5b6b60;
+  --color-text: #0f1720;
+  --color-text-muted: #4f5d69;
+  --color-text-subtle: #334150;
+  /* Primary is ink, as in SeniorityGuru: solid buttons and the active phase read as print. */
+  --color-primary: #0f1720;
+  --color-primary-hover: #334150;
+  --color-primary-disabled: #d3d9d2;
+  --color-primary-disabled-text: #334150;
   --color-primary-text: #ffffff;
-  --color-secondary-bg: #e2e8f0;
-  --color-secondary-hover: #cbd5e1;
-  --color-secondary-text: #334155;
+  --color-secondary-bg: #e4e8e2;
+  --color-secondary-hover: #d3d9d2;
+  --color-secondary-text: #1f2a35;
   --color-info-bg: #e0f2fe;
   --color-info-border: #bae6fd;
-  --color-info-text: #0369a1;
+  --color-info-text: #075985;
   --color-warning-bg: #fef3c7;
   --color-warning-border: #fde68a;
-  --color-warning-text: #92400e;
+  --color-warning-text: #7c2d12;
   --color-safe-bg: #dcfce7;
   --color-safe-border: #bbf7d0;
-  --color-safe-text: #15803d;
+  --color-safe-text: #166534;
   --color-unsafe-bg: #fee2e2;
   --color-unsafe-border: #fecaca;
-  --color-unsafe-text: #b91c1c;
-  --color-code-bg: #e2e8f0;
-  --color-compass-bg: #f8fafc;
-  --color-compass-stroke: #cbd5e1;
-  --color-compass-ticks: #94a3b8;
-  --color-compass-label: #334155;
+  --color-unsafe-text: #991b1b;
+  --color-code-bg: #e4e8e2;
+  --color-compass-bg: #ffffff;
+  --color-compass-stroke: #c4cbc5;
+  --color-compass-ticks: #5b6b60;
+  --color-compass-label: #1f2a35;
   --color-compass-wind: #0ea5e9;
-  --color-compass-wind-label: #0369a1;
-  --font-mono: 'Courier New', Courier, monospace;
+  --color-compass-wind-label: #075985;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+/* Dark: SeniorityGuru night paper with paper-white ink. */
 [data-theme='dark'] {
-  --color-assumption-bg: #0b2233;
-  --color-bg: #0f172a;
-  --color-surface: #111827;
-  --color-surface-muted: #1f2937;
-  --color-surface-soft: #334155;
-  --color-border: #334155;
-  --color-border-strong: #475569;
-  --color-text: #e2e8f0;
-  --color-text-muted: #94a3b8;
-  --color-text-subtle: #cbd5e1;
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-primary-disabled: #1e3a8a;
-  --color-secondary-bg: #334155;
-  --color-secondary-hover: #475569;
-  --color-secondary-text: #e2e8f0;
+  --color-assumption-bg: #151e22;
+  --color-bg: #11181b;
+  --color-surface: #1a262b;
+  --color-surface-muted: #151e22;
+  --color-surface-soft: #1f3028;
+  --color-border: #35463b;
+  --color-border-strong: #74837a;
+  --color-text: #e6ebe3;
+  --color-text-muted: #9aa9a0;
+  --color-text-subtle: #c4cec6;
+  --color-primary: #e6ebe3;
+  --color-primary-hover: #c4cec6;
+  --color-primary-disabled: #1f3028;
+  --color-primary-disabled-text: #9aa9a0;
+  --color-primary-text: #11181b;
+  --color-secondary-bg: #1f3028;
+  --color-secondary-hover: #35463b;
+  --color-secondary-text: #e6ebe3;
   --color-info-bg: #0c4a6e;
   --color-info-border: #0369a1;
   --color-info-text: #bae6fd;
@@ -70,11 +86,11 @@
   --color-unsafe-bg: #7f1d1d;
   --color-unsafe-border: #991b1b;
   --color-unsafe-text: #fecaca;
-  --color-code-bg: #1e293b;
-  --color-compass-bg: #1f2937;
-  --color-compass-stroke: #475569;
-  --color-compass-ticks: #64748b;
-  --color-compass-label: #e2e8f0;
+  --color-code-bg: #1f3028;
+  --color-compass-bg: #151e22;
+  --color-compass-stroke: #35463b;
+  --color-compass-ticks: #74837a;
+  --color-compass-label: #e6ebe3;
   --color-compass-wind: #38bdf8;
   --color-compass-wind-label: #7dd3fc;
 }
@@ -87,12 +103,21 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
   background: var(--color-bg);
   color: var(--color-text);
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+}
+
+/* Form controls do not inherit the page font by default. */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 
 code {

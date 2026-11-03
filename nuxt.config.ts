@@ -16,7 +16,7 @@ export default defineNuxtConfig({
       title: 'A220 Start Calc — Tailwind Limit Calculator for Pilots',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
-        { name: 'theme-color', content: '#1e40af' },
+        { name: 'theme-color', content: '#11181b' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         {
           name: 'description',
