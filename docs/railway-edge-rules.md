@@ -25,7 +25,7 @@ None of these collide with app routes (`/`, `/api/*`, `/_nuxt/*`, `/icons/*`, `/
 
 ## Rule 2 (optional) — Force traffic through Cloudflare (Block, status 403)
 
-Host `is` `<service>.up.railway.app`.
+Host `is` `a220tools-production.up.railway.app`.
 
 Before enabling, confirm the deploy healthcheck (`/`) still passes; it should not traverse the public edge, but this is unverified.
 
