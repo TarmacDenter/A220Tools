@@ -189,7 +189,7 @@ describe('App', () => {
 
     const footerLinks = wrapper.findAll('footer a')
     const sgIndex = footerLinks.findIndex(
-      (link) => link.attributes('href') === 'https://www.seniorityguru.com',
+      (link) => link.attributes('href') === 'https://www.seniorityguru.com/?utm_source=220tools&utm_medium=referral',
     )
     const bmcIndex = footerLinks.findIndex(
       (link) => link.attributes('href') === 'https://www.buymeacoffee.com/tarmacdenter',
