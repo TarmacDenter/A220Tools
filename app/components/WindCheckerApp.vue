@@ -582,9 +582,9 @@ watch(manualMode, async (enabled) => {
       <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
       <a
         class="sg-button"
-        href="https://www.seniorityguru.com"
+        href="https://www.seniorityguru.com/?utm_source=220tools&utm_medium=referral"
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label="Open Seniority Guru in a new tab"
       >
         Check out Seniority Guru
