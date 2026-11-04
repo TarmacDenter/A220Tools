@@ -362,7 +362,9 @@ watch(manualMode, async (enabled) => {
         </svg>
         <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
       </button>
-      <p class="app-subtitle">Quick-reference wind limits for start, takeoff, and landing</p>
+      <p class="app-subtitle">
+        Quick-reference wind limits for start / ice shedding, takeoff, and landing
+      </p>
     </header>
 
     <div class="pilot-disclaimer" role="note">
@@ -380,7 +382,7 @@ watch(manualMode, async (enabled) => {
         :aria-pressed="activePhase === 'start'"
         @click="activePhase = 'start'"
       >
-        Start
+        Start / Ice Shedding
       </button>
       <button
         id="phase-takeoff"
