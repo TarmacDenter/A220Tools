@@ -275,6 +275,32 @@ describe('WindCheckerApp', () => {
     expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
   })
 
+  it('uses the manual heading after switching to manual mode from a fetched airport', async () => {
+    const fetchMock = mockSuccessfulFetches()
+    vi.stubGlobal('$fetch', fetchMock)
+
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+
+    await selectManualInputBtn(wrapper, true)
+    await flushAsyncUpdates()
+
+    const atisButton = wrapper.findAll('.mode-btn').find((button) => button.text() === 'ATIS (MAG)')
+    await atisButton?.trigger('click')
+    const windInputs = wrapper.findAll('.manual-entry .wind-input')
+    await windInputs[0]?.setValue('070')
+    await windInputs[1]?.setValue('30')
+
+    await wrapper.find('#runway-heading-input').setValue('360')
+    await nextTick()
+
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+    expect(wrapper.text()).toContain('XW 28/32')
+  })
+
   it('preserves the selected runway during background refresh', async () => {
     const fetchMock = mockSuccessfulFetches()
     vi.stubGlobal('$fetch', fetchMock)
