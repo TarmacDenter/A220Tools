@@ -362,7 +362,9 @@ watch(manualMode, async (enabled) => {
         </svg>
         <span>{{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}</span>
       </button>
-      <p class="app-subtitle">Quick-reference wind limits for start, takeoff, and landing</p>
+      <p class="app-subtitle">
+        Quick-reference wind limits for start / ice shedding, takeoff, and landing
+      </p>
     </header>
 
     <div class="pilot-disclaimer" role="note">
@@ -380,7 +382,7 @@ watch(manualMode, async (enabled) => {
         :aria-pressed="activePhase === 'start'"
         @click="activePhase = 'start'"
       >
-        Start
+        Start / Ice Shedding
       </button>
       <button
         id="phase-takeoff"
@@ -582,9 +584,9 @@ watch(manualMode, async (enabled) => {
       <NuxtLink to="/activity" class="activity-link">See Recent Activity</NuxtLink>
       <a
         class="sg-button"
-        href="https://www.seniorityguru.com"
+        href="https://www.seniorityguru.com/?utm_source=220tools&utm_medium=referral"
         target="_blank"
-        rel="noopener noreferrer"
+        rel="noopener"
         aria-label="Open Seniority Guru in a new tab"
       >
         Check out Seniority Guru

@@ -20,7 +20,11 @@ export function useRunwaySelection(runways: Ref<RunwaySelection[]>) {
 
   const runwayHeading = computed<number | null>(() => {
     if (selectedRunway.value) return selectedRunway.value.heading
-    if (runwaySelectionValue.value !== 'manual') return null
+    // With no runway options the selector is hidden and only the manual heading input
+    // is shown, so the input must drive the heading regardless of the stale selector value.
+    const usesManualHeading =
+      runwaySelectionValue.value === 'manual' || runwayOptions.value.length === 0
+    if (!usesManualHeading) return null
     return normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''))
   })
 
