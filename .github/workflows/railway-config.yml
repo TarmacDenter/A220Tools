@@ -7,9 +7,9 @@ name: Railway config
 # re-evaluates the authoring file. It fails (and you re-plan) if production
 # drifted or .railway/ changed after the plan.
 #
-# Requires RAILWAY_TOKEN as a secret on the GitHub "production" environment:
+# Requires RAILWAY_TOKEN as a secret on the GitHub "railway-production" environment:
 # a Railway project token for "A220 Stuff", production environment. Both jobs
-# declare `environment: production`, so the environment's deployment-branch
+# declare `environment: railway-production`, so the environment's deployment-branch
 # rule must allow PR branches (plan runs on the PR, not on master).
 
 on:
@@ -31,7 +31,7 @@ jobs:
   plan:
     if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: production
+    environment: railway-production
     steps:
       - uses: actions/checkout@v4
       - uses: railwayapp/config@9e17d413dbe219f19d62538d9c06b5dbb5e9abf8 # v1.2.0
@@ -43,7 +43,7 @@ jobs:
   apply:
     if: github.event.action == 'closed' && github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: production
+    environment: railway-production
     # Serialize applies to production. Plans are read-only and stay parallel.
     concurrency:
       group: railway-apply-production
