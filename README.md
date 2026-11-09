@@ -70,20 +70,31 @@ npm run test:e2e -- --debug
 
 ## Deployment (Railway)
 
-This project is configured for Nuxt SSR deployment to Railway using configuration-as-code. Railway uses `railway.toml` for deploy orchestration, `.nvmrc` to declare the Node version, and `package.json`'s `packageManager` field to pin npm.
+Railway service configuration is managed as code in `.railway/railway.ts` (Railway Infrastructure as Code, which replaced the deprecated `railway.toml`). `.nvmrc` declares the Node version and `package.json`'s `packageManager` field pins npm.
 
 ### Railway runtime details
 
+- Builder: Railpack
 - Build command: `npm run build`
 - Runtime command: `node .output/server/index.mjs`
 - Health check path: `/`
+- Restart policy: on failure, max 10 retries
+
+### Changing Railway configuration
+
+Railway never reads `.railway/` during deploys; changes apply only via the CLI:
+
+```sh
+railway config plan    # review the diff against live state
+railway config apply   # apply it
+```
+
+Edge rules that block scanner traffic are configured in the dashboard; see [docs/railway-edge-rules.md](docs/railway-edge-rules.md).
 
 ### Deploy steps
 
-1. Create a new Railway project and link this repository.
-2. Ensure Railway is set to use the repo-root `railway.toml` and the service builder is not overridden in the UI.
-3. Deploy from `master` (or your selected release branch).
-4. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
+1. Deploy from `master` (or your selected release branch).
+2. For custom domains, set `NUXT_PUBLIC_APP_BASE_URL` as needed.
 
 Nuxt/Nitro generates the production server bundle in `.output/` during `npm run build`, which Railway starts via the configured start command.
 

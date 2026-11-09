@@ -15,6 +15,9 @@ export interface RequestTelemetry {
   startTimeNs: bigint
 }
 
+// Bounded so unique-path scanner traffic cannot grow it without limit.
+export const MAX_TRACKED_FINGERPRINTS = 10_000
+
 const repeatedRequestCounts = new Map<string, number>()
 
 export function createRequestId(): string {
@@ -57,7 +60,15 @@ export function buildRequestFingerprint(input: RequestFingerprintInput): string 
 export function incrementRepeatedRequestCount(fingerprint: string): number {
   const currentCount = repeatedRequestCounts.get(fingerprint) ?? 0
   const nextCount = currentCount + 1
+  // Delete-then-set moves the key to the end, so Map order is least-recently-seen first.
+  repeatedRequestCounts.delete(fingerprint)
   repeatedRequestCounts.set(fingerprint, nextCount)
+
+  if (repeatedRequestCounts.size > MAX_TRACKED_FINGERPRINTS) {
+    const oldest = repeatedRequestCounts.keys().next().value
+    if (oldest !== undefined) repeatedRequestCounts.delete(oldest)
+  }
+
   return nextCount
 }
 

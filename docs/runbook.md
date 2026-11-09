@@ -162,6 +162,6 @@ After touching wind logic, confirm:
 
 ## Deployment notes
 
-- GitHub Pages deployment is defined in `.github/workflows/deploy.yml`.
-- Deployment publishes `dist/` to `gh-pages`.
-- Ensure build succeeds locally before expecting CI deploy success.
+- Production runs on Railway behind Cloudflare. Service config lives in `.railway/railway.ts`; apply changes with `railway config plan` then `railway config apply` (see README).
+- Scanner traffic is blocked by Railway edge rules configured in the dashboard; see `docs/railway-edge-rules.md`.
+- Ensure `npm run build` succeeds locally before deploying.
