@@ -43,8 +43,9 @@ export default defineRailway((_ctx, project) => {
       startCommand: 'node .output/server/index.mjs',
       healthcheckPath: '/',
       healthcheckTimeout: 100,
-      restartPolicyType: 'ON_FAILURE',
-      restartPolicyMaxRetries: 10,
+      // Restart policy is left at Railway's default (ON_FAILURE, 10 retries).
+      // Declaring the default here causes a permanent no-op diff in
+      // `railway config plan`, because Railway reports default values as unset.
     },
     replicas: { 'us-west2': 1 },
     domains: [
