@@ -66,10 +66,45 @@ function mockSuccessfulFetches() {
   })
 }
 
+function buildConditionsResponse(
+  runways = [
+    { name: '04L', heading: 44 },
+    { name: '22R', heading: 224 },
+  ],
+) {
+  return { metar: buildMetarResponse(), airport: buildAirportResponse(), runways }
+}
+
+type Deferred<T> = { promise: Promise<T>; resolve: (v: T) => void; reject: (e: unknown) => void }
+function deferred<T>(): Deferred<T> {
+  let resolve!: (v: T) => void
+  let reject!: (e: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+/** Queue of per-call conditions responses; each call takes the next handler. */
+function mockQueuedFetches(handlers: Array<() => Promise<unknown>>) {
+  let call = 0
+  return vi.fn(async (url: string) => {
+    if (url.includes('/api/airport-conditions/')) {
+      const handler = handlers[Math.min(call, handlers.length - 1)]
+      call += 1
+      return handler!()
+    }
+    throw Object.assign(new Error('Not Found'), { status: 404 })
+  })
+}
+
 async function flushAsyncUpdates() {
-  await Promise.resolve()
-  await Promise.resolve()
-  await nextTick()
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve()
+    await Promise.resolve()
+    await nextTick()
+  }
 }
 
 describe('WindCheckerApp', () => {
@@ -316,6 +351,153 @@ describe('WindCheckerApp', () => {
     await flushAsyncUpdates()
 
     expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+  })
+
+  describe('background refresh', () => {
+    async function loadTakeoffWithRunway(fetchMock: ReturnType<typeof vi.fn>) {
+      vi.stubGlobal('$fetch', fetchMock)
+      wrapper = mount(WindCheckerApp)
+      await wrapper.find('#phase-takeoff').trigger('click')
+      await wrapper.find('#icao-input').setValue('KJFK')
+      await wrapper.find('.fetch-btn').trigger('click')
+      await flushAsyncUpdates()
+      await wrapper.find('#runway-selector').setValue('04L')
+      await flushAsyncUpdates()
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+    }
+
+    it('keeps the readout and runway visible while a refresh is in flight', async () => {
+      const pending = deferred<unknown>()
+      const fetchMock = mockQueuedFetches([
+        async () => buildConditionsResponse(),
+        () => pending.promise,
+      ])
+      await loadTakeoffWithRunway(fetchMock)
+
+      await vi.advanceTimersByTimeAsync(300_000)
+      await flushAsyncUpdates()
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+      expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+      expect(wrapper.find('#runway-selector').attributes('disabled')).toBeUndefined()
+      expect(wrapper.text()).not.toContain('Fetching data')
+      expect(wrapper.find('[data-testid="refreshing"]').exists()).toBe(true)
+
+      pending.resolve(buildConditionsResponse())
+      await flushAsyncUpdates()
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="refreshing"]').exists()).toBe(false)
+    })
+
+    it('keeps the readout visible when the user re-checks the same airport', async () => {
+      const pending = deferred<unknown>()
+      const fetchMock = mockQueuedFetches([
+        async () => buildConditionsResponse(),
+        () => pending.promise,
+      ])
+      await loadTakeoffWithRunway(fetchMock)
+
+      await wrapper.find('.fetch-btn').trigger('click')
+      await flushAsyncUpdates()
+
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+      expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+      pending.resolve(buildConditionsResponse())
+      await flushAsyncUpdates()
+    })
+
+    it('keeps the last readout with a warning when a refresh fails, and retries', async () => {
+      const fetchMock = mockQueuedFetches([
+        async () => buildConditionsResponse(),
+        async () => {
+          throw new Error('Network down')
+        },
+        async () => buildConditionsResponse(),
+      ])
+      await loadTakeoffWithRunway(fetchMock)
+
+      await vi.advanceTimersByTimeAsync(300_000)
+      await flushAsyncUpdates()
+
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+      expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '04L')
+      expect(wrapper.find('[data-testid="refresh-failed"]').exists()).toBe(true)
+      expect(wrapper.text()).not.toContain('Could not retrieve airport conditions')
+
+      await vi.advanceTimersByTimeAsync(300_000)
+      await flushAsyncUpdates()
+
+      expect(fetchMock).toHaveBeenCalledTimes(3)
+      expect(wrapper.find('[data-testid="refresh-failed"]').exists()).toBe(false)
+    })
+
+    it('does not scroll the page on a background refresh', async () => {
+      const scrollSpy = vi.fn()
+      Element.prototype.scrollIntoView = scrollSpy
+      const fetchMock = mockQueuedFetches([async () => buildConditionsResponse()])
+      await loadTakeoffWithRunway(fetchMock)
+      await nextTick()
+      const callsAfterInitialLoad = scrollSpy.mock.calls.length
+      expect(callsAfterInitialLoad).toBeGreaterThan(0)
+
+      await vi.advanceTimersByTimeAsync(300_000)
+      await flushAsyncUpdates()
+      await nextTick()
+
+      expect(scrollSpy.mock.calls.length).toBe(callsAfterInitialLoad)
+    })
+
+    it('ignores a stale response that resolves after a newer one', async () => {
+      const first = deferred<unknown>()
+      const second = deferred<unknown>()
+      const fetchMock = mockQueuedFetches([() => first.promise, () => second.promise])
+      vi.stubGlobal('$fetch', fetchMock)
+      wrapper = mount(WindCheckerApp)
+      await wrapper.find('#phase-takeoff').trigger('click')
+
+      await wrapper.find('#icao-input').setValue('KJFK')
+      await wrapper.find('.fetch-btn').trigger('click')
+      // A second fetch for a different airport starts before the first resolves
+      // (e.g. via the location button, which emits fetch independently).
+      const airportInput = wrapper.findComponent({ name: 'AirportInput' })
+      airportInput.vm.$emit('fetch', 'KLGA')
+      await flushAsyncUpdates()
+
+      second.resolve(buildConditionsResponse([{ name: '13', heading: 121 }]))
+      await flushAsyncUpdates()
+      first.resolve(buildConditionsResponse())
+      await flushAsyncUpdates()
+
+      const options = wrapper.findAll('#runway-selector option').map((o) => o.text())
+      expect(options.some((t) => t.startsWith('13 '))).toBe(true)
+      expect(options.some((t) => t.startsWith('04L'))).toBe(false)
+    })
+  })
+
+  it('keeps a heading typed while runway data was unavailable once runways return', async () => {
+    vi.stubGlobal('$fetch', mockSuccessfulFetches())
+    wrapper = mount(WindCheckerApp)
+    await wrapper.find('#phase-takeoff').trigger('click')
+    await wrapper.find('#icao-input').setValue('KJFK')
+    await wrapper.find('.fetch-btn').trigger('click')
+    await flushAsyncUpdates()
+    // Runway list loaded, no runway picked yet.
+    expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '')
+
+    // Manual wind clears the runway list; the pilot types a heading instead.
+    await selectManualInputBtn(wrapper, true)
+    await flushAsyncUpdates()
+    await wrapper.find('#runway-heading-input').setValue('90')
+    await flushAsyncUpdates()
+
+    // Back to live: runways return, typed heading must survive.
+    await wrapper.find('#manual-mode-toggle').trigger('click')
+    await flushAsyncUpdates()
+
+    expect(wrapper.find('#runway-selector').element).toHaveProperty('value', 'manual')
+    expect(wrapper.find('#runway-heading-input').element).toHaveProperty('value', '90')
+    expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
   })
 
   it('clears the selected runway when the airport changes', async () => {

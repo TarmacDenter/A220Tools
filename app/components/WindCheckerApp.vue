@@ -82,6 +82,8 @@ const {
   runways,
   error: conditionsError,
   lastFetchedAt,
+  isRefreshing,
+  refreshFailed,
   fetchAirportConditions,
   clearConditions,
 } = useAirportConditions()
@@ -98,6 +100,8 @@ const activeIcao = ref('')
 const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
 const freshnessNowMs = ref(Date.now())
 const readoutRef = ref<HTMLElement | null>(null)
+// Scroll to the readout only once per user-initiated fetch, never on background refresh.
+const scrollToReadoutPending = ref(false)
 
 // --- Intervals ---
 useInterval(() => {
@@ -107,9 +111,10 @@ useInterval(() => {
 useInterval(() => {
   if (!isOnline.value) return
   if (manualMode.value) return
+  // Keep refreshing after a failed background refresh so the display recovers on its own.
   if (conditionsStatus.value !== 'success') return
   if (activeIcao.value.length < 3) return
-  void fetchAirportConditions(activeIcao.value)
+  void fetchAirportConditions(activeIcao.value, { keepPrevious: true })
 }, CONDITIONS_REFRESH_INTERVAL_MS)
 
 // --- Fetch orchestration ---
@@ -121,7 +126,8 @@ async function onFetch(icao: string) {
     resetForAirport()
   }
   activeIcao.value = normalizedIcao
-  await fetchAirportConditions(icao)
+  scrollToReadoutPending.value = isNewAirport || windResult.value === null
+  await fetchAirportConditions(normalizedIcao, { keepPrevious: !isNewAirport })
   if (isNewAirport) {
     completeAirportLoad()
   }
@@ -211,8 +217,11 @@ const rawMetar = computed(() => metar.value?.rawOb ?? null)
 const isLoading = computed(() => conditionsStatus.value === 'loading')
 
 watch(windResult, (result) => {
-  if (result)
-    nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }))
+  if (!result) return
+  // Manual wind entry has no fetch; scroll as the pilot fills in the wind.
+  if (!manualMode.value && !scrollToReadoutPending.value) return
+  scrollToReadoutPending.value = false
+  nextTick(() => readoutRef.value?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }))
 })
 
 const metarFreshnessText = computed(() => {
@@ -447,7 +456,12 @@ watch(manualMode, async (enabled) => {
     </div>
 
     <p v-if="metarFreshnessText" class="metar-freshness">
-      <span>{{ metarFreshnessText }}</span>
+      <span>
+        {{ metarFreshnessText }}
+        <span v-if="isRefreshing && !manualMode" class="metar-refreshing" data-testid="refreshing">
+          · Refreshing…
+        </span>
+      </span>
       <span v-if="metarFreshnessRaw" class="metar-freshness-raw">{{ metarFreshnessRaw }}</span>
     </p>
 
@@ -501,6 +515,16 @@ watch(manualMode, async (enabled) => {
 
     <!-- Loading indicator -->
     <StatusMessage v-if="isLoading" variant="loading"> Fetching data… </StatusMessage>
+
+    <StatusMessage
+      v-else-if="refreshFailed && !manualMode"
+      variant="warning"
+      data-testid="refresh-failed"
+      role="alert"
+    >
+      METAR refresh failed. Showing the last METAR fetched
+      {{ metarFetchedAtUtc ?? 'earlier' }} — check its issued time below. Retrying automatically.
+    </StatusMessage>
 
     <!-- Conditions fetch failed -->
     <ErrorPanel
@@ -768,6 +792,10 @@ watch(manualMode, async (enabled) => {
   margin: 0.25rem 0 0.75rem;
   font-size: 0.85rem;
   color: var(--color-text-subtle);
+}
+
+.metar-refreshing {
+  font-weight: 600;
 }
 
 .metar-freshness-raw {
