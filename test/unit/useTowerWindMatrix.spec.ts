@@ -8,7 +8,7 @@ import {
 } from '#shared/domain/runwayMatrix'
 
 describe('buildTowerWindMatrix', () => {
-  it('generates all absolute wind directions and centers the visible window on the reference wind', () => {
+  it('generates all absolute wind directions and orders them from the centered window around the reference wind', () => {
     const matrix = buildTowerWindMatrix({
       phase: 'landing',
       rcamCode: 6,
@@ -17,11 +17,13 @@ describe('buildTowerWindMatrix', () => {
     })
 
     expect(matrix.allRows).toHaveLength(36)
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+    expect(matrix.orderedRows).toHaveLength(36)
+    expect(matrix.orderedRows.slice(0, 7).map((row) => row.windDirection)).toEqual([
       40, 50, 60, 70, 80, 90, 100,
     ])
-    expect(matrix.visibleRows.find((row) => row.windDirection === 70)?.isReference).toBe(true)
-    expect(matrix.visibleRows.find((row) => row.windDirection === 90)).toMatchObject({
+    expect(matrix.orderedRows[3]).toMatchObject({ windDirection: 70, isReference: true })
+    expect(matrix.orderedRows.filter((row) => row.isReference)).toHaveLength(1)
+    expect(matrix.orderedRows.find((row) => row.windDirection === 90)).toMatchObject({
       maxWindKt: 29,
       limitingComponent: 'XW',
       displayMaxWind: '29 kt',
@@ -36,9 +38,11 @@ describe('buildTowerWindMatrix', () => {
       referenceWindDirection: 350,
     })
 
-    expect(matrix.visibleRows.map((row) => row.windDirection)).toEqual([
+    expect(matrix.orderedRows.slice(0, 7).map((row) => row.windDirection)).toEqual([
       320, 330, 340, 350, 0, 10, 20,
     ])
+    expect(matrix.orderedRows.at(-1)?.windDirection).toBe(310)
+    expect(new Set(matrix.orderedRows.map((row) => row.windDirection)).size).toBe(36)
   })
 
   it('uses tailwind as the limiting component on tailwind rows', () => {
@@ -49,7 +53,7 @@ describe('buildTowerWindMatrix', () => {
       referenceWindDirection: 180,
     })
 
-    expect(matrix.visibleRows.find((row) => row.windDirection === 180)).toMatchObject({
+    expect(matrix.orderedRows.find((row) => row.windDirection === 180)).toMatchObject({
       maxWindKt: 10,
       limitingComponent: 'TW',
     })
@@ -63,7 +67,7 @@ describe('buildTowerWindMatrix', () => {
       referenceWindDirection: 0,
     })
 
-    expect(matrix.visibleRows.find((row) => row.windDirection === 0)?.displayMaxWind).toBe('>99 kt')
+    expect(matrix.orderedRows.find((row) => row.windDirection === 0)?.displayMaxWind).toBe('>99 kt')
   })
 })
 
