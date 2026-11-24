@@ -466,12 +466,19 @@ describe('WindCheckerApp', () => {
 
       second.resolve(buildConditionsResponse([{ name: '13', heading: 121 }]))
       await flushAsyncUpdates()
+      // The pilot picks a runway from the newer airport before the stale response lands.
+      await wrapper.find('#runway-selector').setValue('13')
+      await flushAsyncUpdates()
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
+
       first.resolve(buildConditionsResponse())
       await flushAsyncUpdates()
 
       const options = wrapper.findAll('#runway-selector option').map((o) => o.text())
       expect(options.some((t) => t.startsWith('13 '))).toBe(true)
       expect(options.some((t) => t.startsWith('04L'))).toBe(false)
+      expect(wrapper.find('#runway-selector').element).toHaveProperty('value', '13')
+      expect(wrapper.find('.tower-wind-matrix').exists()).toBe(true)
     })
   })
 

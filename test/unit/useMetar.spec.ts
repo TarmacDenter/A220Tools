@@ -121,10 +121,20 @@ describe('useAirportConditions', () => {
 
     const result = useAirportConditions()
     const first = result.fetchAirportConditions('KSEA')
-    await result.fetchAirportConditions('KSEA')
+    const secondIsCurrent = await result.fetchAirportConditions('KSEA')
     resolveFirst(conditions)
-    await first
+    const firstIsCurrent = await first
 
     expect(result.runways.value).toEqual([{ name: '16L', heading: 163 }])
+    expect(secondIsCurrent).toBe(true)
+    expect(firstIsCurrent).toBe(false)
+  })
+
+  it('reports a failed request as current when nothing superseded it', async () => {
+    vi.mocked(fetchAirportConditionsFromServer).mockRejectedValueOnce(new Error('Network down'))
+    const result = useAirportConditions()
+
+    await expect(result.fetchAirportConditions('KSEA')).resolves.toBe(true)
+    expect(result.status.value).toBe('error')
   })
 })

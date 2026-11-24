@@ -32,10 +32,15 @@ export function useAirportConditions() {
     return metar.value !== null
   }
 
+  /**
+   * Resolves `true` if this request was still the latest when it settled (success or error),
+   * `false` if a newer request or `clearConditions` superseded it. Callers must skip any
+   * follow-up work (e.g. runway setup) for a superseded request.
+   */
   async function fetchAirportConditions(
     icao: string,
     options: FetchAirportConditionsOptions = {},
-  ): Promise<void> {
+  ): Promise<boolean> {
     const requestId = ++latestRequestId
     const keepPrevious = options.keepPrevious === true && hasConditions()
 
@@ -53,7 +58,7 @@ export function useAirportConditions() {
 
     try {
       const conditions = await loadAirportConditions(icao)
-      if (requestId !== latestRequestId) return
+      if (requestId !== latestRequestId) return false
       runways.value = conditions.runways
       metar.value = conditions.metar
       magneticCorrection.value = conditions.magneticCorrection
@@ -61,14 +66,16 @@ export function useAirportConditions() {
       error.value = null
       refreshFailed.value = false
       status.value = 'success'
+      return true
     } catch (err) {
-      if (requestId !== latestRequestId) return
+      if (requestId !== latestRequestId) return false
       error.value = err instanceof Error ? err.message : String(err)
       if (keepPrevious) {
         refreshFailed.value = true
       } else {
         status.value = 'error'
       }
+      return true
     } finally {
       if (requestId === latestRequestId) isRefreshing.value = false
     }

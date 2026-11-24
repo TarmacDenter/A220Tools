@@ -127,8 +127,9 @@ async function onFetch(icao: string) {
   }
   activeIcao.value = normalizedIcao
   scrollToReadoutPending.value = isNewAirport || windResult.value === null
-  await fetchAirportConditions(normalizedIcao, { keepPrevious: !isNewAirport })
-  if (isNewAirport) {
+  const isCurrent = await fetchAirportConditions(normalizedIcao, { keepPrevious: !isNewAirport })
+  // A superseded request must not touch the runway setup of the airport that replaced it.
+  if (isNewAirport && isCurrent) {
     completeAirportLoad()
   }
 }
