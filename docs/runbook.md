@@ -151,6 +151,13 @@ Checks:
 2. Validate ICAO input format.
 3. Use manual mode to continue verification flow when remote data is unavailable.
 
+Refresh behavior:
+
+- Same-airport refreshes (5-minute auto-refresh, re-clicking Check METAR, location for the same airport) keep the current readout, runway selection, and manual heading on screen. The freshness line shows "Refreshing…" while in flight.
+- If a refresh fails, the last successful METAR stays on screen with a "METAR refresh failed" warning, and auto-refresh keeps retrying. The issued/fetched times show how old the data is.
+- A different airport clears all conditions and the runway setup before loading.
+- Only the latest request may update the screen; slower earlier responses are ignored.
+
 ## Safety-critical behavior checks
 
 After touching wind logic, confirm:
@@ -159,6 +166,7 @@ After touching wind logic, confirm:
 2. ATIS (MAG) mode still applies no declination correction.
 3. Zero-declination fallback warning still appears when airport declination is unavailable.
 4. Pilot disclaimer remains visible on initial page load.
+5. A background refresh does not hide the readout, reset the runway heading, or scroll the page.
 
 ## Deployment notes
 

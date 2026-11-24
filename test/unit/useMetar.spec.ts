@@ -72,4 +72,69 @@ describe('useAirportConditions', () => {
     expect(result.status.value).toBe('error')
     expect(result.lastFetchedAt.value).toBe(firstSuccessTime.getTime())
   })
+
+  it('keeps previous conditions while a keepPrevious refresh is in flight', async () => {
+    vi.mocked(fetchAirportConditionsFromServer).mockResolvedValueOnce(conditions)
+    const result = useAirportConditions()
+    await result.fetchAirportConditions('KSEA')
+
+    let resolveRefresh!: (value: typeof conditions) => void
+    vi.mocked(fetchAirportConditionsFromServer).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRefresh = resolve
+      }),
+    )
+    const refresh = result.fetchAirportConditions('KSEA', { keepPrevious: true })
+
+    expect(result.status.value).toBe('success')
+    expect(result.isRefreshing.value).toBe(true)
+    expect(result.metar.value).not.toBeNull()
+
+    resolveRefresh(conditions)
+    await refresh
+    expect(result.isRefreshing.value).toBe(false)
+  })
+
+  it('keeps previous conditions and flags refreshFailed when a keepPrevious refresh fails', async () => {
+    vi.mocked(fetchAirportConditionsFromServer).mockResolvedValueOnce(conditions)
+    const result = useAirportConditions()
+    await result.fetchAirportConditions('KSEA')
+
+    vi.mocked(fetchAirportConditionsFromServer).mockRejectedValueOnce(new Error('Network down'))
+    await result.fetchAirportConditions('KSEA', { keepPrevious: true })
+
+    expect(result.status.value).toBe('success')
+    expect(result.refreshFailed.value).toBe(true)
+    expect(result.error.value).toBe('Network down')
+    expect(result.metar.value).not.toBeNull()
+  })
+
+  it('ignores a response from a superseded request', async () => {
+    let resolveFirst!: (value: typeof conditions) => void
+    vi.mocked(fetchAirportConditionsFromServer)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ ...conditions, runways: [{ name: '16L', heading: 163 }] })
+
+    const result = useAirportConditions()
+    const first = result.fetchAirportConditions('KSEA')
+    const secondIsCurrent = await result.fetchAirportConditions('KSEA')
+    resolveFirst(conditions)
+    const firstIsCurrent = await first
+
+    expect(result.runways.value).toEqual([{ name: '16L', heading: 163 }])
+    expect(secondIsCurrent).toBe(true)
+    expect(firstIsCurrent).toBe(false)
+  })
+
+  it('reports a failed request as current when nothing superseded it', async () => {
+    vi.mocked(fetchAirportConditionsFromServer).mockRejectedValueOnce(new Error('Network down'))
+    const result = useAirportConditions()
+
+    await expect(result.fetchAirportConditions('KSEA')).resolves.toBe(true)
+    expect(result.status.value).toBe('error')
+  })
 })

@@ -53,7 +53,20 @@ export function useRunwaySelection(runways: Ref<RunwaySelection[]>) {
   watch(
     runways,
     (updatedRunways) => {
-      if (!selectedRunway.value) return
+      if (!selectedRunway.value) {
+        // A heading typed while the runway list was empty (manual wind, failed fetch) was driving
+        // the cards. When runways return, keep it as the manual heading instead of dropping to
+        // the unselected placeholder, which would silently clear the runway heading.
+        const typedHeading = normalizeRunwayHeading(String(runwayHeadingInput.value ?? ''))
+        if (
+          updatedRunways.length > 0 &&
+          runwaySelectionValue.value === '' &&
+          typedHeading !== null
+        ) {
+          runwaySelectionValue.value = 'manual'
+        }
+        return
+      }
       const refreshed = updatedRunways.find((runway) => runway.name === selectedRunway.value?.name)
       if (refreshed) selectedRunway.value = refreshed
     },

@@ -58,7 +58,7 @@ function onLocButtonClick() {
       <button
         v-if="locBtnState !== 'unsupported'"
         class="fetch-btn col-4"
-        :disabled="locBtnState === 'loading'"
+        :disabled="locBtnState === 'loading' || status === 'loading' || disabled"
         @click="onLocButtonClick"
       >
         {{ locBtnText }}
