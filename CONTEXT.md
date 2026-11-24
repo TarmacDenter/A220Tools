@@ -101,7 +101,7 @@ The wind matrix row nearest to the current reference wind direction, highlighted
 _Avoid_: Current-wind verdict, selected row
 
 **Centered Matrix Window**:
-The seven visible absolute-direction rows centered on the shared wind source, selected from a complete set of generated wind direction values.
+The seven-row viewport into a scrollable, wrap-around list of every generated absolute wind direction, opening centered on the shared wind source and re-centering when that source changes.
 _Avoid_: Partial calculation, limited model
 
 **Runway-Centered Fallback**:

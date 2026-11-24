@@ -11,6 +11,8 @@ import { calculateRunwayWindComponents, degToRad, normalizeDeg } from './windAng
 export type { RunwayWindComponents } from './windAngles'
 
 export type TowerWindPhase = 'takeoff' | 'landing'
+/** Where the Reference Row comes from: METAR wind, manual wind, or the Runway-Centered Fallback. */
+export type TowerReferenceSource = 'metar' | 'manual' | 'runway'
 export type LimitingComponent = 'XW' | 'TW'
 export type ComponentStatus = 'safe' | 'warning' | 'unsafe' | 'info'
 
@@ -33,7 +35,11 @@ export interface TowerWindMatrix {
   crosswindLimitKt: number
   tailwindLimitKt: number
   allRows: TowerWindMatrixRow[]
-  visibleRows: TowerWindMatrixRow[]
+  /**
+   * All generated rows rotated so the first MATRIX_WINDOW_RADIUS_ROWS * 2 + 1 rows form the
+   * Centered Matrix Window; the Reference Row sits at index MATRIX_WINDOW_RADIUS_ROWS.
+   */
+  orderedRows: TowerWindMatrixRow[]
 }
 
 export interface CurrentWindComponentReadoutInput {
@@ -133,7 +139,8 @@ export function buildTowerWindMatrix(input: TowerWindMatrixInput): TowerWindMatr
   const crosswindLimitKt = getCrosswindLimit(input.phase, input.rcamCode)
   const tailwindLimitKt = getTailwindLimit(input.phase)
   const referenceDirection = nearestWindDirection(input.referenceWindDirection)
-  const allRows = Array.from({ length: 36 }, (_, index) => {
+  const rowCount = 360 / WIND_DIRECTION_STEP_DEG
+  const allRows = Array.from({ length: rowCount }, (_, index) => {
     const windDirection = index * WIND_DIRECTION_STEP_DEG
     return {
       windDirection,
@@ -141,11 +148,11 @@ export function buildTowerWindMatrix(input: TowerWindMatrixInput): TowerWindMatr
       ...maxWindForDirection(windDirection, input.runwayHeading, crosswindLimitKt, tailwindLimitKt),
     }
   })
-  const visibleRows = Array.from({ length: MATRIX_WINDOW_RADIUS_ROWS * 2 + 1 }, (_, index) => {
+  const orderedRows = Array.from({ length: rowCount }, (_, index) => {
     const offset = index - MATRIX_WINDOW_RADIUS_ROWS
     const windDirection = normalizeDeg(referenceDirection + offset * WIND_DIRECTION_STEP_DEG)
     return allRows.find((row) => row.windDirection === windDirection)
   }).filter((row): row is TowerWindMatrixRow => row !== undefined)
 
-  return { crosswindLimitKt, tailwindLimitKt, allRows, visibleRows }
+  return { crosswindLimitKt, tailwindLimitKt, allRows, orderedRows }
 }

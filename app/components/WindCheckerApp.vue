@@ -14,6 +14,7 @@ import {
 } from '@/constants'
 import { METAR_ISSUED_STALE_MIN, METAR_ISSUED_WARNING_MIN } from '#shared/domain/calculationPolicy'
 import type { RCAM_KEYS } from '#shared/domain/runwayLimits'
+import type { TowerReferenceSource } from '#shared/domain/runwayMatrix'
 import { TAILWIND_LIMIT_KT } from '#shared/domain/windLimits'
 import type { MagneticCorrection, ParsedWind } from '#shared/domain/wind'
 
@@ -196,6 +197,12 @@ const towerReferenceWindDirection = computed(() => {
   if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable)
     return runwayHeading.value
   return result.windDirectionMagnetic
+})
+
+const towerReferenceSource = computed<TowerReferenceSource>(() => {
+  const result = windResult.value
+  if (!result || result.parsedWind.isCalm || result.parsedWind.isVariable) return 'runway'
+  return manualMode.value ? 'manual' : 'metar'
 })
 
 const { matrix: towerWindMatrix, currentReadout: currentTowerWindReadout } = useTowerWindMatrix({
@@ -569,6 +576,7 @@ watch(manualMode, async (enabled) => {
         <TowerWindMatrix
           v-if="runwayPhase && towerWindMatrix"
           :phase="runwayPhase"
+          :reference-source="towerReferenceSource"
           :matrix="towerWindMatrix"
           :current-readout="currentTowerWindReadout"
         />
