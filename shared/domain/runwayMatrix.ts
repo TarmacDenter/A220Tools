@@ -11,6 +11,8 @@ import { calculateRunwayWindComponents, degToRad, normalizeDeg } from './windAng
 export type { RunwayWindComponents } from './windAngles'
 
 export type TowerWindPhase = 'takeoff' | 'landing'
+/** Where the Reference Row comes from: METAR wind, manual wind, or the Runway-Centered Fallback. */
+export type TowerReferenceSource = 'metar' | 'manual' | 'runway'
 export type LimitingComponent = 'XW' | 'TW'
 export type ComponentStatus = 'safe' | 'warning' | 'unsafe' | 'info'
 

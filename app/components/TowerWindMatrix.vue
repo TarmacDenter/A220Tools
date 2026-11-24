@@ -3,6 +3,7 @@ import { computed, ref, useId, type ComponentPublicInstance } from 'vue'
 import { MATRIX_WINDOW_RADIUS_ROWS } from '#shared/domain/calculationPolicy'
 import type {
   CurrentWindComponentReadout,
+  TowerReferenceSource,
   TowerWindMatrix,
   TowerWindPhase,
 } from '#shared/domain/runwayMatrix'
@@ -11,6 +12,7 @@ import { formatMagneticHeading } from '@/utils/formatting'
 
 const props = defineProps<{
   phase: TowerWindPhase
+  referenceSource: TowerReferenceSource
   matrix: TowerWindMatrix
   currentReadout: CurrentWindComponentReadout | null
 }>()
@@ -42,7 +44,7 @@ const { isOffCenter, viewportHeightPx, recenter } = useCircularScroller({
   periodStartRow,
   rowsPerPeriod: () => props.matrix.orderedRows.length,
   visibleRows: WINDOW_ROWS,
-  centerKey: () => `${props.phase}:${referenceDirection.value}`,
+  centerKey: () => `${props.phase}:${props.referenceSource}:${referenceDirection.value}`,
 })
 
 const viewportStyle = computed(() =>
@@ -50,6 +52,12 @@ const viewportStyle = computed(() =>
     ? undefined
     : { height: `${viewportHeightPx.value}px`, maxHeight: 'none' },
 )
+
+function onRecenterClick(): void {
+  // Move focus before the button unmounts so keyboard users stay on the scroll region.
+  scroller.value?.focus({ preventScroll: true })
+  void recenter()
+}
 
 function formatPhase(phase: TowerWindPhase): string {
   return phase === 'takeoff' ? 'Takeoff' : 'Landing'
@@ -83,7 +91,7 @@ function formatPhase(phase: TowerWindPhase): string {
 
     <div class="matrix-heading">
       <span :id="captionId" class="matrix-caption">Tower Wind Matrix (Magnetic)</span>
-      <button v-if="isOffCenter" type="button" class="recenter-btn" @click="recenter">
+      <button v-if="isOffCenter" type="button" class="recenter-btn" @click="onRecenterClick">
         Re-center
       </button>
     </div>
